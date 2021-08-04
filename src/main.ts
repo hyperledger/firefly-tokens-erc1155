@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { version as API_VERSION } from '../package.json';
 import { AppModule } from './app.module';
+import { RequestLoggingInterceptor } from './request-logging.interceptor';
 
 export function getApiConfig() {
   return new DocumentBuilder().setTitle('FireFly Tokens - ERC1155').setVersion(API_VERSION).build();
@@ -9,6 +10,9 @@ export function getApiConfig() {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
+  app.useGlobalInterceptors(new RequestLoggingInterceptor());
+
   const apiConfig = getApiConfig();
   const api = SwaggerModule.createDocument(app, apiConfig);
   SwaggerModule.setup('api', app, api);
