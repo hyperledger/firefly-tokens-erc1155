@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { version as API_VERSION } from '../package.json';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { version as API_VERSION } from '../package.json';
+import { AppModule } from './app.module';
 
 export function getApiConfig() {
   return new DocumentBuilder().setTitle('FireFly Tokens - ERC1155').setVersion(API_VERSION).build();
