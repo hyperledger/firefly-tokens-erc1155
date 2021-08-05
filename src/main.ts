@@ -1,4 +1,5 @@
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { version as API_VERSION } from '../package.json';
@@ -7,12 +8,7 @@ import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 
-const ethConnectUrl = 'http://127.0.0.1:5102';
-const instanceUrl = `${ethConnectUrl}/contracts/tokens`;
-const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
-const topic = 'token';
 const subscriptions = ['URI', 'TransferSingle'];
-const ethConnectIdentity = '0x136e7a2eb8d1ed764ce229779370879eb0d738b2';
 
 export function getApiConfig() {
   return new DocumentBuilder().setTitle('FireFly Tokens - ERC1155').setVersion(API_VERSION).build();
@@ -31,7 +27,17 @@ async function bootstrap() {
 
   const apiConfig = getApiConfig();
   const api = SwaggerModule.createDocument(app, apiConfig);
+  const config = app.get(ConfigService);
+
   SwaggerModule.setup('api', app, api);
+
+  const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
+  const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
+  const topic = config.get<string>('ETHCONNECT_TOPIC', '');
+  const identity = config.get<string>('ETHCONNECT_IDENTITY', '');
+
+  const instanceUrl = ethConnectUrl + instancePath;
+  const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
 
   const eventStream = app.get(EventStreamService);
   const stream = await eventStream.ensureEventStream(ethConnectUrl, topic);
@@ -39,9 +45,11 @@ async function bootstrap() {
   eventStream.initWebsocket(wsUrl, topic);
 
   const tokens = app.get(TokensService);
-  tokens.init(instanceUrl, ethConnectIdentity);
+  tokens.init(instanceUrl, identity);
 
-  await app.listen(3000);
+  const port = config.get<number>('PORT', 3000);
+  console.log(`Listening on port ${port}`);
+  await app.listen(port);
 }
 
 bootstrap().catch(err => {
