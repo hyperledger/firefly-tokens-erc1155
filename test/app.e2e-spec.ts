@@ -66,7 +66,7 @@ describe('AppController (e2e)', () => {
       type: TokenType.FUNGIBLE,
       namespace: 'testns',
       name: 'token1',
-      id: '65b9241c-8f03-4138-b001-336a7f846395',
+      client_id: '1',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -75,13 +75,13 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/tokens').send(request).expect(202).expect(response);
+    await server.post('/tokens/pool').send(request).expect(202).expect(response);
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        uri: 'fly://erc1155/testns/token1/65b9241c-8f03-4138-b001-336a7f846395',
+        uri: 'fly://erc1155/testns/token1/1',
         is_fungible: true,
       },
       OPTIONS,
@@ -93,7 +93,7 @@ describe('AppController (e2e)', () => {
       type: TokenType.NONFUNGIBLE,
       namespace: 'testns',
       name: 'token1',
-      id: '65b9241c-8f03-4138-b001-336a7f846395',
+      client_id: '1',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -102,13 +102,13 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/tokens').send(request).expect(202).expect(response);
+    await server.post('/tokens/pool').send(request).expect(202).expect(response);
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        uri: 'fly://erc1155/testns/token1/65b9241c-8f03-4138-b001-336a7f846395',
+        uri: 'fly://erc1155/testns/token1/1',
         is_fungible: false,
       },
       OPTIONS,

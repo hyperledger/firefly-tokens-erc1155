@@ -9,11 +9,23 @@ import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
+import {
+  TokenMintEvent,
+  TokenPoolEvent,
+} from './eventstream-proxy/eventstream-proxy.interfaces';
 
 const subscriptions = ['URI', 'TransferSingle'];
 
+const API_DESCRIPTION = `
+<p>All APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
+`;
+
 export function getApiConfig() {
-  return new DocumentBuilder().setTitle('FireFly Tokens - ERC1155').setVersion(API_VERSION).build();
+  return new DocumentBuilder()
+    .setTitle('FireFly Tokens - ERC1155')
+    .setDescription(API_DESCRIPTION)
+    .setVersion(API_VERSION)
+    .build();
 }
 
 async function bootstrap() {
@@ -29,7 +41,9 @@ async function bootstrap() {
   app.useGlobalInterceptors(new RequestLoggingInterceptor());
 
   const apiConfig = getApiConfig();
-  const api = SwaggerModule.createDocument(app, apiConfig);
+  const api = SwaggerModule.createDocument(app, apiConfig, {
+    extraModels: [TokenPoolEvent, TokenMintEvent],
+  });
   const config = app.get(ConfigService);
 
   SwaggerModule.setup('api', app, api);

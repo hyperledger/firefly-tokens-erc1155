@@ -1,3 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { TokenType } from '../tokens/tokens.interfaces';
+
 export interface UriEventData {
   id: string;
   value: string;
@@ -11,8 +14,33 @@ export interface TransferSingleEventData {
   value: number;
 }
 
-export interface TokenPoolCreatedEvent {
+export class TokenPoolEvent {
+  @ApiProperty()
+  pool_id: string;
+
+  @ApiProperty()
+  type: TokenType;
+
+  @ApiProperty()
   namespace: string;
+
+  @ApiProperty()
   name: string;
-  id: string;
+
+  @ApiProperty()
+  client_id: string;
+}
+
+export class TokenMintEvent {
+  @ApiProperty()
+  pool_id: string;
+
+  @ApiProperty()
+  token_id: string;
+
+  @ApiProperty()
+  to: string;
+
+  @ApiProperty()
+  amount: number;
 }
