@@ -1,3 +1,4 @@
+import { HttpService } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TokensService } from './tokens.service';
 
@@ -6,7 +7,13 @@ describe('TokensService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TokensService],
+      providers: [
+        TokensService,
+        {
+          provide: HttpService,
+          useValue: jest.fn(),
+        },
+      ],
     }).compile();
 
     service = module.get<TokensService>(TokensService);
