@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDefined, IsNotEmpty } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsUUID } from 'class-validator';
 
 export class EthConnectAsyncResponse {
   @ApiProperty()
@@ -21,5 +21,13 @@ export class TokenPool {
 
   @ApiProperty()
   @IsNotEmpty()
-  base_uri: string;
+  namespace: string;
+
+  @ApiProperty()
+  @IsUUID()
+  id: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  name: string;
 }
