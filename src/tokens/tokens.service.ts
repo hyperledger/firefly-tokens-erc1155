@@ -8,7 +8,7 @@ export class TokensService {
 
   constructor(private http: HttpService) {}
 
-  init(instanceUrl: string, identity: string) {
+  configure(instanceUrl: string, identity: string) {
     this.instanceUrl = instanceUrl;
     this.identity = identity;
   }

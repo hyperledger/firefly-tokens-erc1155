@@ -7,22 +7,102 @@ import {
   EventStreamSubscription,
 } from './event-stream.interfaces';
 
-@Injectable()
-export class EventStreamService {
-  private readonly logger = new Logger(EventStreamService.name);
+const RECONNECT_TIME = 5000;
+const PING_TIMEOUT = 60000;
+
+export class EventStreamSocket {
+  private readonly logger = new Logger(EventStreamSocket.name);
 
   private ws: WebSocket;
   private pingTimeout: NodeJS.Timeout;
   private disconnectDetected = false;
+  private closeRequested = false;
+
+  constructor(private url: string, private topic: string, private handler: (event: Event) => void) {
+    this.init();
+  }
+
+  private init() {
+    this.disconnectDetected = false;
+    this.closeRequested = false;
+
+    this.ws = new WebSocket(this.url);
+    this.ws
+      .on('open', () => {
+        if (this.disconnectDetected) {
+          this.disconnectDetected = false;
+          this.logger.log('Event stream websocket restored');
+        } else {
+          this.logger.log('Event stream websocket connected');
+        }
+        this.produce({ type: 'listen', topic: this.topic });
+        this.produce({ type: 'listenreplies' });
+        this.ping();
+      })
+      .on('close', () => {
+        if (this.closeRequested) {
+          this.logger.log('Event stream websocket closed');
+        } else {
+          this.disconnectDetected = true;
+          this.logger.error(
+            `Event stream websocket disconnected, attempting to reconnect in ${RECONNECT_TIME}ms`,
+          );
+          setTimeout(() => this.init(), RECONNECT_TIME);
+        }
+      })
+      .on('message', (message: string) => {
+        this.handleMessage(JSON.parse(message));
+      })
+      .on('pong', () => {
+        this.ping();
+      })
+      .on('error', err => {
+        this.logger.error(`Event stream websocket error: ${err}`);
+      });
+  }
+
+  private ping() {
+    this.ws.ping();
+    clearTimeout(this.pingTimeout);
+    this.pingTimeout = setTimeout(() => {
+      this.logger.error('Event stream ping timeout');
+      this.ws.terminate();
+    }, PING_TIMEOUT);
+  }
+
+  private produce(message: any) {
+    this.ws.send(JSON.stringify(message));
+  }
+
+  ack() {
+    this.produce({ type: 'ack', topic: this.topic });
+  }
+
+  close() {
+    this.closeRequested = true;
+    this.ws.terminate();
+  }
+
+  private handleMessage(message: EventStreamReply | Event[]) {
+    if (Array.isArray(message)) {
+      for (const event of message) {
+        this.logger.log(`Ethconnect '${event.signature}' message: ${JSON.stringify(event.data)}`);
+        this.handler(event);
+      }
+    } else {
+      const replyType = message.headers.type;
+      const errorMessage = message.errorMessage ?? '';
+      this.logger.log(
+        `Ethconnect '${replyType}' reply request=${message.headers.requestId} tx=${message.transactionHash} ${errorMessage}`,
+      );
+    }
+  }
+}
+@Injectable()
+export class EventStreamService {
+  private readonly logger = new Logger(EventStreamService.name);
 
   constructor(private http: HttpService) {}
-
-  async init(baseUrl: string, instanceUrl: string, topic: string, subscriptions: string[]) {
-    const stream = await this.ensureEventStream(baseUrl, topic);
-    await this.ensureSubscriptions(baseUrl, instanceUrl, stream.id, subscriptions);
-    const wsUrl = baseUrl.replace('http', 'ws') + '/ws';
-    this.initWebsocket(wsUrl, topic);
-  }
 
   async ensureEventStream(baseUrl: string, topic: string): Promise<EventStream> {
     const streamDetails = {
@@ -88,63 +168,7 @@ export class EventStreamService {
     }
   }
 
-  initWebsocket(wsUrl: string, topic: string) {
-    this.ws = new WebSocket(wsUrl);
-    this.ws
-      .on('open', () => {
-        if (this.disconnectDetected) {
-          this.disconnectDetected = false;
-          this.logger.log('Event stream websocket restored');
-        } else {
-          this.logger.log('Event stream websocket connected');
-        }
-        this.produce({ type: 'listen', topic });
-        this.produce({ type: 'listenreplies' });
-        this.ping();
-      })
-      .on('close', () => {
-        this.disconnectDetected = true;
-        this.logger.error(
-          `Event stream websocket disconnected, attempting to reconnect in 5 second(s)`,
-        );
-        setTimeout(() => this.initWebsocket(wsUrl, topic), 5 * 1000);
-      })
-      .on('message', (message: string) => {
-        this.handleMessage(JSON.parse(message));
-        this.produce({ type: 'ack', topic });
-      })
-      .on('pong', () => {
-        this.ping();
-      })
-      .on('error', err => {
-        this.logger.error(`Event stream websocket error. ${err}`);
-      });
-  }
-
-  private ping() {
-    this.ws.ping();
-    clearTimeout(this.pingTimeout);
-    this.pingTimeout = setTimeout(() => {
-      this.logger.error('Event stream ping timeout');
-      this.ws.terminate();
-    }, 60 * 1000);
-  }
-
-  private produce(message: any) {
-    this.ws.send(JSON.stringify(message));
-  }
-
-  private handleMessage(message: EventStreamReply | Event[]) {
-    if (Array.isArray(message)) {
-      for (const event of message) {
-        this.logger.log(`Ethconnect '${event.signature}' message: ${JSON.stringify(event.data)}`);
-      }
-    } else {
-      const replyType = message.headers.type;
-      const errorMessage = message.errorMessage ?? '';
-      this.logger.log(
-        `Ethconnect '${replyType}' reply request=${message.headers.requestId} tx=${message.transactionHash} ${errorMessage}`,
-      );
-    }
+  subscribe(url: string, topic: string, handler: (event: Event) => void) {
+    return new EventStreamSocket(url, topic, handler);
   }
 }

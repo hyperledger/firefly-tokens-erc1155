@@ -8,5 +8,6 @@ import { EventStreamService } from './event-stream.service';
     }),
   ],
   providers: [EventStreamService],
+  exports: [EventStreamService],
 })
 export class EventStreamModule {}

@@ -2,11 +2,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { version as API_VERSION } from '../package.json';
 import { AppModule } from './app.module';
 import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
+import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
 
 const subscriptions = ['URI', 'TransferSingle'];
 
@@ -17,6 +19,7 @@ export function getApiConfig() {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
+  app.useWebSocketAdapter(new WsAdapter(app));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -42,10 +45,9 @@ async function bootstrap() {
   const eventStream = app.get(EventStreamService);
   const stream = await eventStream.ensureEventStream(ethConnectUrl, topic);
   await eventStream.ensureSubscriptions(ethConnectUrl, instanceUrl, stream.id, subscriptions);
-  eventStream.initWebsocket(wsUrl, topic);
 
-  const tokens = app.get(TokensService);
-  tokens.init(instanceUrl, identity);
+  app.get(EventStreamProxyGateway).configure(wsUrl, topic);
+  app.get(TokensService).configure(instanceUrl, identity);
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);
