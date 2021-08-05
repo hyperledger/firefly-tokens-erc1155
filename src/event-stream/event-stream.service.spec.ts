@@ -1,6 +1,5 @@
 import { HttpService } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as sinon from 'sinon';
 import { EventStreamService } from './event-stream.service';
 
 describe('EventStreamService', () => {
@@ -12,7 +11,7 @@ describe('EventStreamService', () => {
         EventStreamService,
         {
           provide: HttpService,
-          useValue: sinon.fake(),
+          useValue: jest.fn(),
         },
       ],
     }).compile();

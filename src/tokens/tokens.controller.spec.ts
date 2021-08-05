@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import * as sinon from 'sinon';
 import { TokensController } from './tokens.controller';
 import { TokensService } from './tokens.service';
 
@@ -12,7 +11,7 @@ describe('TokensController', () => {
       providers: [
         {
           provide: TokensService,
-          useValue: sinon.fake(),
+          useValue: jest.fn(),
         },
       ],
     }).compile();
