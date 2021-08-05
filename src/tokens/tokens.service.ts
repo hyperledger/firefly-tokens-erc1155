@@ -1,6 +1,8 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { EthConnectAsyncResponse, TokenPool, TokenType } from './tokens.interfaces';
 
+const URI_PREFIX = 'fly://erc1155';
+
 @Injectable()
 export class TokensService {
   instanceUrl: string;
@@ -22,12 +24,16 @@ export class TokensService {
     };
   }
 
+  private buildUri(namespace: string, name: string, id: string) {
+    return `${URI_PREFIX}/${namespace}/${name}/${id}`;
+  }
+
   async createPool(dto: TokenPool) {
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
-          uri: dto.base_uri,
+          uri: this.buildUri(dto.namespace, dto.name, dto.id),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
         this.options,

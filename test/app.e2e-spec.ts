@@ -64,7 +64,9 @@ describe('AppController (e2e)', () => {
   it('Create fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.FUNGIBLE,
-      base_uri: 'test',
+      namespace: 'testns',
+      name: 'token1',
+      id: '65b9241c-8f03-4138-b001-336a7f846395',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -79,7 +81,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        uri: 'test',
+        uri: 'fly://erc1155/testns/token1/65b9241c-8f03-4138-b001-336a7f846395',
         is_fungible: true,
       },
       OPTIONS,
@@ -89,7 +91,9 @@ describe('AppController (e2e)', () => {
   it('Create non-fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
-      base_uri: 'test',
+      namespace: 'testns',
+      name: 'token1',
+      id: '65b9241c-8f03-4138-b001-336a7f846395',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -104,7 +108,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        uri: 'test',
+        uri: 'fly://erc1155/testns/token1/65b9241c-8f03-4138-b001-336a7f846395',
         is_fungible: false,
       },
       OPTIONS,

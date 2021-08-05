@@ -123,11 +123,13 @@ export class EventStreamService {
       const { data: patchedStream } = await this.http
         .patch<EventStream>(`${baseUrl}/eventstreams/${stream.id}`, streamDetails)
         .toPromise();
+      this.logger.log(`Event stream for ${topic}: ${stream.id}`);
       return patchedStream;
     }
     const { data: newStream } = await this.http
       .post<EventStream>(`${baseUrl}/eventstreams`, streamDetails)
       .toPromise();
+    this.logger.log(`Event stream for ${topic}: ${newStream.id}`);
     return newStream;
   }
 
@@ -153,19 +155,23 @@ export class EventStreamService {
     instanceUrl: string,
     streamId: string,
     subscriptions: string[],
-  ) {
+  ): Promise<EventStreamSubscription[]> {
     const { data: existing } = await this.http
       .get<EventStreamSubscription[]>(`${baseUrl}/subscriptions`)
       .toPromise();
+    const results: EventStreamSubscription[] = [];
     for (const eventName of subscriptions) {
       const sub = existing.find(s => s.name === eventName && s.stream === streamId);
-      if (!sub) {
+      if (sub) {
+        this.logger.log(`Subscription for ${eventName}: ${sub.id}`);
+        results.push(sub);
+      } else {
         const newSub = await this.createSubscription(instanceUrl, eventName, streamId);
         this.logger.log(`Subscription for ${eventName}: ${newSub.id}`);
-      } else {
-        this.logger.log(`Subscription for ${eventName}: ${sub.id}`);
+        results.push(newSub);
       }
     }
+    return results;
   }
 
   subscribe(url: string, topic: string, handler: (event: Event) => void) {
