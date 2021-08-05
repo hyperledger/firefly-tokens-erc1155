@@ -1,7 +1,6 @@
 import { HttpService, Injectable } from '@nestjs/common';
-import { EthConnectAsyncResponse, TokenPool, TokenType } from './tokens.interfaces';
-
-const URI_PREFIX = 'fly://erc1155';
+import { isFungible, packTokenId, packTokenUri } from '../util';
+import { EthConnectAsyncResponse, TokenMint, TokenPool, TokenType } from './tokens.interfaces';
 
 @Injectable()
 export class TokensService {
@@ -24,21 +23,54 @@ export class TokensService {
     };
   }
 
-  private buildUri(namespace: string, name: string, id: string) {
-    return `${URI_PREFIX}/${namespace}/${name}/${id}`;
-  }
-
   async createPool(dto: TokenPool) {
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
-          uri: this.buildUri(dto.namespace, dto.name, dto.id),
+          uri: packTokenUri(dto.namespace, dto.name, dto.client_id),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
         this.options,
       )
       .toPromise();
     return response.data;
+  }
+
+  async mint(dto: TokenMint) {
+    const type_id = packTokenId(dto.pool_id);
+    if (isFungible(dto.pool_id)) {
+      const response = await this.http
+        .post<EthConnectAsyncResponse>(
+          `${this.instanceUrl}/mintFungible`,
+          {
+            type_id,
+            to: [dto.to],
+            amounts: [dto.amount],
+            data: [0],
+          },
+          this.options,
+        )
+        .toPromise();
+      return response.data;
+    } else {
+      const to: string[] = [];
+      for (let i = 0; i < dto.amount; i++) {
+        to.push(dto.to);
+      }
+
+      const response = await this.http
+        .post<EthConnectAsyncResponse>(
+          `${this.instanceUrl}/mintNonFungible`,
+          {
+            type_id,
+            to,
+            data: [0],
+          },
+          this.options,
+        )
+        .toPromise();
+      return response.data;
+    }
   }
 }

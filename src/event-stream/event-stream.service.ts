@@ -18,7 +18,7 @@ export class EventStreamSocket {
   private disconnectDetected = false;
   private closeRequested = false;
 
-  constructor(private url: string, private topic: string, private handler: (event: Event) => void) {
+  constructor(private url: string, private topic: string, private handler: (events: Event[]) => void) {
     this.init();
   }
 
@@ -87,8 +87,8 @@ export class EventStreamSocket {
     if (Array.isArray(message)) {
       for (const event of message) {
         this.logger.log(`Ethconnect '${event.signature}' message: ${JSON.stringify(event.data)}`);
-        this.handler(event);
       }
+      this.handler(message);
     } else {
       const replyType = message.headers.type;
       const errorMessage = message.errorMessage ?? '';
@@ -108,7 +108,7 @@ export class EventStreamService {
     const streamDetails = {
       name: topic,
       errorHandling: 'block',
-      batchSize: 50,
+      batchSize: 1,
       batchTimeoutMS: 500,
       type: 'websocket',
       websocket: { topic },
@@ -174,7 +174,7 @@ export class EventStreamService {
     return results;
   }
 
-  subscribe(url: string, topic: string, handler: (event: Event) => void) {
+  subscribe(url: string, topic: string, handler: (events: Event[]) => void) {
     return new EventStreamSocket(url, topic, handler);
   }
 }
