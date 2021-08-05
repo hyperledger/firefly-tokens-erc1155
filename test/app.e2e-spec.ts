@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { TokensService } from '../src/tokens/tokens.service';
 import { EthConnectAsyncResponse, TokenPool, TokenType } from '../src/tokens/tokens.interfaces';
 import { AppModule } from './../src/app.module';
@@ -42,6 +43,7 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useWebSocketAdapter(new WsAdapter(app));
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -50,9 +52,13 @@ describe('AppController (e2e)', () => {
     );
     await app.init();
 
-    app.get(TokensService).init(INSTANCE_URL, IDENTITY);
+    app.get(TokensService).configure(INSTANCE_URL, IDENTITY);
 
     server = request(app.getHttpServer());
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   it('Create fungible pool', async () => {

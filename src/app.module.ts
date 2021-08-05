@@ -4,9 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TokensModule } from './tokens/tokens.module';
 import { EventStreamModule } from './event-stream/event-stream.module';
+import { EventStreamProxyModule } from './eventstream-proxy/eventstream-proxy.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), TokensModule, EventStreamModule],
+  imports: [ConfigModule.forRoot(), TokensModule, EventStreamModule, EventStreamProxyModule],
   controllers: [AppController],
   providers: [AppService],
 })
