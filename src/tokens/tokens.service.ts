@@ -1,15 +1,18 @@
 import { HttpService, Injectable } from '@nestjs/common';
+import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { isFungible, packTokenId, packTokenUri } from '../util';
 import { EthConnectAsyncResponse, TokenMint, TokenPool, TokenType } from './tokens.interfaces';
 
 @Injectable()
 export class TokensService {
+  baseUrl: string;
   instanceUrl: string;
   identity: string;
 
   constructor(private http: HttpService) {}
 
-  configure(instanceUrl: string, identity: string) {
+  configure(baseUrl: string, instanceUrl: string, identity: string) {
+    this.baseUrl = baseUrl;
     this.instanceUrl = instanceUrl;
     this.identity = identity;
   }
@@ -21,6 +24,13 @@ export class TokensService {
         'fly-sync': 'false',
       },
     };
+  }
+
+  async getReceipt(id: string) {
+    const response = await this.http
+      .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, this.options)
+      .toPromise();
+    return response.data;
   }
 
   async createPool(dto: TokenPool) {
