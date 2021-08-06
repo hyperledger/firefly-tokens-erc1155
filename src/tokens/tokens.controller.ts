@@ -3,7 +3,7 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EthConnectAsyncResponse, TokenMint, TokenPool } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
 
-@Controller('tokens')
+@Controller()
 export class TokensController {
   constructor(private readonly service: TokensService) {}
 
