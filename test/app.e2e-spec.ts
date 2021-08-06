@@ -6,7 +6,8 @@ import { TokensService } from '../src/tokens/tokens.service';
 import { EthConnectAsyncResponse, TokenPool, TokenType } from '../src/tokens/tokens.interfaces';
 import { AppModule } from './../src/app.module';
 
-const INSTANCE_URL = 'http://tokens';
+const BASE_URL = 'http://eth';
+const INSTANCE_URL = `${BASE_URL}/tokens`;
 const IDENTITY = '0x1';
 const OPTIONS = {
   params: {
@@ -52,7 +53,7 @@ describe('AppController (e2e)', () => {
     );
     await app.init();
 
-    app.get(TokensService).configure(INSTANCE_URL, IDENTITY);
+    app.get(TokensService).configure(BASE_URL, INSTANCE_URL, IDENTITY);
 
     server = request(app.getHttpServer());
   });

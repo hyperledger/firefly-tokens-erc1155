@@ -1,3 +1,5 @@
+import { ApiProperty } from "@nestjs/swagger";
+
 export interface EventStream {
   id: string;
   name: string;
@@ -17,11 +19,21 @@ export interface Event {
   data: any;
 }
 
-export interface EventStreamReply {
-  headers: {
-    type: string;
-    requestId: string;
-  };
+export class EventStreamReplyHeaders {
+  @ApiProperty()
+  type: string;
+
+  @ApiProperty()
+  requestId: string;
+}
+
+export class EventStreamReply {
+  @ApiProperty()
+  headers: EventStreamReplyHeaders;
+
+  @ApiProperty()
   transactionHash: string;
+
+  @ApiProperty()
   errorMessage?: string;
 }

@@ -9,10 +9,8 @@ import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
-import {
-  TokenMintEvent,
-  TokenPoolEvent,
-} from './eventstream-proxy/eventstream-proxy.interfaces';
+import { TokenMintEvent, TokenPoolEvent } from './eventstream-proxy/eventstream-proxy.interfaces';
+import { EventStreamReply } from './event-stream/event-stream.interfaces';
 
 const subscriptions = ['URI', 'TransferSingle'];
 
@@ -42,7 +40,7 @@ async function bootstrap() {
 
   const apiConfig = getApiConfig();
   const api = SwaggerModule.createDocument(app, apiConfig, {
-    extraModels: [TokenPoolEvent, TokenMintEvent],
+    extraModels: [EventStreamReply, TokenPoolEvent, TokenMintEvent],
   });
   const config = app.get(ConfigService);
 
@@ -61,7 +59,7 @@ async function bootstrap() {
   await eventStream.ensureSubscriptions(ethConnectUrl, instanceUrl, stream.id, subscriptions);
 
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
-  app.get(TokensService).configure(instanceUrl, identity);
+  app.get(TokensService).configure(ethConnectUrl, instanceUrl, identity);
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);

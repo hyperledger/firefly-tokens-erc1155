@@ -1,5 +1,6 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EthConnectAsyncResponse, TokenMint, TokenPool } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
 
@@ -31,5 +32,12 @@ export class TokensController {
   @ApiResponse({ status: 202, type: EthConnectAsyncResponse })
   mint(@Body() dto: TokenMint) {
     return this.service.mint(dto);
+  }
+
+  @Get('receipt/:id')
+  @ApiOperation({ summary: 'Retrieve the result of an async operation' })
+  @ApiResponse({ status: 200, type: EventStreamReply })
+  getReceipt(@Param('id') id: string) {
+    return this.service.getReceipt(id);
   }
 }
