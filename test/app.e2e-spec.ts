@@ -3,7 +3,15 @@ import { HttpService, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { TokensService } from '../src/tokens/tokens.service';
-import { EthConnectAsyncResponse, TokenPool, TokenType } from '../src/tokens/tokens.interfaces';
+import {
+  EthConnectAsyncResponse,
+  EthConnectReturn,
+  TokenBalance,
+  TokenBalanceQuery,
+  TokenMint,
+  TokenPool,
+  TokenType,
+} from '../src/tokens/tokens.interfaces';
 import { AppModule } from './../src/app.module';
 
 const BASE_URL = 'http://eth';
@@ -28,11 +36,13 @@ describe('AppController (e2e)', () => {
   let app: INestApplication;
   let server: ReturnType<typeof request>;
   let http: {
+    get: ReturnType<typeof jest.fn>;
     post: ReturnType<typeof jest.fn>;
   };
 
   beforeEach(async () => {
     http = {
+      get: jest.fn(),
       post: jest.fn(),
     };
 
@@ -114,5 +124,89 @@ describe('AppController (e2e)', () => {
       },
       OPTIONS,
     );
+  });
+
+  it('Mint fungible token', async () => {
+    const request: TokenMint = {
+      pool_id: 'F1',
+      to: '1',
+      amount: 2,
+    };
+    const response: EthConnectAsyncResponse = {
+      id: '1',
+      sent: true,
+    };
+
+    http.post = jest.fn(() => new FakeObservable(response));
+
+    await server.post('/mint').send(request).expect(202).expect(response);
+
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(http.post).toHaveBeenCalledWith(
+      `${INSTANCE_URL}/mintFungible`,
+      {
+        type_id: '340282366920938463463374607431768211456',
+        to: ['1'],
+        amounts: [2],
+        data: [0],
+      },
+      OPTIONS,
+    );
+  });
+
+  it('Mint non-fungible token', async () => {
+    const request: TokenMint = {
+      pool_id: 'N1',
+      to: '1',
+      amount: 2,
+    };
+    const response: EthConnectAsyncResponse = {
+      id: '1',
+      sent: true,
+    };
+
+    http.post = jest.fn(() => new FakeObservable(response));
+
+    await server.post('/mint').send(request).expect(202).expect(response);
+
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(http.post).toHaveBeenCalledWith(
+      `${INSTANCE_URL}/mintNonFungible`,
+      {
+        type_id: '57896044618658097711785492504343953926975274699741220483192166611388333031424',
+        to: ['1', '1'],
+        data: [0],
+      },
+      OPTIONS,
+    );
+  });
+
+  it('Query balance', async () => {
+    const request: TokenBalanceQuery = {
+      account: '1',
+      pool_id: 'F1',
+      token_id: '0',
+    };
+    const response: EthConnectReturn = {
+      output: '1',
+    };
+
+    http.get = jest.fn(() => new FakeObservable(response));
+
+    await server
+      .get('/balance')
+      .query(request)
+      .expect(200)
+      .expect(<TokenBalance>{
+        balance: 1,
+      });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${INSTANCE_URL}/balanceOf`, {
+      params: {
+        account: '1',
+        id: '340282366920938463463374607431768211456',
+      },
+    });
   });
 });
