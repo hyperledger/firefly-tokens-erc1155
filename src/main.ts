@@ -15,7 +15,7 @@ import { EventStreamReply } from './event-stream/event-stream.interfaces';
 const subscriptions = ['URI', 'TransferSingle'];
 
 const API_DESCRIPTION = `
-<p>All APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
+<p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
 `;
 
 export function getApiConfig() {

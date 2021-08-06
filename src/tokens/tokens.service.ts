@@ -1,7 +1,15 @@
 import { HttpService, Injectable } from '@nestjs/common';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { isFungible, packTokenId, packTokenUri } from '../util';
-import { EthConnectAsyncResponse, TokenMint, TokenPool, TokenType } from './tokens.interfaces';
+import {
+  EthConnectAsyncResponse,
+  EthConnectReturn,
+  TokenBalance,
+  TokenBalanceQuery,
+  TokenMint,
+  TokenPool,
+  TokenType,
+} from './tokens.interfaces';
 
 @Injectable()
 export class TokensService {
@@ -17,7 +25,7 @@ export class TokensService {
     this.identity = identity;
   }
 
-  private get options() {
+  private get postOptions() {
     return {
       params: {
         'fly-from': this.identity,
@@ -28,7 +36,7 @@ export class TokensService {
 
   async getReceipt(id: string) {
     const response = await this.http
-      .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, this.options)
+      .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`)
       .toPromise();
     return response.data;
   }
@@ -41,7 +49,7 @@ export class TokensService {
           uri: packTokenUri(dto.namespace, dto.name, dto.client_id),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
-        this.options,
+        this.postOptions,
       )
       .toPromise();
     return response.data;
@@ -59,7 +67,7 @@ export class TokensService {
             amounts: [dto.amount],
             data: [0],
           },
-          this.options,
+          this.postOptions,
         )
         .toPromise();
       return response.data;
@@ -77,10 +85,25 @@ export class TokensService {
             to,
             data: [0],
           },
-          this.options,
+          this.postOptions,
         )
         .toPromise();
       return response.data;
     }
+  }
+
+  async balance(dto: TokenBalanceQuery) {
+    const id = packTokenId(dto.pool_id, dto.token_id);
+    const response = await this.http
+      .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
+        params: {
+          account: dto.account,
+          id,
+        },
+      })
+      .toPromise();
+    return <TokenBalance>{
+      balance: parseInt(response.data.output),
+    };
   }
 }

@@ -9,6 +9,10 @@ export class EthConnectAsyncResponse {
   id: string;
 }
 
+export interface EthConnectReturn {
+  output: string;
+}
+
 export enum TokenType {
   FUNGIBLE = 'fungible',
   NONFUNGIBLE = 'nonfungible',
@@ -48,4 +52,23 @@ export class TokenMint {
   @IsInt()
   @Min(1)
   amount: number;
+}
+
+export class TokenBalanceQuery {
+  @ApiProperty()
+  @IsNotEmpty()
+  pool_id: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  token_id: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  account: string;
+}
+
+export class TokenBalance {
+  @ApiProperty()
+  balance: number;
 }

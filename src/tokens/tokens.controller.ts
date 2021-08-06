@@ -1,7 +1,13 @@
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
-import { EthConnectAsyncResponse, TokenMint, TokenPool } from './tokens.interfaces';
+import {
+  EthConnectAsyncResponse,
+  TokenBalance,
+  TokenBalanceQuery,
+  TokenMint,
+  TokenPool,
+} from './tokens.interfaces';
 import { TokensService } from './tokens.service';
 
 @Controller()
@@ -32,6 +38,13 @@ export class TokensController {
   @ApiResponse({ status: 202, type: EthConnectAsyncResponse })
   mint(@Body() dto: TokenMint) {
     return this.service.mint(dto);
+  }
+
+  @Get('balance')
+  @ApiOperation({ summary: 'Retrieve a token balance' })
+  @ApiResponse({ status: 200, type: TokenBalance })
+  balance(@Query() query: TokenBalanceQuery) {
+    return this.service.balance(query);
   }
 
   @Get('receipt/:id')
