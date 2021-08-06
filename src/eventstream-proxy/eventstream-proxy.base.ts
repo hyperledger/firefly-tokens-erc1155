@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { SubscribeMessage } from '@nestjs/websockets';
-import { Event } from '../event-stream/event-stream.interfaces';
+import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EventStreamService, EventStreamSocket } from '../event-stream/event-stream.service';
 import { WebSocketEventsBase, WebSocketEx } from '../websocket-events/websocket-events.base';
 
@@ -14,6 +14,8 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
   socket?: EventStreamSocket;
   url?: string;
   topic?: string;
+
+  private awaitingAck = 0;
 
   constructor(
     protected readonly logger: Logger,
@@ -32,12 +34,20 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     super.handleConnection(client);
     if (this.server.clients.size === 1 && this.url !== undefined && this.topic !== undefined) {
       this.logger.log(`Initializing event stream proxy`);
-      this.socket = this.eventstream.subscribe(this.url, this.topic, (events: Event[]) => {
-        for (const event of events) {
-          this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
-          this.handleEvent(event);
-        }
-      });
+      this.socket = this.eventstream.subscribe(
+        this.url,
+        this.topic,
+        events => {
+          this.awaitingAck += events.length;
+          for (const event of events) {
+            this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
+            this.handleEvent(event);
+          }
+        },
+        receipt => {
+          this.handleReceipt(receipt);
+        },
+      );
     }
   }
 
@@ -53,9 +63,23 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     // do nothing (can be overridden)
   }
 
+  protected handleReceipt(_receipt: EventStreamReply) {
+    // do nothing (can be overridden)
+  }
+
+  ack() {
+    if (this.awaitingAck > 0) {
+      this.awaitingAck--;
+    }
+    if (this.awaitingAck === 0) {
+      this.logger.log('Sending ack for batch');
+      this.socket?.ack();
+    }
+  }
+
   @SubscribeMessage('ack')
   handleAck() {
     this.logger.log('Received ack');
-    this.socket?.ack();
+    this.ack();
   }
 }
