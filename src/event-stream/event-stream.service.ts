@@ -18,7 +18,12 @@ export class EventStreamSocket {
   private disconnectDetected = false;
   private closeRequested = false;
 
-  constructor(private url: string, private topic: string, private handler: (events: Event[]) => void) {
+  constructor(
+    private url: string,
+    private topic: string,
+    private handleEvents: (events: Event[]) => void,
+    private handleReceipt: (receipt: EventStreamReply) => void,
+  ) {
     this.init();
   }
 
@@ -88,13 +93,14 @@ export class EventStreamSocket {
       for (const event of message) {
         this.logger.log(`Ethconnect '${event.signature}' message: ${JSON.stringify(event.data)}`);
       }
-      this.handler(message);
+      this.handleEvents(message);
     } else {
       const replyType = message.headers.type;
       const errorMessage = message.errorMessage ?? '';
       this.logger.log(
         `Ethconnect '${replyType}' reply request=${message.headers.requestId} tx=${message.transactionHash} ${errorMessage}`,
       );
+      this.handleReceipt(message);
     }
   }
 }
@@ -108,7 +114,7 @@ export class EventStreamService {
     const streamDetails = {
       name: topic,
       errorHandling: 'block',
-      batchSize: 1,
+      batchSize: 5,
       batchTimeoutMS: 500,
       type: 'websocket',
       websocket: { topic },
@@ -174,7 +180,12 @@ export class EventStreamService {
     return results;
   }
 
-  subscribe(url: string, topic: string, handler: (events: Event[]) => void) {
-    return new EventStreamSocket(url, topic, handler);
+  subscribe(
+    url: string,
+    topic: string,
+    handleEvents: (events: Event[]) => void,
+    handleReceipt: (receipt: EventStreamReply) => void,
+  ) {
+    return new EventStreamSocket(url, topic, handleEvents, handleReceipt);
   }
 }
