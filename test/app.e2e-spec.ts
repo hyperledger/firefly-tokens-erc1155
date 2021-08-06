@@ -186,7 +186,7 @@ describe('AppController (e2e)', () => {
     const request: TokenBalanceQuery = {
       account: '1',
       pool_id: 'F1',
-      token_id: '0',
+      token_index: '0',
     };
     const response: EthConnectReturn = {
       output: '1',
@@ -214,7 +214,7 @@ describe('AppController (e2e)', () => {
   it('Transfer token', async () => {
     const request: TokenTransfer = {
       pool_id: 'F1',
-      token_id: '0',
+      token_index: '0',
       from: '1',
       to: '2',
       amount: 2,

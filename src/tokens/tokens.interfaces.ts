@@ -77,7 +77,7 @@ export class TokenBalanceQuery {
 
   @ApiProperty()
   @IsNotEmpty()
-  token_id: string;
+  token_index: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -96,7 +96,7 @@ export class TokenTransfer {
 
   @ApiProperty()
   @IsNotEmpty()
-  token_id: string;
+  token_index: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -136,7 +136,7 @@ export class TokenMintEvent {
   pool_id: string;
 
   @ApiProperty()
-  token_id: string;
+  token_index: string;
 
   @ApiProperty()
   to: string;
@@ -150,7 +150,7 @@ export class TokenTransferEvent {
   pool_id: string;
 
   @ApiProperty()
-  token_id: string;
+  token_index: string;
 
   @ApiProperty()
   from: string;
