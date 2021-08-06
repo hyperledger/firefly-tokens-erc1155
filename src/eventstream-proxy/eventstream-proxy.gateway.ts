@@ -9,6 +9,7 @@ import {
   ReceiptEvent,
   TokenMintEvent,
   TokenPoolEvent,
+  TokenTransferEvent,
   TransferSingleEventData,
   UriEventData,
 } from './eventstream-proxy.interfaces';
@@ -74,7 +75,14 @@ export class EventStreamProxyGateway extends EventStreamProxyBase {
       this.ack();
     } else {
       // transfer
-      this.ack();
+      const parts = unpackTokenId(data.id);
+      this.broadcast('token-transfer', <TokenTransferEvent>{
+        pool_id: parts.pool_id,
+        token_id: parts.token_id,
+        from: data.from,
+        to: data.to,
+        amount: data.value,
+      });
     }
   }
 }

@@ -45,6 +45,23 @@ export class TokenMintEvent {
   amount: number;
 }
 
+export class TokenTransferEvent {
+  @ApiProperty()
+  pool_id: string;
+
+  @ApiProperty()
+  token_id: string;
+
+  @ApiProperty()
+  from: string;
+
+  @ApiProperty()
+  to: string;
+
+  @ApiProperty()
+  amount: number;
+}
+
 export class ReceiptEvent {
   @ApiProperty()
   id: string;

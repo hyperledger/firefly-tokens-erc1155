@@ -9,7 +9,11 @@ import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
-import { TokenMintEvent, TokenPoolEvent } from './eventstream-proxy/eventstream-proxy.interfaces';
+import {
+  TokenMintEvent,
+  TokenPoolEvent,
+  TokenTransferEvent,
+} from './eventstream-proxy/eventstream-proxy.interfaces';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
 
 const subscriptions = ['URI', 'TransferSingle'];
@@ -40,7 +44,7 @@ async function bootstrap() {
 
   const apiConfig = getApiConfig();
   const api = SwaggerModule.createDocument(app, apiConfig, {
-    extraModels: [EventStreamReply, TokenPoolEvent, TokenMintEvent],
+    extraModels: [EventStreamReply, TokenPoolEvent, TokenMintEvent, TokenTransferEvent],
   });
   const config = app.get(ConfigService);
 

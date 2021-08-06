@@ -7,6 +7,7 @@ import {
   TokenBalanceQuery,
   TokenMint,
   TokenPool,
+  TokenTransfer,
 } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
 
@@ -45,6 +46,19 @@ export class TokensController {
   @ApiResponse({ status: 200, type: TokenBalance })
   balance(@Query() query: TokenBalanceQuery) {
     return this.service.balance(query);
+  }
+
+  @Post('transfer')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Transfer tokens',
+    description:
+      'Will be followed by a websocket notification with event=token-transfer and data=TokenTransferEvent',
+  })
+  @ApiBody({ type: TokenTransfer })
+  @ApiResponse({ status: 202, type: EthConnectAsyncResponse })
+  transfer(@Body() dto: TokenTransfer) {
+    return this.service.transfer(dto);
   }
 
   @Get('receipt/:id')

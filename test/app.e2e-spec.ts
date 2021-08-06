@@ -10,6 +10,7 @@ import {
   TokenBalanceQuery,
   TokenMint,
   TokenPool,
+  TokenTransfer,
   TokenType,
 } from '../src/tokens/tokens.interfaces';
 import { AppModule } from './../src/app.module';
@@ -208,5 +209,36 @@ describe('AppController (e2e)', () => {
         id: '340282366920938463463374607431768211456',
       },
     });
+  });
+
+  it('Transfer token', async () => {
+    const request: TokenTransfer = {
+      pool_id: 'F1',
+      token_id: '0',
+      from: '1',
+      to: '2',
+      amount: 2,
+    };
+    const response: EthConnectAsyncResponse = {
+      id: '1',
+      sent: true,
+    };
+
+    http.post = jest.fn(() => new FakeObservable(response));
+
+    await server.post('/transfer').send(request).expect(202).expect(response);
+
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(http.post).toHaveBeenCalledWith(
+      `${INSTANCE_URL}/safeTransferFrom`,
+      {
+        id: '340282366920938463463374607431768211456',
+        from: '1',
+        to: '2',
+        amount: 2,
+        data: [0],
+      },
+      OPTIONS,
+    );
   });
 });
