@@ -1,5 +1,6 @@
 import { HttpService } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { TokensService } from './tokens.service';
 
 describe('TokensService', () => {
@@ -12,6 +13,10 @@ describe('TokensService', () => {
         {
           provide: HttpService,
           useValue: jest.fn(),
+        },
+        {
+          provide: EventStreamProxyGateway,
+          useValue: { addListener: jest.fn() },
         },
       ],
     }).compile();

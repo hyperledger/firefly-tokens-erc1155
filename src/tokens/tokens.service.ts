@@ -1,25 +1,42 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { EventStreamReply } from '../event-stream/event-stream.interfaces';
-import { isFungible, packTokenId, packTokenUri } from '../util';
+import { HttpService, Injectable, Logger } from '@nestjs/common';
+import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
+import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
+import { isFungible, packTokenId, packTokenUri, unpackTokenId, unpackTokenUri } from '../util';
+import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import {
   AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
+  ReceiptEvent,
   TokenBalance,
   TokenBalanceQuery,
   TokenMint,
+  TokenMintEvent,
   TokenPool,
+  TokenPoolEvent,
   TokenTransfer,
+  TokenTransferEvent,
   TokenType,
+  TransferSingleEventData,
+  UriEventData,
 } from './tokens.interfaces';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const uriEventSignature = 'URI(string,uint256)';
+const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 
 @Injectable()
 export class TokensService {
   baseUrl: string;
   instanceUrl: string;
   identity: string;
+  listener: TokenListener;
 
-  constructor(private http: HttpService) {}
+  constructor(private http: HttpService, proxy: EventStreamProxyGateway) {
+    this.listener = new TokenListener(proxy);
+    proxy.addListener(this.listener);
+  }
 
   configure(baseUrl: string, instanceUrl: string, identity: string) {
     this.baseUrl = baseUrl;
@@ -121,5 +138,80 @@ export class TokensService {
       )
       .toPromise();
     return { id: response.data.id };
+  }
+}
+
+class TokenListener implements EventListener {
+  private readonly logger = new Logger(TokenListener.name);
+
+  constructor(private proxy: EventStreamProxyGateway) {}
+
+  handleEvent(event: Event) {
+    switch (event.signature) {
+      case uriEventSignature:
+        this.handleUriEvent(event.data);
+        break;
+      case transferSingleEventSignature:
+        this.handleTransferSingleEvent(event.data);
+        break;
+      default:
+        this.logger.error(`Unknown event signature: ${event.signature}`);
+        this.ack();
+        break;
+    }
+  }
+
+  handleReceipt(receipt: EventStreamReply) {
+    this.broadcast('receipt', <ReceiptEvent>{
+      id: receipt.headers.requestId,
+      success: receipt.headers.type === 'TransactionSuccess',
+      message: receipt.errorMessage,
+    });
+  }
+
+  private ack() {
+    this.proxy.ack();
+  }
+
+  private broadcast(event: string, data: any = null) {
+    this.proxy.broadcast(event, data);
+  }
+
+  private handleUriEvent(data: UriEventData) {
+    const parts = unpackTokenId(data.id);
+    this.broadcast('token-pool', <TokenPoolEvent>{
+      ...unpackTokenUri(data.value),
+      pool_id: parts.pool_id,
+      type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+    });
+  }
+
+  private handleTransferSingleEvent(data: TransferSingleEventData) {
+    if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
+      // create pool (handled by URI event)
+      this.ack();
+    } else if (data.from === ZERO_ADDRESS) {
+      // mint
+      const parts = unpackTokenId(data.id);
+      this.broadcast('token-mint', <TokenMintEvent>{
+        pool_id: parts.pool_id,
+        token_id: parts.token_id,
+        to: data.to,
+        amount: data.value,
+      });
+    } else if (data.to === ZERO_ADDRESS) {
+      // burn
+      this.ack();
+    } else {
+      // transfer
+      const parts = unpackTokenId(data.id);
+      this.broadcast('token-transfer', <TokenTransferEvent>{
+        pool_id: parts.pool_id,
+        token_id: parts.token_id,
+        from: data.from,
+        to: data.to,
+        amount: data.value,
+      });
+    }
   }
 }
