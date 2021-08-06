@@ -1,11 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { WebSocketGateway } from '@nestjs/websockets';
 import { TokenType } from '../tokens/tokens.interfaces';
-import { Event } from '../event-stream/event-stream.interfaces';
+import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { unpackTokenId, unpackTokenUri } from '../util';
 import { EventStreamProxyBase } from './eventstream-proxy.base';
 import {
+  ReceiptEvent,
   TokenMintEvent,
   TokenPoolEvent,
   TransferSingleEventData,
@@ -33,9 +34,17 @@ export class EventStreamProxyGateway extends EventStreamProxyBase {
         break;
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
-        this.socket?.ack();
+        this.ack();
         break;
     }
+  }
+
+  protected handleReceipt(receipt: EventStreamReply) {
+    this.broadcast('receipt', <ReceiptEvent>{
+      id: receipt.headers.requestId,
+      success: receipt.headers.type === 'TransactionSuccess',
+      message: receipt.errorMessage,
+    });
   }
 
   private handlUriEvent(data: UriEventData) {
@@ -50,7 +59,7 @@ export class EventStreamProxyGateway extends EventStreamProxyBase {
   private handleTransferSingleEvent(data: TransferSingleEventData) {
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // create pool (handled by URI event)
-      this.socket?.ack();
+      this.ack();
     } else if (data.from === ZERO_ADDRESS) {
       // mint
       const parts = unpackTokenId(data.id);
@@ -62,10 +71,10 @@ export class EventStreamProxyGateway extends EventStreamProxyBase {
       });
     } else if (data.to === ZERO_ADDRESS) {
       // burn
-      this.socket?.ack();
+      this.ack();
     } else {
       // transfer
-      this.socket?.ack();
+      this.ack();
     }
   }
 }
