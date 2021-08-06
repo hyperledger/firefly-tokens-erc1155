@@ -9,6 +9,11 @@ export class EthConnectAsyncResponse {
   id: string;
 }
 
+export class AsyncResponse {
+  @ApiProperty()
+  id: string;
+}
+
 export interface EthConnectReturn {
   output: string;
 }

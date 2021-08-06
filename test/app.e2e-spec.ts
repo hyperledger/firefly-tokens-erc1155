@@ -87,7 +87,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/pool').send(request).expect(202).expect(response);
+    await server.post('/pool').send(request).expect(202).expect({ id: '1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/pool').send(request).expect(202).expect(response);
+    await server.post('/pool').send(request).expect(202).expect({ id: '1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/mint').send(request).expect(202).expect(response);
+    await server.post('/mint').send(request).expect(202).expect({ id: '1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -168,7 +168,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/mint').send(request).expect(202).expect(response);
+    await server.post('/mint').send(request).expect(202).expect({ id: '1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -226,7 +226,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/transfer').send(request).expect(202).expect(response);
+    await server.post('/transfer').send(request).expect(202).expect({ id: '1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(

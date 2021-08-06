@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/com
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import {
-  EthConnectAsyncResponse,
+  AsyncResponse,
   TokenBalance,
   TokenBalanceQuery,
   TokenMint,
@@ -23,7 +23,7 @@ export class TokensController {
       'Will be followed by a websocket notification with event=token-pool and data=TokenPoolEvent',
   })
   @ApiBody({ type: TokenPool })
-  @ApiResponse({ status: 202, type: EthConnectAsyncResponse })
+  @ApiResponse({ status: 202, type: AsyncResponse })
   createPool(@Body() dto: TokenPool) {
     return this.service.createPool(dto);
   }
@@ -36,7 +36,7 @@ export class TokensController {
       'Will be followed by a websocket notification with event=token-mint and data=TokenMintEvent',
   })
   @ApiBody({ type: TokenMint })
-  @ApiResponse({ status: 202, type: EthConnectAsyncResponse })
+  @ApiResponse({ status: 202, type: AsyncResponse })
   mint(@Body() dto: TokenMint) {
     return this.service.mint(dto);
   }
@@ -56,7 +56,7 @@ export class TokensController {
       'Will be followed by a websocket notification with event=token-transfer and data=TokenTransferEvent',
   })
   @ApiBody({ type: TokenTransfer })
-  @ApiResponse({ status: 202, type: EthConnectAsyncResponse })
+  @ApiResponse({ status: 202, type: AsyncResponse })
   transfer(@Body() dto: TokenTransfer) {
     return this.service.transfer(dto);
   }
