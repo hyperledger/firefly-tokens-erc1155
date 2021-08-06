@@ -2,6 +2,7 @@ import { HttpService, Injectable } from '@nestjs/common';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { isFungible, packTokenId, packTokenUri } from '../util';
 import {
+  AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
   TokenBalance,
@@ -35,14 +36,14 @@ export class TokensService {
     };
   }
 
-  async getReceipt(id: string) {
+  async getReceipt(id: string): Promise<EventStreamReply> {
     const response = await this.http
       .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`)
       .toPromise();
     return response.data;
   }
 
-  async createPool(dto: TokenPool) {
+  async createPool(dto: TokenPool): Promise<AsyncResponse> {
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
@@ -53,10 +54,10 @@ export class TokensService {
         this.postOptions,
       )
       .toPromise();
-    return response.data;
+    return { id: response.data.id };
   }
 
-  async mint(dto: TokenMint) {
+  async mint(dto: TokenMint): Promise<AsyncResponse> {
     const type_id = packTokenId(dto.pool_id);
     if (isFungible(dto.pool_id)) {
       const response = await this.http
@@ -71,7 +72,7 @@ export class TokensService {
           this.postOptions,
         )
         .toPromise();
-      return response.data;
+      return { id: response.data.id };
     } else {
       const to: string[] = [];
       for (let i = 0; i < dto.amount; i++) {
@@ -89,11 +90,11 @@ export class TokensService {
           this.postOptions,
         )
         .toPromise();
-      return response.data;
+      return { id: response.data.id };
     }
   }
 
-  async balance(dto: TokenBalanceQuery) {
+  async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
     const response = await this.http
       .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
@@ -102,12 +103,10 @@ export class TokensService {
         },
       })
       .toPromise();
-    return <TokenBalance>{
-      balance: parseInt(response.data.output),
-    };
+    return { balance: parseInt(response.data.output) };
   }
 
-  async transfer(dto: TokenTransfer) {
+  async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/safeTransferFrom`,
@@ -121,6 +120,6 @@ export class TokensService {
         this.postOptions,
       )
       .toPromise();
-    return response.data;
+    return { id: response.data.id };
   }
 }
