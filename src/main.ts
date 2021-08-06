@@ -9,12 +9,8 @@ import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
-import {
-  TokenMintEvent,
-  TokenPoolEvent,
-  TokenTransferEvent,
-} from './eventstream-proxy/eventstream-proxy.interfaces';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
+import { TokenPoolEvent, TokenMintEvent, TokenTransferEvent } from './tokens/tokens.interfaces';
 
 const subscriptions = ['URI', 'TransferSingle'];
 

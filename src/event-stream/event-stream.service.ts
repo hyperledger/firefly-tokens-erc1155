@@ -104,6 +104,7 @@ export class EventStreamSocket {
     }
   }
 }
+
 @Injectable()
 export class EventStreamService {
   private readonly logger = new Logger(EventStreamService.name);
