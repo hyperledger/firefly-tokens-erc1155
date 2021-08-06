@@ -116,7 +116,7 @@ export class TokensService {
       .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
           account: dto.account,
-          id: packTokenId(dto.pool_id, dto.token_id),
+          id: packTokenId(dto.pool_id, dto.token_index),
         },
       })
       .toPromise();
@@ -130,7 +130,7 @@ export class TokensService {
         {
           from: dto.from,
           to: dto.to,
-          id: packTokenId(dto.pool_id, dto.token_id),
+          id: packTokenId(dto.pool_id, dto.token_index),
           amount: dto.amount,
           data: [0],
         },
@@ -195,7 +195,7 @@ class TokenListener implements EventListener {
       const parts = unpackTokenId(data.id);
       this.broadcast('token-mint', <TokenMintEvent>{
         pool_id: parts.pool_id,
-        token_id: parts.token_id,
+        token_index: parts.token_index,
         to: data.to,
         amount: data.value,
       });
@@ -207,7 +207,7 @@ class TokenListener implements EventListener {
       const parts = unpackTokenId(data.id);
       this.broadcast('token-transfer', <TokenTransferEvent>{
         pool_id: parts.pool_id,
-        token_id: parts.token_id,
+        token_index: parts.token_index,
         from: data.from,
         to: data.to,
         amount: data.value,

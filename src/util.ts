@@ -19,11 +19,11 @@ export function isFungible(pool_id: string) {
   return pool_id[0] === 'F';
 }
 
-export function packTokenId(pool_id: string, token_id = '0') {
+export function packTokenId(pool_id: string, token_index = '0') {
   return (
     (BigInt(isFungible(pool_id) ? 0 : 1) << BigInt(255)) |
     (BigInt(pool_id.substr(1)) << BigInt(128)) |
-    BigInt(token_id)
+    BigInt(token_index)
   ).toString();
 }
 
@@ -33,6 +33,6 @@ export function unpackTokenId(id: string) {
   return {
     is_fungible: isFungible,
     pool_id: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
-    token_id: BigInt.asUintN(128, val).toString(),
+    token_index: BigInt.asUintN(128, val).toString(),
   };
 }
