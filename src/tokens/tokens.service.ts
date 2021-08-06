@@ -8,6 +8,7 @@ import {
   TokenBalanceQuery,
   TokenMint,
   TokenPool,
+  TokenTransfer,
   TokenType,
 } from './tokens.interfaces';
 
@@ -93,17 +94,33 @@ export class TokensService {
   }
 
   async balance(dto: TokenBalanceQuery) {
-    const id = packTokenId(dto.pool_id, dto.token_id);
     const response = await this.http
       .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
           account: dto.account,
-          id,
+          id: packTokenId(dto.pool_id, dto.token_id),
         },
       })
       .toPromise();
     return <TokenBalance>{
       balance: parseInt(response.data.output),
     };
+  }
+
+  async transfer(dto: TokenTransfer) {
+    const response = await this.http
+      .post<EthConnectAsyncResponse>(
+        `${this.instanceUrl}/safeTransferFrom`,
+        {
+          from: dto.from,
+          to: dto.to,
+          id: packTokenId(dto.pool_id, dto.token_id),
+          amount: dto.amount,
+          data: [0],
+        },
+        this.postOptions,
+      )
+      .toPromise();
+    return response.data;
   }
 }

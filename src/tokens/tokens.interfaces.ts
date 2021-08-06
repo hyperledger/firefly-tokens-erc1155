@@ -72,3 +72,26 @@ export class TokenBalance {
   @ApiProperty()
   balance: number;
 }
+
+export class TokenTransfer {
+  @ApiProperty()
+  @IsNotEmpty()
+  pool_id: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  token_id: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  from: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  to: string;
+
+  @ApiProperty()
+  @IsInt()
+  @Min(1)
+  amount: number;
+}
