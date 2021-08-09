@@ -14,9 +14,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Server } from 'http';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService, INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'superwstest';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { TokensService } from '../src/tokens/tokens.service';
 import {
@@ -25,10 +26,18 @@ import {
   TokenBalance,
   TokenBalanceQuery,
   TokenMint,
+  TokenMintEvent,
   TokenPool,
+  TokenPoolEvent,
   TokenTransfer,
+  TokenTransferEvent,
   TokenType,
+  TransferSingleEventData,
+  UriEventData,
 } from '../src/tokens/tokens.interfaces';
+import { EventStreamService } from '../src/event-stream/event-stream.service';
+import { Event } from '../src/event-stream/event-stream.interfaces';
+import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
 import { AppModule } from './../src/app.module';
 
 const BASE_URL = 'http://eth';
@@ -40,6 +49,10 @@ const OPTIONS = {
     'fly-sync': 'false',
   },
 };
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const uriEventSignature = 'URI(string,uint256)';
+const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 
 class FakeObservable<T> {
   constructor(public data: T) {}
@@ -56,6 +69,12 @@ describe('AppController (e2e)', () => {
     get: ReturnType<typeof jest.fn>;
     post: ReturnType<typeof jest.fn>;
   };
+  let eventHandler: (events: Event[]) => void;
+  const eventstream = {
+    subscribe: (url: string, topic: string, handleEvents: (events: Event[]) => void) => {
+      eventHandler = handleEvents;
+    },
+  };
 
   beforeEach(async () => {
     http = {
@@ -68,6 +87,8 @@ describe('AppController (e2e)', () => {
     })
       .overrideProvider(HttpService)
       .useValue(http)
+      .overrideProvider(EventStreamService)
+      .useValue(eventstream)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -80,8 +101,10 @@ describe('AppController (e2e)', () => {
     );
     await app.init();
 
+    app.get(EventStreamProxyGateway).configure('url', 'topic');
     app.get(TokensService).configure(BASE_URL, INSTANCE_URL, IDENTITY);
 
+    (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());
   });
 
@@ -256,5 +279,115 @@ describe('AppController (e2e)', () => {
       },
       OPTIONS,
     );
+  });
+
+  it('Websocket: token pool event', () => {
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          {
+            signature: uriEventSignature,
+            address: '',
+            blockNumber: 1,
+            transactionHash: '',
+            data: <UriEventData>{
+              id: '340282366920938463463374607431768211456',
+              value: 'fly://erc1155/ns/name/id',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual({
+          event: 'token-pool',
+          data: <TokenPoolEvent>{
+            namespace: 'ns',
+            name: 'name',
+            client_id: 'id',
+            pool_id: 'F1',
+            type: 'fungible',
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Websocket: token mint event', () => {
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          {
+            signature: transferSingleEventSignature,
+            address: '',
+            blockNumber: 1,
+            transactionHash: '',
+            data: <TransferSingleEventData>{
+              id: '340282366920938463463374607431768211456',
+              from: ZERO_ADDRESS,
+              to: 'A',
+              operator: 'A',
+              value: 5,
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual({
+          event: 'token-mint',
+          data: <TokenMintEvent>{
+            pool_id: 'F1',
+            token_index: '0',
+            to: 'A',
+            amount: 5,
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Websocket: token transfer event', () => {
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          {
+            signature: transferSingleEventSignature,
+            address: '',
+            blockNumber: 1,
+            transactionHash: '',
+            data: <TransferSingleEventData>{
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              value: 1,
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual({
+          event: 'token-transfer',
+          data: <TokenTransferEvent>{
+            pool_id: 'N1',
+            token_index: '1',
+            from: 'A',
+            to: 'B',
+            amount: 1,
+          },
+        });
+        return true;
+      });
   });
 });
