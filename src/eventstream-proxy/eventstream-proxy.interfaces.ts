@@ -14,9 +14,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
+import { ApiProperty } from '@nestjs/swagger';
+import { WebSocketMessage } from '../websocket-events/websocket-events.base';
+import { Event } from '../event-stream/event-stream.interfaces';
 
 export interface EventListener {
-  handleEvent: (event: Event) => void;
-  handleReceipt: (receipt: EventStreamReply) => void;
+  transformEvent: (event: Event) => WebSocketMessage | undefined;
+}
+
+export class ReceiptEvent {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  message?: string;
+}
+
+export interface WebSocketMessageWithId extends WebSocketMessage {
+  id: string;
 }

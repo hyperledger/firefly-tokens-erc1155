@@ -15,6 +15,7 @@
 // limitations under the License.
 
 import { HttpService, Injectable, Logger } from '@nestjs/common';
+import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { isFungible, packTokenId, packTokenUri, unpackTokenId, unpackTokenUri } from '../util';
@@ -23,7 +24,6 @@ import {
   AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
-  ReceiptEvent,
   TokenBalance,
   TokenBalanceQuery,
   TokenMint,
@@ -47,11 +47,9 @@ export class TokensService {
   baseUrl: string;
   instanceUrl: string;
   identity: string;
-  listener: TokenListener;
 
   constructor(private http: HttpService, proxy: EventStreamProxyGateway) {
-    this.listener = new TokenListener(proxy);
-    proxy.addListener(this.listener);
+    proxy.addListener(new TokenListener());
   }
 
   configure(baseUrl: string, instanceUrl: string, identity: string) {
@@ -160,74 +158,64 @@ export class TokensService {
 class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  constructor(private proxy: EventStreamProxyGateway) {}
-
-  handleEvent(event: Event) {
+  transformEvent(event: Event): WebSocketMessage | undefined {
     switch (event.signature) {
       case uriEventSignature:
-        this.handleUriEvent(event.data);
-        break;
+        return this.transformUriEvent(event.data);
       case transferSingleEventSignature:
-        this.handleTransferSingleEvent(event.data);
-        break;
+        return this.transformTransferSingleEvent(event.data);
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
-        this.ack();
-        break;
+        return undefined;
     }
   }
 
-  handleReceipt(receipt: EventStreamReply) {
-    this.broadcast('receipt', <ReceiptEvent>{
-      id: receipt.headers.requestId,
-      success: receipt.headers.type === 'TransactionSuccess',
-      message: receipt.errorMessage,
-    });
-  }
-
-  private ack() {
-    this.proxy.ack();
-  }
-
-  private broadcast(event: string, data: any = null) {
-    this.proxy.broadcast(event, data);
-  }
-
-  private handleUriEvent(data: UriEventData) {
+  private transformUriEvent(data: UriEventData): WebSocketMessage {
     const parts = unpackTokenId(data.id);
-    this.broadcast('token-pool', <TokenPoolEvent>{
-      ...unpackTokenUri(data.value),
-      pool_id: parts.pool_id,
-      type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
-    });
+    return {
+      event: 'token-pool',
+      data: <TokenPoolEvent>{
+        ...unpackTokenUri(data.value),
+        pool_id: parts.pool_id,
+        type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+      },
+    };
   }
 
-  private handleTransferSingleEvent(data: TransferSingleEventData) {
+  private transformTransferSingleEvent(
+    data: TransferSingleEventData,
+  ): WebSocketMessage | undefined {
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // create pool (handled by URI event)
-      this.ack();
+      return undefined;
     } else if (data.from === ZERO_ADDRESS) {
       // mint
       const parts = unpackTokenId(data.id);
-      this.broadcast('token-mint', <TokenMintEvent>{
-        pool_id: parts.pool_id,
-        token_index: parts.token_index,
-        to: data.to,
-        amount: data.value,
-      });
+      return {
+        event: 'token-mint',
+        data: <TokenMintEvent>{
+          pool_id: parts.pool_id,
+          token_index: parts.token_index,
+          to: data.to,
+          amount: data.value,
+        },
+      };
     } else if (data.to === ZERO_ADDRESS) {
       // burn
-      this.ack();
+      return undefined;
     } else {
       // transfer
       const parts = unpackTokenId(data.id);
-      this.broadcast('token-transfer', <TokenTransferEvent>{
-        pool_id: parts.pool_id,
-        token_index: parts.token_index,
-        from: data.from,
-        to: data.to,
-        amount: data.value,
-      });
+      return {
+        event: 'token-transfer',
+        data: <TokenTransferEvent>{
+          pool_id: parts.pool_id,
+          token_index: parts.token_index,
+          from: data.from,
+          to: data.to,
+          amount: data.value,
+        },
+      };
     }
   }
 }

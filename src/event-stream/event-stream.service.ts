@@ -131,7 +131,7 @@ export class EventStreamService {
     const streamDetails = {
       name: topic,
       errorHandling: 'block',
-      batchSize: 5,
+      batchSize: 50,
       batchTimeoutMS: 500,
       type: 'websocket',
       websocket: { topic },
