@@ -22,6 +22,7 @@ import { EventStreamService, EventStreamSocket } from '../event-stream/event-str
 import {
   WebSocketEventsBase,
   WebSocketEx,
+  WebSocketMessage,
 } from '../websocket-events/websocket-events.base';
 import {
   EventListener,
@@ -69,7 +70,13 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
           // This handler and all methods it calls must be synchronous in order to preserve ordering!
           for (const event of events) {
             this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
-            const newEvent = this.transformEvent(event);
+            let newEvent: WebSocketMessage | undefined;
+            try {
+              newEvent = this.transformEvent(event);
+            } catch (err) {
+              this.logger.error(`Error processing event: ${err}`);
+              continue;
+            }
             if (newEvent !== undefined) {
               const message: WebSocketMessageWithId = { ...newEvent, id: uuidv4() };
               this.awaitingAck.push(message);
