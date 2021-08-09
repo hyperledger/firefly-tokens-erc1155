@@ -177,14 +177,3 @@ export class TokenTransferEvent {
   @ApiProperty()
   amount: number;
 }
-
-export class ReceiptEvent {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  success: boolean;
-
-  @ApiProperty()
-  message?: string;
-}

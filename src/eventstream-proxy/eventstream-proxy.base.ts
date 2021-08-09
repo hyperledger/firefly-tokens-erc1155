@@ -15,10 +15,19 @@
 // limitations under the License.
 
 import { Logger } from '@nestjs/common';
-import { SubscribeMessage } from '@nestjs/websockets';
-import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
+import { MessageBody, SubscribeMessage } from '@nestjs/websockets';
+import { v4 as uuidv4 } from 'uuid';
+import { Event } from '../event-stream/event-stream.interfaces';
 import { EventStreamService, EventStreamSocket } from '../event-stream/event-stream.service';
-import { WebSocketEventsBase, WebSocketEx } from '../websocket-events/websocket-events.base';
+import {
+  WebSocketEventsBase,
+  WebSocketEx,
+} from '../websocket-events/websocket-events.base';
+import {
+  EventListener,
+  ReceiptEvent,
+  WebSocketMessageWithId,
+} from './eventstream-proxy.interfaces';
 
 /**
  * Base class for a websocket gateway that listens for and proxies event stream messages.
@@ -31,7 +40,9 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
   url?: string;
   topic?: string;
 
-  private awaitingAck = 0;
+  private listeners: EventListener[] = [];
+  private awaitingAck: WebSocketMessageWithId[] = [];
+  private currentClient: WebSocketEx | undefined;
 
   constructor(
     protected readonly logger: Logger,
@@ -50,18 +61,29 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     super.handleConnection(client);
     if (this.server.clients.size === 1 && this.url !== undefined && this.topic !== undefined) {
       this.logger.log(`Initializing event stream proxy`);
+      this.currentClient = client;
       this.socket = this.eventstream.subscribe(
         this.url,
         this.topic,
         events => {
-          this.awaitingAck += events.length;
+          // This handler and all methods it calls must be synchronous in order to preserve ordering!
           for (const event of events) {
             this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
-            this.handleEvent(event);
+            const newEvent = this.transformEvent(event);
+            if (newEvent !== undefined) {
+              const message: WebSocketMessageWithId = { ...newEvent, id: uuidv4() };
+              this.awaitingAck.push(message);
+              this.currentClient?.send(JSON.stringify(message));
+            }
           }
+          this.checkBatchComplete();
         },
         receipt => {
-          this.handleReceipt(receipt);
+          this.broadcast('receipt', <ReceiptEvent>{
+            id: receipt.headers.requestId,
+            success: receipt.headers.type === 'TransactionSuccess',
+            message: receipt.errorMessage,
+          });
         },
       );
     }
@@ -72,30 +94,49 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     if (this.server.clients.size === 0) {
       this.socket?.close();
       this.socket = undefined;
+      this.currentClient = undefined;
+    } else if (client.id === this.currentClient?.id) {
+      // Pick a new client and retransmit any unacknowledged messages
+      this.currentClient = this.server.clients[0];
+      for (const message of this.awaitingAck) {
+        this.currentClient?.send(message);
+      }
     }
   }
 
-  protected handleEvent(_event: Event) {
-    // do nothing (can be overridden)
+  addListener(listener: EventListener) {
+    this.listeners.push(listener);
   }
 
-  protected handleReceipt(_receipt: EventStreamReply) {
-    // do nothing (can be overridden)
-  }
-
-  ack() {
-    if (this.awaitingAck > 0) {
-      this.awaitingAck--;
+  private transformEvent(event: Event) {
+    for (const listener of this.listeners) {
+      const newEvent = listener.transformEvent(event);
+      if (newEvent !== undefined) {
+        return newEvent;
+      }
     }
-    if (this.awaitingAck === 0) {
+    return undefined;
+  }
+
+  private checkBatchComplete() {
+    if (this.awaitingAck.length === 0) {
       this.logger.log('Sending ack for batch');
       this.socket?.ack();
     }
   }
 
   @SubscribeMessage('ack')
-  handleAck() {
-    this.logger.log('Received ack');
-    this.ack();
+  handleAck(@MessageBody() data: string) {
+    let id: string;
+    try {
+      id = JSON.parse(data).id;
+    } catch (err) {
+      this.logger.error('Received malformed ack');
+      return;
+    }
+
+    this.logger.log(`Received ack ${id}`);
+    this.awaitingAck = this.awaitingAck.filter(msg => msg.id !== id);
+    this.checkBatchComplete();
   }
 }
