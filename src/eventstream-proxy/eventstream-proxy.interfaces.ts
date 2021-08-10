@@ -36,3 +36,7 @@ export class ReceiptEvent {
 export interface WebSocketMessageWithId extends WebSocketMessage {
   id: string;
 }
+
+export interface AckMessageData {
+  id?: string;
+}

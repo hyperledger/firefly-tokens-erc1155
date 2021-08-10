@@ -25,6 +25,7 @@ import {
   WebSocketMessage,
 } from '../websocket-events/websocket-events.base';
 import {
+  AckMessageData,
   EventListener,
   ReceiptEvent,
   WebSocketMessageWithId,
@@ -139,17 +140,14 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
   }
 
   @SubscribeMessage('ack')
-  handleAck(@MessageBody() data: string) {
-    let id: string;
-    try {
-      id = JSON.parse(data).id;
-    } catch (err) {
+  handleAck(@MessageBody() data: AckMessageData) {
+    if (data.id === undefined) {
       this.logger.error('Received malformed ack');
       return;
     }
 
-    this.logger.log(`Received ack ${id}`);
-    this.awaitingAck = this.awaitingAck.filter(msg => msg.id !== id);
+    this.logger.log(`Received ack ${data.id}`);
+    this.awaitingAck = this.awaitingAck.filter(msg => msg.id !== data.id);
     this.checkBatchComplete();
   }
 }
