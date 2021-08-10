@@ -47,22 +47,26 @@ export class TokensService {
   baseUrl: string;
   instanceUrl: string;
   identity: string;
+  shortPrefix: string;
 
   constructor(private http: HttpService, proxy: EventStreamProxyGateway) {
     proxy.addListener(new TokenListener());
   }
 
-  configure(baseUrl: string, instanceUrl: string, identity: string) {
+  configure(baseUrl: string, instanceUrl: string, identity: string, shortPrefix: string) {
     this.baseUrl = baseUrl;
     this.instanceUrl = instanceUrl;
     this.identity = identity;
+    this.shortPrefix = shortPrefix;
   }
 
   private get postOptions() {
+    const from = `${this.shortPrefix}-from`;
+    const sync = `${this.shortPrefix}-sync`;
     return {
       params: {
-        'fly-from': this.identity,
-        'fly-sync': 'false',
+        [from]: this.identity,
+        [sync]: 'false',
       },
     };
   }
