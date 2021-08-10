@@ -15,6 +15,31 @@
 // limitations under the License.
 
 import { Injectable } from '@nestjs/common';
+import { EventStreamService } from './event-stream/event-stream.service';
+
+const SUBSCRIPTIONS = ['TokenCreate', 'TransferSingle'];
 
 @Injectable()
-export class AppService {}
+export class AppService {
+  private ethConnectUrl: string;
+  private instanceUrl: string;
+  private topic: string;
+
+  constructor(private eventStream: EventStreamService) {}
+
+  configure(ethConnectUrl: string, instanceUrl: string, topic: string) {
+    this.ethConnectUrl = ethConnectUrl;
+    this.instanceUrl = instanceUrl;
+    this.topic = topic;
+  }
+
+  async init() {
+    const stream = await this.eventStream.ensureEventStream(this.ethConnectUrl, this.topic);
+    await this.eventStream.ensureSubscriptions(
+      this.ethConnectUrl,
+      this.instanceUrl,
+      stream.id,
+      SUBSCRIPTIONS,
+    );
+  }
+}

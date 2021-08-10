@@ -14,8 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { EventStreamService } from './event-stream/event-stream.service';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -23,6 +26,17 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
+      providers: [
+        AppService,
+        {
+          provide: ConfigService,
+          useValue: jest.fn(),
+        },
+        {
+          provide: EventStreamService,
+          useValue: jest.fn(),
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
