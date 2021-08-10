@@ -449,4 +449,125 @@ describe('AppController (e2e)', () => {
         return true;
       });
   });
+
+  it('Websocket: disconnect and reconnect', async () => {
+    const tokenPoolMessage = {
+      signature: uriEventSignature,
+      address: '',
+      blockNumber: 1,
+      transactionHash: '',
+      data: <UriEventData>{
+        id: '340282366920938463463374607431768211456',
+        value: 'fly://erc1155/ns/name/id',
+      },
+    };
+
+    await server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([tokenPoolMessage]);
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('token-pool');
+        return true;
+      })
+      .close();
+
+    await server.ws('/api/ws').expectJson(message => {
+      expect(message.event).toEqual('token-pool');
+      return true;
+    });
+  });
+
+  it('Websocket: client switchover', async () => {
+    const tokenPoolMessage = {
+      signature: uriEventSignature,
+      address: '',
+      blockNumber: 1,
+      transactionHash: '',
+      data: <UriEventData>{
+        id: '340282366920938463463374607431768211456',
+        value: 'fly://erc1155/ns/name/id',
+      },
+    };
+
+    const ws1 = server.ws('/api/ws');
+    const ws2 = server.ws('/api/ws');
+
+    await ws1
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([tokenPoolMessage]);
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('token-pool');
+        return true;
+      })
+      .close();
+
+    await ws2.expectJson(message => {
+      expect(message.event).toEqual('token-pool');
+      return true;
+    });
+  });
+
+  it('Websocket: batch + ack + client switchover', async () => {
+    const tokenPoolMessage = {
+      signature: uriEventSignature,
+      address: '',
+      blockNumber: 1,
+      transactionHash: '',
+      data: <UriEventData>{
+        id: '340282366920938463463374607431768211456',
+        value: 'fly://erc1155/ns/name/id',
+      },
+    };
+    const tokenMintMessage = {
+      signature: transferSingleEventSignature,
+      address: '',
+      blockNumber: 1,
+      transactionHash: '',
+      data: <TransferSingleEventData>{
+        id: '340282366920938463463374607431768211456',
+        from: ZERO_ADDRESS,
+        to: 'A',
+        operator: 'A',
+        value: 5,
+      },
+    };
+
+    const ws1 = server.ws('/api/ws');
+    const ws2 = server.ws('/api/ws');
+    let messageID1: string;
+
+    await ws1
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([tokenPoolMessage, tokenMintMessage]);
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('token-pool');
+        messageID1 = message.id;
+        return true;
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('token-mint');
+        return true;
+      })
+      .exec(client => {
+        client.send(
+          JSON.stringify({
+            event: 'ack',
+            data: { id: messageID1 },
+          }),
+        );
+      })
+      .close();
+
+    await ws2.expectJson(message => {
+      expect(message.event).toEqual('token-mint');
+      return true;
+    });
+  });
 });
