@@ -36,8 +36,10 @@ import {
   UriEventData,
 } from '../src/tokens/tokens.interfaces';
 import { EventStreamService } from '../src/event-stream/event-stream.service';
-import { Event } from '../src/event-stream/event-stream.interfaces';
+import { Event, EventStreamReply } from '../src/event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
+import { WebSocketMessage } from '../src/websocket-events/websocket-events.base';
+import { ReceiptEvent } from '../src/eventstream-proxy/eventstream-proxy.interfaces';
 import { AppModule } from './../src/app.module';
 
 const BASE_URL = 'http://eth';
@@ -70,9 +72,16 @@ describe('AppController (e2e)', () => {
     post: ReturnType<typeof jest.fn>;
   };
   let eventHandler: (events: Event[]) => void;
+  let receiptHandler: (receipt: EventStreamReply) => void;
   const eventstream = {
-    subscribe: (url: string, topic: string, handleEvents: (events: Event[]) => void) => {
+    subscribe: (
+      url: string,
+      topic: string,
+      handleEvents: (events: Event[]) => void,
+      handleReceipt: (receipt: EventStreamReply) => void,
+    ) => {
       eventHandler = handleEvents;
+      receiptHandler = handleReceipt;
     },
   };
 
@@ -302,7 +311,7 @@ describe('AppController (e2e)', () => {
       .expectJson(message => {
         expect(message.id).toBeDefined();
         delete message.id;
-        expect(message).toEqual({
+        expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
             namespace: 'ns',
@@ -340,7 +349,7 @@ describe('AppController (e2e)', () => {
       .expectJson(message => {
         expect(message.id).toBeDefined();
         delete message.id;
-        expect(message).toEqual({
+        expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
             pool_id: 'F1',
@@ -377,7 +386,7 @@ describe('AppController (e2e)', () => {
       .expectJson(message => {
         expect(message.id).toBeDefined();
         delete message.id;
-        expect(message).toEqual({
+        expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             pool_id: 'N1',
@@ -385,6 +394,56 @@ describe('AppController (e2e)', () => {
             from: 'A',
             to: 'B',
             amount: 1,
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Websocket: success receipt', () => {
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(receiptHandler).toBeDefined();
+        receiptHandler(<EventStreamReply>{
+          headers: {
+            requestId: '1',
+            type: 'TransactionSuccess',
+          },
+        });
+      })
+      .expectJson(message => {
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'receipt',
+          data: <ReceiptEvent>{
+            id: '1',
+            success: true,
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Websocket: error receipt', () => {
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(receiptHandler).toBeDefined();
+        receiptHandler(<EventStreamReply>{
+          headers: {
+            requestId: '1',
+            type: 'Error',
+          },
+          errorMessage: 'Failed',
+        });
+      })
+      .expectJson(message => {
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'receipt',
+          data: <ReceiptEvent>{
+            id: '1',
+            success: false,
+            message: 'Failed',
           },
         });
         return true;
