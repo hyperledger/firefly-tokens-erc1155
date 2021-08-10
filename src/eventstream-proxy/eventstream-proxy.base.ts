@@ -62,7 +62,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     super.handleConnection(client);
     if (this.server.clients.size === 1 && this.url !== undefined && this.topic !== undefined) {
       this.logger.log(`Initializing event stream proxy`);
-      this.currentClient = client;
+      this.setCurrentClient(client);
       this.socket = this.eventstream.subscribe(
         this.url,
         this.topic,
@@ -103,10 +103,9 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       this.socket = undefined;
       this.currentClient = undefined;
     } else if (client.id === this.currentClient?.id) {
-      // Pick a new client and retransmit any unacknowledged messages
-      this.currentClient = this.server.clients[0];
-      for (const message of this.awaitingAck) {
-        this.currentClient?.send(message);
+      for (const newClient of this.server.clients) {
+        this.setCurrentClient(newClient as WebSocketEx);
+        break;
       }
     }
   }
@@ -123,6 +122,13 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       }
     }
     return undefined;
+  }
+
+  private setCurrentClient(client: WebSocketEx) {
+    this.currentClient = client;
+    for (const message of this.awaitingAck) {
+      this.currentClient.send(JSON.stringify(message));
+    }
   }
 
   private checkBatchComplete() {
