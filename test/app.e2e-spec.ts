@@ -45,6 +45,7 @@ import { AppModule } from './../src/app.module';
 const BASE_URL = 'http://eth';
 const INSTANCE_URL = `${BASE_URL}/tokens`;
 const IDENTITY = '0x1';
+const PREFIX = 'fly';
 const OPTIONS = {
   params: {
     'fly-from': IDENTITY,
@@ -111,7 +112,7 @@ describe('AppController (e2e)', () => {
     await app.init();
 
     app.get(EventStreamProxyGateway).configure('url', 'topic');
-    app.get(TokensService).configure(BASE_URL, INSTANCE_URL, IDENTITY);
+    app.get(TokensService).configure(BASE_URL, INSTANCE_URL, IDENTITY, PREFIX);
 
     (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());

@@ -66,6 +66,7 @@ async function bootstrap() {
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
   const topic = config.get<string>('ETHCONNECT_TOPIC', '');
   const identity = config.get<string>('ETHCONNECT_IDENTITY', '');
+  const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
 
   const instanceUrl = ethConnectUrl + instancePath;
   const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
@@ -75,7 +76,7 @@ async function bootstrap() {
   await eventStream.ensureSubscriptions(ethConnectUrl, instanceUrl, stream.id, subscriptions);
 
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
-  app.get(TokensService).configure(ethConnectUrl, instanceUrl, identity);
+  app.get(TokensService).configure(ethConnectUrl, instanceUrl, identity, shortPrefix);
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);
