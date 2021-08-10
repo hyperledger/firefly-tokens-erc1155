@@ -21,14 +21,12 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { version as API_VERSION } from '../package.json';
 import { AppModule } from './app.module';
-import { EventStreamService } from './event-stream/event-stream.service';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
 import { TokenPoolEvent, TokenMintEvent, TokenTransferEvent } from './tokens/tokens.interfaces';
-
-const subscriptions = ['TokenCreate', 'TransferSingle'];
+import { AppService } from './app.service';
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
@@ -64,19 +62,21 @@ async function bootstrap() {
 
   const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
-  const topic = config.get<string>('ETHCONNECT_TOPIC', '');
+  const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
   const identity = config.get<string>('ETHCONNECT_IDENTITY', '');
   const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
+  const autoInit = config.get<string>('AUTO_INIT', 'true');
 
   const instanceUrl = ethConnectUrl + instancePath;
   const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
 
-  const eventStream = app.get(EventStreamService);
-  const stream = await eventStream.ensureEventStream(ethConnectUrl, topic);
-  await eventStream.ensureSubscriptions(ethConnectUrl, instanceUrl, stream.id, subscriptions);
-
+  app.get(AppService).configure(ethConnectUrl, instanceUrl, topic);
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
   app.get(TokensService).configure(ethConnectUrl, instanceUrl, identity, shortPrefix);
+
+  if (autoInit !== 'false') {
+    await app.get(AppService).init();
+  }
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);

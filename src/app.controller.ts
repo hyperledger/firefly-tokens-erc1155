@@ -14,7 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Controller } from '@nestjs/common';
+import { Controller, HttpCode, Post } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
+import { AppService } from './app.service';
 
 @Controller()
-export class AppController {}
+export class AppController {
+  constructor(private service: AppService) {}
+
+  @Post('init')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Perform one-time initialization (if not auto-initialized)' })
+  async init() {
+    await this.service.init();
+  }
+}
