@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { packTokenId, packTokenUri, unpackTokenId, unpackTokenUri } from './util';
+import { packTokenId, packTokenUri, unpackTokenId, unpackTokenUri } from './tokens.util';
 
 describe('Util', () => {
   it('packTokenUri', () => {
