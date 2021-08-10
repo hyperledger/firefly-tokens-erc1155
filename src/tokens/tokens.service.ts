@@ -18,8 +18,14 @@ import { HttpService, Injectable, Logger } from '@nestjs/common';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
-import { isFungible, packTokenId, packTokenUri, unpackTokenId, unpackTokenUri } from '../util';
 import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
+import {
+  isFungible,
+  packTokenId,
+  packTokenUri,
+  unpackTokenId,
+  unpackTokenUri,
+} from './tokens.util';
 import {
   AsyncResponse,
   EthConnectAsyncResponse,
