@@ -39,8 +39,8 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
-  TransferSingleEventData,
-  UriEventData,
+  TransferSingleEvent,
+  UriEvent,
 } from './tokens.interfaces';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -171,16 +171,17 @@ class TokenListener implements EventListener {
   transformEvent(event: Event): WebSocketMessage | undefined {
     switch (event.signature) {
       case uriEventSignature:
-        return this.transformUriEvent(event.data);
+        return this.transformUriEvent(event);
       case transferSingleEventSignature:
-        return this.transformTransferSingleEvent(event.data);
+        return this.transformTransferSingleEvent(event);
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
         return undefined;
     }
   }
 
-  private transformUriEvent(data: UriEventData): WebSocketMessage {
+  private transformUriEvent(event: UriEvent): WebSocketMessage {
+    const { data } = event;
     const parts = unpackTokenId(data.id);
     return {
       event: 'token-pool',
@@ -188,13 +189,13 @@ class TokenListener implements EventListener {
         ...unpackTokenUri(data.value),
         pool_id: parts.pool_id,
         type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+        author: event.address,
       },
     };
   }
 
-  private transformTransferSingleEvent(
-    data: TransferSingleEventData,
-  ): WebSocketMessage | undefined {
+  private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
+    const { data } = event;
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // create pool (handled by URI event)
       return undefined;

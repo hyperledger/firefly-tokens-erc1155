@@ -32,8 +32,8 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
-  TransferSingleEventData,
-  UriEventData,
+  TransferSingleEvent,
+  UriEvent,
 } from '../src/tokens/tokens.interfaces';
 import { EventStreamService } from '../src/event-stream/event-stream.service';
 import { Event, EventStreamReply } from '../src/event-stream/event-stream.interfaces';
@@ -297,12 +297,12 @@ describe('AppController (e2e)', () => {
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
-          {
+          <UriEvent>{
             signature: uriEventSignature,
-            address: '',
+            address: 'bob',
             blockNumber: 1,
             transactionHash: '',
-            data: <UriEventData>{
+            data: {
               id: '340282366920938463463374607431768211456',
               value: 'fly://erc1155/ns/name/id',
             },
@@ -320,6 +320,7 @@ describe('AppController (e2e)', () => {
             client_id: 'id',
             pool_id: 'F1',
             type: 'fungible',
+            author: 'bob',
           },
         });
         return true;
@@ -332,12 +333,12 @@ describe('AppController (e2e)', () => {
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
-          {
+          <TransferSingleEvent>{
             signature: transferSingleEventSignature,
             address: '',
             blockNumber: 1,
             transactionHash: '',
-            data: <TransferSingleEventData>{
+            data: {
               id: '340282366920938463463374607431768211456',
               from: ZERO_ADDRESS,
               to: 'A',
@@ -369,12 +370,12 @@ describe('AppController (e2e)', () => {
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
-          {
+          <TransferSingleEvent>{
             signature: transferSingleEventSignature,
             address: '',
             blockNumber: 1,
             transactionHash: '',
-            data: <TransferSingleEventData>{
+            data: {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: 'B',
@@ -452,12 +453,12 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: disconnect and reconnect', async () => {
-    const tokenPoolMessage = {
+    const tokenPoolMessage: UriEvent = {
       signature: uriEventSignature,
       address: '',
       blockNumber: 1,
       transactionHash: '',
-      data: <UriEventData>{
+      data: {
         id: '340282366920938463463374607431768211456',
         value: 'fly://erc1155/ns/name/id',
       },
@@ -482,12 +483,12 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: client switchover', async () => {
-    const tokenPoolMessage = {
+    const tokenPoolMessage: UriEvent = {
       signature: uriEventSignature,
       address: '',
       blockNumber: 1,
       transactionHash: '',
-      data: <UriEventData>{
+      data: {
         id: '340282366920938463463374607431768211456',
         value: 'fly://erc1155/ns/name/id',
       },
@@ -514,22 +515,22 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: batch + ack + client switchover', async () => {
-    const tokenPoolMessage = {
+    const tokenPoolMessage: UriEvent = {
       signature: uriEventSignature,
       address: '',
       blockNumber: 1,
       transactionHash: '',
-      data: <UriEventData>{
+      data: {
         id: '340282366920938463463374607431768211456',
         value: 'fly://erc1155/ns/name/id',
       },
     };
-    const tokenMintMessage = {
+    const tokenMintMessage: TransferSingleEvent = {
       signature: transferSingleEventSignature,
       address: '',
       blockNumber: 1,
       transactionHash: '',
-      data: <TransferSingleEventData>{
+      data: {
         id: '340282366920938463463374607431768211456',
         from: ZERO_ADDRESS,
         to: 'A',

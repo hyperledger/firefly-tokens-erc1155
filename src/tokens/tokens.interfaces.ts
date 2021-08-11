@@ -16,6 +16,7 @@
 
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDefined, IsInt, IsNotEmpty, Matches, Min } from 'class-validator';
+import { Event } from '../event-stream/event-stream.interfaces';
 
 // Ethconnect interfaces
 export interface EthConnectAsyncResponse {
@@ -26,17 +27,22 @@ export interface EthConnectAsyncResponse {
 export interface EthConnectReturn {
   output: string;
 }
-export interface UriEventData {
-  id: string;
-  value: string;
+
+export interface UriEvent extends Event {
+  data: {
+    id: string;
+    value: string;
+  };
 }
 
-export interface TransferSingleEventData {
-  from: string;
-  to: string;
-  operator: string;
-  id: string;
-  value: number;
+export interface TransferSingleEvent extends Event {
+  data: {
+    from: string;
+    to: string;
+    operator: string;
+    id: string;
+    value: number;
+  };
 }
 
 // REST API requests and responses
@@ -144,6 +150,9 @@ export class TokenPoolEvent {
 
   @ApiProperty()
   client_id: string;
+
+  @ApiProperty()
+  author: string;
 }
 
 export class TokenMintEvent {
