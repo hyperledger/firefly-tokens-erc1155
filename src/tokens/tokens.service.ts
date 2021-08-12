@@ -22,9 +22,9 @@ import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces
 import {
   isFungible,
   packTokenId,
-  packTokenUri,
+  packTokenData,
   unpackTokenId,
-  unpackTokenUri,
+  unpackTokenData,
 } from './tokens.util';
 import {
   AsyncResponse,
@@ -32,6 +32,7 @@ import {
   EthConnectReturn,
   TokenBalance,
   TokenBalanceQuery,
+  TokenCreateEvent,
   TokenMint,
   TokenMintEvent,
   TokenPool,
@@ -40,12 +41,11 @@ import {
   TokenTransferEvent,
   TokenType,
   TransferSingleEvent,
-  UriEvent,
 } from './tokens.interfaces';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const uriEventSignature = 'URI(string,uint256)';
+const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 
 @Injectable()
@@ -89,7 +89,7 @@ export class TokensService {
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
-          uri: packTokenUri(dto.namespace, dto.name, dto.client_id),
+          data: packTokenData(dto.namespace, dto.name, dto.client_id),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
         this.postOptions,
@@ -170,8 +170,8 @@ class TokenListener implements EventListener {
 
   transformEvent(event: Event): WebSocketMessage | undefined {
     switch (event.signature) {
-      case uriEventSignature:
-        return this.transformUriEvent(event);
+      case tokenCreateEventSignature:
+        return this.transformTokenCreateEvent(event);
       case transferSingleEventSignature:
         return this.transformTransferSingleEvent(event);
       default:
@@ -180,13 +180,13 @@ class TokenListener implements EventListener {
     }
   }
 
-  private transformUriEvent(event: UriEvent): WebSocketMessage {
+  private transformTokenCreateEvent(event: TokenCreateEvent): WebSocketMessage {
     const { data } = event;
-    const parts = unpackTokenId(data.id);
+    const parts = unpackTokenId(data.type_id);
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
-        ...unpackTokenUri(data.value),
+        ...unpackTokenData(data.data),
         pool_id: parts.pool_id,
         type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         author: event.address,
@@ -197,7 +197,7 @@ class TokenListener implements EventListener {
   private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
     const { data } = event;
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
-      // create pool (handled by URI event)
+      // should not happen
       return undefined;
     } else if (data.from === ZERO_ADDRESS) {
       // mint

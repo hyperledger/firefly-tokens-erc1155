@@ -14,20 +14,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const BASE_URI = 'fly://erc1155';
-
-export function packTokenUri(namespace: string, name: string, client_id: string) {
-  const uri = new URL(BASE_URI);
-  uri.pathname = `/${namespace}/${name}/${client_id}`;
-  return uri.href;
+export function encodeHex(data: string) {
+  return '0x' + Buffer.from(data, 'utf8').toString('hex');
 }
 
-export function unpackTokenUri(uri: string) {
-  const parts = new URL(uri).pathname.split('/');
+export function decodeHex(data: string) {
+  return Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
+}
+
+export function packTokenData(namespace: string, name: string, client_id: string) {
+  return encodeHex([namespace, name, client_id].join('\0'));
+}
+
+export function unpackTokenData(data: string) {
+  const parts = decodeHex(data).split('\0');
   return {
-    namespace: parts[1],
-    name: parts[2],
-    client_id: parts[3],
+    namespace: parts[0],
+    name: parts[1],
+    client_id: parts[2],
   };
 }
 
