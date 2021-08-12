@@ -14,15 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { packTokenId, packTokenUri, unpackTokenId, unpackTokenUri } from './tokens.util';
+import { packTokenId, packTokenData, unpackTokenId, unpackTokenData } from './tokens.util';
 
 describe('Util', () => {
   it('packTokenUri', () => {
-    expect(packTokenUri('ns', 'name', 'id')).toEqual('fly://erc1155/ns/name/id');
+    expect(packTokenData('ns', 'name', 'id')).toEqual('0x6e73006e616d65006964');
   });
 
   it('unpackTokenUri', () => {
-    expect(unpackTokenUri('fly://erc1155/ns/name/id')).toEqual({
+    expect(unpackTokenData('0x6e73006e616d65006964')).toEqual({
       namespace: 'ns',
       name: 'name',
       client_id: 'id',

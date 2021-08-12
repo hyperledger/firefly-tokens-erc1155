@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDefined, IsInt, IsNotEmpty, Matches, Min } from 'class-validator';
+import { IsDefined, IsInt, IsNotEmpty, Min } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
 // Ethconnect interfaces
@@ -28,10 +28,11 @@ export interface EthConnectReturn {
   output: string;
 }
 
-export interface UriEvent extends Event {
+export interface TokenCreateEvent extends Event {
   data: {
-    id: string;
-    value: string;
+    operator: string;
+    type_id: string;
+    data: string;
   };
 }
 
@@ -56,23 +57,21 @@ export enum TokenType {
   NONFUNGIBLE = 'nonfungible',
 }
 
-export const URI_PATH_PATTERN = /^[a-zA-Z0-9.\-_~!&'()*+,;=:@$]+$/;
-
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
   @IsDefined()
   type: TokenType;
 
   @ApiProperty()
-  @Matches(URI_PATH_PATTERN)
+  @IsNotEmpty()
   namespace: string;
 
   @ApiProperty()
-  @Matches(URI_PATH_PATTERN)
+  @IsNotEmpty()
   name: string;
 
   @ApiProperty()
-  @Matches(URI_PATH_PATTERN)
+  @IsNotEmpty()
   client_id: string;
 }
 

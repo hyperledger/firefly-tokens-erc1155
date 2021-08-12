@@ -25,6 +25,7 @@ import {
   EthConnectReturn,
   TokenBalance,
   TokenBalanceQuery,
+  TokenCreateEvent,
   TokenMint,
   TokenMintEvent,
   TokenPool,
@@ -33,7 +34,6 @@ import {
   TokenTransferEvent,
   TokenType,
   TransferSingleEvent,
-  UriEvent,
 } from '../src/tokens/tokens.interfaces';
 import { EventStreamService } from '../src/event-stream/event-stream.service';
 import { Event, EventStreamReply } from '../src/event-stream/event-stream.interfaces';
@@ -54,7 +54,7 @@ const OPTIONS = {
 };
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const uriEventSignature = 'URI(string,uint256)';
+const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 
 class FakeObservable<T> {
@@ -142,7 +142,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        uri: 'fly://erc1155/testns/token1/1',
+        data: '0x746573746e7300746f6b656e310031',
         is_fungible: true,
       },
       OPTIONS,
@@ -169,7 +169,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        uri: 'fly://erc1155/testns/token1/1',
+        data: '0x746573746e7300746f6b656e310031',
         is_fungible: false,
       },
       OPTIONS,
@@ -297,14 +297,15 @@ describe('AppController (e2e)', () => {
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
-          <UriEvent>{
-            signature: uriEventSignature,
+          <TokenCreateEvent>{
+            signature: tokenCreateEventSignature,
             address: 'bob',
             blockNumber: 1,
             transactionHash: '',
             data: {
-              id: '340282366920938463463374607431768211456',
-              value: 'fly://erc1155/ns/name/id',
+              operator: 'bob',
+              type_id: '340282366920938463463374607431768211456',
+              data: '0x6e73006e616d65006964',
             },
           },
         ]);
@@ -453,14 +454,15 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: disconnect and reconnect', async () => {
-    const tokenPoolMessage: UriEvent = {
-      signature: uriEventSignature,
-      address: '',
+    const tokenPoolMessage: TokenCreateEvent = {
+      signature: tokenCreateEventSignature,
+      address: 'bob',
       blockNumber: 1,
       transactionHash: '',
       data: {
-        id: '340282366920938463463374607431768211456',
-        value: 'fly://erc1155/ns/name/id',
+        operator: 'bob',
+        type_id: '340282366920938463463374607431768211456',
+        data: '0x6e73006e616d65006964',
       },
     };
 
@@ -483,14 +485,15 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: client switchover', async () => {
-    const tokenPoolMessage: UriEvent = {
-      signature: uriEventSignature,
-      address: '',
+    const tokenPoolMessage: TokenCreateEvent = {
+      signature: tokenCreateEventSignature,
+      address: 'bob',
       blockNumber: 1,
       transactionHash: '',
       data: {
-        id: '340282366920938463463374607431768211456',
-        value: 'fly://erc1155/ns/name/id',
+        operator: 'bob',
+        type_id: '340282366920938463463374607431768211456',
+        data: '0x6e73006e616d65006964',
       },
     };
 
@@ -515,14 +518,15 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: batch + ack + client switchover', async () => {
-    const tokenPoolMessage: UriEvent = {
-      signature: uriEventSignature,
-      address: '',
+    const tokenPoolMessage: TokenCreateEvent = {
+      signature: tokenCreateEventSignature,
+      address: 'bob',
       blockNumber: 1,
       transactionHash: '',
       data: {
-        id: '340282366920938463463374607431768211456',
-        value: 'fly://erc1155/ns/name/id',
+        operator: 'bob',
+        type_id: '340282366920938463463374607431768211456',
+        data: '0x6e73006e616d65006964',
       },
     };
     const tokenMintMessage: TransferSingleEvent = {

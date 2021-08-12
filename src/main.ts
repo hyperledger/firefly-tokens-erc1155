@@ -28,7 +28,7 @@ import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.g
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
 import { TokenPoolEvent, TokenMintEvent, TokenTransferEvent } from './tokens/tokens.interfaces';
 
-const subscriptions = ['URI', 'TransferSingle'];
+const subscriptions = ['TokenCreate', 'TransferSingle'];
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.

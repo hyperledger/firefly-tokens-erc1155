@@ -23,6 +23,8 @@ contract ERC1155MixedFungibleMintable is Context, ERC1155 {
     mapping (uint256 => address) public creators;
     mapping (uint256 => uint256) public maxIndex;
 
+    event TokenCreate(address indexed operator, uint256 indexed type_id, bytes data);
+
     function isFungible(uint256 id) internal pure returns(bool) {
         return id & TYPE_NF_BIT == 0;
     }
@@ -39,7 +41,7 @@ contract ERC1155MixedFungibleMintable is Context, ERC1155 {
     constructor(string memory uri) ERC1155(uri) public {
     }
 
-    function create(string calldata uri, bool is_fungible)
+    function create(bool is_fungible, bytes calldata data)
         external
         virtual
         returns(uint256 type_id)
@@ -50,10 +52,7 @@ contract ERC1155MixedFungibleMintable is Context, ERC1155 {
 
         creators[type_id] = _msgSender();
 
-        emit TransferSingle(_msgSender(), address(0x0), address(0x0), type_id, 0);
-
-        if (bytes(uri).length > 0)
-            emit URI(uri, type_id);
+        emit TokenCreate(_msgSender(), type_id, data);
     }
 
     function mintNonFungible(uint256 type_id, address[] calldata to, bytes calldata data)
