@@ -300,8 +300,9 @@ describe('AppController (e2e)', () => {
           <TokenCreateEvent>{
             signature: tokenCreateEventSignature,
             address: 'bob',
-            blockNumber: 1,
-            transactionHash: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
             data: {
               operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
@@ -322,6 +323,11 @@ describe('AppController (e2e)', () => {
             pool_id: 'F1',
             type: 'fungible',
             author: 'bob',
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
           },
         });
         return true;
@@ -337,14 +343,20 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             signature: transferSingleEventSignature,
             address: '',
-            blockNumber: 1,
-            transactionHash: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
             data: {
               id: '340282366920938463463374607431768211456',
               from: ZERO_ADDRESS,
               to: 'A',
               operator: 'A',
               value: 5,
+              transaction: {
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+              },
             },
           },
         ]);
@@ -359,6 +371,11 @@ describe('AppController (e2e)', () => {
             token_index: '0',
             to: 'A',
             amount: 5,
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
           },
         });
         return true;
@@ -374,8 +391,9 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             signature: transferSingleEventSignature,
             address: '',
-            blockNumber: 1,
-            transactionHash: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
             data: {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
@@ -397,6 +415,11 @@ describe('AppController (e2e)', () => {
             from: 'A',
             to: 'B',
             amount: 1,
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
           },
         });
         return true;
@@ -457,8 +480,9 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       signature: tokenCreateEventSignature,
       address: 'bob',
-      blockNumber: 1,
-      transactionHash: '',
+      blockNumber: '1',
+      transactionIndex: '0x0',
+      transactionHash: '0x123',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -488,8 +512,9 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       signature: tokenCreateEventSignature,
       address: 'bob',
-      blockNumber: 1,
-      transactionHash: '',
+      blockNumber: '1',
+      transactionIndex: '0x0',
+      transactionHash: '0x123',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -521,8 +546,9 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       signature: tokenCreateEventSignature,
       address: 'bob',
-      blockNumber: 1,
-      transactionHash: '',
+      blockNumber: '1',
+      transactionIndex: '0x0',
+      transactionHash: '0x123',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -532,8 +558,9 @@ describe('AppController (e2e)', () => {
     const tokenMintMessage: TransferSingleEvent = {
       signature: transferSingleEventSignature,
       address: '',
-      blockNumber: 1,
-      transactionHash: '',
+      blockNumber: '1',
+      transactionIndex: '0x0',
+      transactionHash: '0x123',
       data: {
         id: '340282366920938463463374607431768211456',
         from: ZERO_ADDRESS,

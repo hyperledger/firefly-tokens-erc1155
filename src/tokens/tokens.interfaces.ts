@@ -134,6 +134,17 @@ export class TokenTransfer {
 
 // Websocket notifications
 
+export class BlockchainTransaction {
+  @ApiProperty()
+  blockNumber: string;
+
+  @ApiProperty()
+  transactionIndex: string;
+
+  @ApiProperty()
+  transactionHash: string;
+}
+
 export class TokenPoolEvent {
   @ApiProperty()
   pool_id: string;
@@ -152,6 +163,9 @@ export class TokenPoolEvent {
 
   @ApiProperty()
   author: string;
+
+  @ApiProperty()
+  transaction: BlockchainTransaction;
 }
 
 export class TokenMintEvent {
@@ -166,6 +180,9 @@ export class TokenMintEvent {
 
   @ApiProperty()
   amount: number;
+
+  @ApiProperty()
+  transaction: BlockchainTransaction;
 }
 
 export class TokenTransferEvent {
@@ -183,4 +200,7 @@ export class TokenTransferEvent {
 
   @ApiProperty()
   amount: number;
+
+  @ApiProperty()
+  transaction: BlockchainTransaction;
 }
