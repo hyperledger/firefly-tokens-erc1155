@@ -30,7 +30,8 @@ export interface EventStreamSubscription {
 export interface Event {
   signature: string;
   address: string;
-  blockNumber: number;
+  blockNumber: string;
+  transactionIndex: string;
   transactionHash: string;
   data: any;
 }

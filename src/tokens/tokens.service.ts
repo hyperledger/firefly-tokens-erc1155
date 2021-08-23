@@ -190,6 +190,11 @@ class TokenListener implements EventListener {
         pool_id: parts.pool_id,
         type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         author: event.address,
+        transaction: {
+          blockNumber: event.blockNumber,
+          transactionIndex: event.transactionIndex,
+          transactionHash: event.transactionHash,
+        },
       },
     };
   }
@@ -209,6 +214,11 @@ class TokenListener implements EventListener {
           token_index: parts.token_index,
           to: data.to,
           amount: data.value,
+          transaction: {
+            blockNumber: event.blockNumber,
+            transactionIndex: event.transactionIndex,
+            transactionHash: event.transactionHash,
+          },
         },
       };
     } else if (data.to === ZERO_ADDRESS) {
@@ -225,6 +235,11 @@ class TokenListener implements EventListener {
           from: data.from,
           to: data.to,
           amount: data.value,
+          transaction: {
+            blockNumber: event.blockNumber,
+            transactionIndex: event.transactionIndex,
+            transactionHash: event.transactionHash,
+          },
         },
       };
     }
