@@ -127,7 +127,7 @@ describe('AppController (e2e)', () => {
       type: TokenType.FUNGIBLE,
       namespace: 'testns',
       name: 'token1',
-      client_id: '1',
+      clientId: '1',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -154,7 +154,7 @@ describe('AppController (e2e)', () => {
       type: TokenType.NONFUNGIBLE,
       namespace: 'testns',
       name: 'token1',
-      client_id: '1',
+      clientId: '1',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -178,7 +178,7 @@ describe('AppController (e2e)', () => {
 
   it('Mint fungible token', async () => {
     const request: TokenMint = {
-      pool_id: 'F1',
+      poolId: 'F1',
       to: '1',
       amount: 2,
     };
@@ -206,7 +206,7 @@ describe('AppController (e2e)', () => {
 
   it('Mint non-fungible token', async () => {
     const request: TokenMint = {
-      pool_id: 'N1',
+      poolId: 'N1',
       to: '1',
       amount: 2,
     };
@@ -234,8 +234,8 @@ describe('AppController (e2e)', () => {
   it('Query balance', async () => {
     const request: TokenBalanceQuery = {
       account: '1',
-      pool_id: 'F1',
-      token_index: '0',
+      poolId: 'F1',
+      tokenIndex: '0',
     };
     const response: EthConnectReturn = {
       output: '1',
@@ -262,8 +262,8 @@ describe('AppController (e2e)', () => {
 
   it('Transfer token', async () => {
     const request: TokenTransfer = {
-      pool_id: 'F1',
-      token_index: '0',
+      poolId: 'F1',
+      tokenIndex: '0',
       from: '1',
       to: '2',
       amount: 2,
@@ -319,8 +319,8 @@ describe('AppController (e2e)', () => {
           data: <TokenPoolEvent>{
             namespace: 'ns',
             name: 'name',
-            client_id: 'id',
-            pool_id: 'F1',
+            clientId: 'id',
+            poolId: 'F1',
             type: 'fungible',
             author: 'bob',
             transaction: {
@@ -367,8 +367,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
-            pool_id: 'F1',
-            token_index: '0',
+            poolId: 'F1',
+            tokenIndex: '0',
             to: 'A',
             amount: 5,
             transaction: {
@@ -410,8 +410,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            pool_id: 'N1',
-            token_index: '1',
+            poolId: 'N1',
+            tokenIndex: '1',
             from: 'A',
             to: 'B',
             amount: 1,

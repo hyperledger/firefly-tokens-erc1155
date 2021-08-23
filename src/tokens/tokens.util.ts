@@ -31,7 +31,7 @@ export function unpackTokenData(data: string) {
   return {
     namespace: parts[0],
     name: parts[1],
-    client_id: parts[2],
+    clientId: parts[2],
   };
 }
 
@@ -51,8 +51,8 @@ export function unpackTokenId(id: string) {
   const val = BigInt(id);
   const isFungible = val >> BigInt(255) === BigInt(0);
   return {
-    is_fungible: isFungible,
-    pool_id: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
-    token_index: BigInt.asUintN(128, val).toString(),
+    isFungible: isFungible,
+    poolId: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
+    tokenIndex: BigInt.asUintN(128, val).toString(),
   };
 }

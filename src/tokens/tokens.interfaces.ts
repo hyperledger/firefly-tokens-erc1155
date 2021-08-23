@@ -72,13 +72,13 @@ export class TokenPool {
 
   @ApiProperty()
   @IsNotEmpty()
-  client_id: string;
+  clientId: string;
 }
 
 export class TokenMint {
   @ApiProperty()
   @IsNotEmpty()
-  pool_id: string;
+  poolId: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -93,11 +93,11 @@ export class TokenMint {
 export class TokenBalanceQuery {
   @ApiProperty()
   @IsNotEmpty()
-  pool_id: string;
+  poolId: string;
 
   @ApiProperty()
   @IsNotEmpty()
-  token_index: string;
+  tokenIndex: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -112,11 +112,11 @@ export class TokenBalance {
 export class TokenTransfer {
   @ApiProperty()
   @IsNotEmpty()
-  pool_id: string;
+  poolId: string;
 
   @ApiProperty()
   @IsNotEmpty()
-  token_index: string;
+  tokenIndex: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -147,7 +147,7 @@ export class BlockchainTransaction {
 
 export class TokenPoolEvent {
   @ApiProperty()
-  pool_id: string;
+  poolId: string;
 
   @ApiProperty()
   type: TokenType;
@@ -159,7 +159,7 @@ export class TokenPoolEvent {
   name: string;
 
   @ApiProperty()
-  client_id: string;
+  clientId: string;
 
   @ApiProperty()
   author: string;
@@ -170,10 +170,10 @@ export class TokenPoolEvent {
 
 export class TokenMintEvent {
   @ApiProperty()
-  pool_id: string;
+  poolId: string;
 
   @ApiProperty()
-  token_index: string;
+  tokenIndex: string;
 
   @ApiProperty()
   to: string;
@@ -187,10 +187,10 @@ export class TokenMintEvent {
 
 export class TokenTransferEvent {
   @ApiProperty()
-  pool_id: string;
+  poolId: string;
 
   @ApiProperty()
-  token_index: string;
+  tokenIndex: string;
 
   @ApiProperty()
   from: string;

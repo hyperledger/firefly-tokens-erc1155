@@ -89,7 +89,7 @@ export class TokensService {
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
-          data: packTokenData(dto.namespace, dto.name, dto.client_id),
+          data: packTokenData(dto.namespace, dto.name, dto.clientId),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
         this.postOptions,
@@ -99,13 +99,13 @@ export class TokensService {
   }
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
-    const type_id = packTokenId(dto.pool_id);
-    if (isFungible(dto.pool_id)) {
+    const typeId = packTokenId(dto.poolId);
+    if (isFungible(dto.poolId)) {
       const response = await this.http
         .post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintFungible`,
           {
-            type_id,
+            type_id: typeId,
             to: [dto.to],
             amounts: [dto.amount],
             data: [0],
@@ -124,7 +124,7 @@ export class TokensService {
         .post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintNonFungible`,
           {
-            type_id,
+            type_id: typeId,
             to,
             data: [0],
           },
@@ -140,7 +140,7 @@ export class TokensService {
       .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
           account: dto.account,
-          id: packTokenId(dto.pool_id, dto.token_index),
+          id: packTokenId(dto.poolId, dto.tokenIndex),
         },
       })
       .toPromise();
@@ -154,7 +154,7 @@ export class TokensService {
         {
           from: dto.from,
           to: dto.to,
-          id: packTokenId(dto.pool_id, dto.token_index),
+          id: packTokenId(dto.poolId, dto.tokenIndex),
           amount: dto.amount,
           data: [0],
         },
@@ -187,8 +187,8 @@ class TokenListener implements EventListener {
       event: 'token-pool',
       data: <TokenPoolEvent>{
         ...unpackTokenData(data.data),
-        pool_id: parts.pool_id,
-        type: parts.is_fungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+        poolId: parts.poolId,
+        type: parts.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         author: event.address,
         transaction: {
           blockNumber: event.blockNumber,
@@ -210,8 +210,8 @@ class TokenListener implements EventListener {
       return {
         event: 'token-mint',
         data: <TokenMintEvent>{
-          pool_id: parts.pool_id,
-          token_index: parts.token_index,
+          poolId: parts.poolId,
+          tokenIndex: parts.tokenIndex,
           to: data.to,
           amount: data.value,
           transaction: {
@@ -230,8 +230,8 @@ class TokenListener implements EventListener {
       return {
         event: 'token-transfer',
         data: <TokenTransferEvent>{
-          pool_id: parts.pool_id,
-          token_index: parts.token_index,
+          poolId: parts.poolId,
+          tokenIndex: parts.tokenIndex,
           from: data.from,
           to: data.to,
           amount: data.value,
