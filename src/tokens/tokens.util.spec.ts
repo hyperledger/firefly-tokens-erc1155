@@ -25,7 +25,7 @@ describe('Util', () => {
     expect(unpackTokenData('0x6e73006e616d65006964')).toEqual({
       namespace: 'ns',
       name: 'name',
-      client_id: 'id',
+      clientId: 'id',
     });
   });
 
@@ -38,18 +38,18 @@ describe('Util', () => {
 
   it('unpackTokenId', () => {
     expect(unpackTokenId('340282366920938463463374607431768211456')).toEqual({
-      is_fungible: true,
-      pool_id: 'F1',
-      token_index: '0',
+      isFungible: true,
+      poolId: 'F1',
+      tokenIndex: '0',
     });
     expect(
       unpackTokenId(
         '57896044618658097711785492504343953926975274699741220483192166611388333031425',
       ),
     ).toEqual({
-      is_fungible: false,
-      pool_id: 'N1',
-      token_index: '1',
+      isFungible: false,
+      poolId: 'N1',
+      tokenIndex: '1',
     });
   });
 });
