@@ -162,7 +162,10 @@ export class TokenPoolEvent {
   clientId: string;
 
   @ApiProperty()
-  author: string;
+  author: string; // TODO: remove
+
+  @ApiProperty()
+  operator: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
@@ -180,6 +183,9 @@ export class TokenMintEvent {
 
   @ApiProperty()
   amount: number;
+
+  @ApiProperty()
+  operator: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
@@ -200,6 +206,9 @@ export class TokenTransferEvent {
 
   @ApiProperty()
   amount: number;
+
+  @ApiProperty()
+  operator: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
