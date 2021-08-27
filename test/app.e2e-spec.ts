@@ -323,6 +323,7 @@ describe('AppController (e2e)', () => {
             poolId: 'F1',
             type: 'fungible',
             author: 'bob',
+            operator: 'bob',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
@@ -371,6 +372,7 @@ describe('AppController (e2e)', () => {
             tokenIndex: '0',
             to: 'A',
             amount: 5,
+            operator: 'A',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
@@ -415,6 +417,7 @@ describe('AppController (e2e)', () => {
             from: 'A',
             to: 'B',
             amount: 1,
+            operator: 'A',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',

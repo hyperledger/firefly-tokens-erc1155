@@ -29,9 +29,9 @@ not require any acknowledgment). Receipts can also be manually queried from the
 Successful operations will also result in a more detailed event of the form
 `{event: string, id: string, data: any}`, with the following event types:
 
-* `token-pool` - Token pool created (outputs: poolId, author, type, namespace, name, clientId)
-* `token-mint` - Tokens minted (outputs: poolId, tokenIndex, to, amount)
-* `token-transfer` - Tokens transferred (outputs: poolId, tokenIndex, from, to, amount)
+* `token-pool` - Token pool created (outputs: poolId, operator, type, namespace, name, clientId)
+* `token-mint` - Tokens minted (outputs: poolId, tokenIndex, operator, to, amount)
+* `token-transfer` - Tokens transferred (outputs: poolId, tokenIndex, operator, from, to, amount)
 
 For these events, if multiple websocket clients are connected, only one will receive them.
 Each one _must_ be acknowledged by replying on the websocket with `{event: "ack", data: {id}}`.
