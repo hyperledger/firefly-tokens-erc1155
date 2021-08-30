@@ -162,9 +162,6 @@ export class TokenPoolEvent {
   clientId: string;
 
   @ApiProperty()
-  author: string; // TODO: remove
-
-  @ApiProperty()
   operator: string;
 
   @ApiProperty()

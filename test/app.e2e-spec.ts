@@ -322,7 +322,6 @@ describe('AppController (e2e)', () => {
             clientId: 'id',
             poolId: 'F1',
             type: 'fungible',
-            author: 'bob',
             operator: 'bob',
             transaction: {
               blockNumber: '1',
