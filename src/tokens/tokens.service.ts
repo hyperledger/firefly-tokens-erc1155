@@ -189,7 +189,6 @@ class TokenListener implements EventListener {
         ...unpackTokenData(data.data),
         poolId: parts.poolId,
         type: parts.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
-        author: data.operator, // TODO: remove
         operator: data.operator,
         transaction: {
           blockNumber: event.blockNumber,
