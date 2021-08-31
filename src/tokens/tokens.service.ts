@@ -66,13 +66,15 @@ export class TokensService {
     this.shortPrefix = shortPrefix;
   }
 
-  private get postOptions() {
+  private postOptions(requestId?: string) {
     const from = `${this.shortPrefix}-from`;
     const sync = `${this.shortPrefix}-sync`;
+    const id = `${this.shortPrefix}-id`;
     return {
       params: {
         [from]: this.identity,
         [sync]: 'false',
+        [id]: requestId,
       },
     };
   }
@@ -92,7 +94,7 @@ export class TokensService {
           data: packTokenData(dto.namespace, dto.name, dto.clientId),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
-        this.postOptions,
+        this.postOptions(dto.requestId),
       )
       .toPromise();
     return { id: response.data.id };
@@ -110,7 +112,7 @@ export class TokensService {
             amounts: [dto.amount],
             data: [0],
           },
-          this.postOptions,
+          this.postOptions(dto.requestId),
         )
         .toPromise();
       return { id: response.data.id };
@@ -128,7 +130,7 @@ export class TokensService {
             to,
             data: [0],
           },
-          this.postOptions,
+          this.postOptions(dto.requestId),
         )
         .toPromise();
       return { id: response.data.id };
@@ -158,7 +160,7 @@ export class TokensService {
           amount: dto.amount,
           data: [0],
         },
-        this.postOptions,
+        this.postOptions(dto.requestId),
       )
       .toPromise();
     return { id: response.data.id };
