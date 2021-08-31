@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDefined, IsInt, IsNotEmpty, Min } from 'class-validator';
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, Min } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
 // Ethconnect interfaces
@@ -73,6 +73,10 @@ export class TokenPool {
   @ApiProperty()
   @IsNotEmpty()
   clientId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  requestId?: string;
 }
 
 export class TokenMint {
@@ -88,6 +92,10 @@ export class TokenMint {
   @IsInt()
   @Min(1)
   amount: number;
+
+  @ApiProperty()
+  @IsOptional()
+  requestId?: string;
 }
 
 export class TokenBalanceQuery {
@@ -130,6 +138,10 @@ export class TokenTransfer {
   @IsInt()
   @Min(1)
   amount: number;
+
+  @ApiProperty()
+  @IsOptional()
+  requestId?: string;
 }
 
 // Websocket notifications

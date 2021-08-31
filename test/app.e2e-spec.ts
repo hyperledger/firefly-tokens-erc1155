@@ -128,15 +128,16 @@ describe('AppController (e2e)', () => {
       namespace: 'testns',
       name: 'token1',
       clientId: '1',
+      requestId: '12345',
     };
     const response: EthConnectAsyncResponse = {
-      id: '1',
+      id: '12345',
       sent: true,
     };
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/pool').send(request).expect(202).expect({ id: '1' });
+    await server.post('/pool').send(request).expect(202).expect({ id: '12345' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -145,7 +146,13 @@ describe('AppController (e2e)', () => {
         data: '0x746573746e7300746f6b656e310031',
         is_fungible: true,
       },
-      OPTIONS,
+      {
+        ...OPTIONS,
+        params: {
+          ...OPTIONS.params,
+          'fly-id': '12345',
+        },
+      },
     );
   });
 
