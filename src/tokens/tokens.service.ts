@@ -24,8 +24,7 @@ import {
   packTokenId,
   unpackTokenId,
   encodeHex,
-  packTokenData,
-  unpackTokenData,
+  decodeHex,
 } from './tokens.util';
 import {
   AsyncResponse,
@@ -88,16 +87,12 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
-    const namespace = dto.namespace ?? '';
-    const name = dto.name ?? '';
-    const clientId = dto.clientId ?? '';
-    const data = dto.data ?? '';
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
-          data: packTokenData(namespace, name, clientId, data),
           is_fungible: dto.type === TokenType.FUNGIBLE,
+          data: encodeHex(dto.data ?? ''),
         },
         this.postOptions(dto.requestId),
       )
@@ -193,10 +188,10 @@ class TokenListener implements EventListener {
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
-        ...unpackTokenData(data.data),
         poolId: parts.poolId,
         type: parts.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
+        data: decodeHex(data.data),
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,

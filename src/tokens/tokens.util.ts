@@ -22,20 +22,6 @@ export function decodeHex(data: string) {
   return Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
 }
 
-export function packTokenData(namespace: string, name: string, client_id: string, data: string) {
-  return encodeHex([namespace, name, client_id, data].join('\0'));
-}
-
-export function unpackTokenData(data: string) {
-  const parts = decodeHex(data).split('\0');
-  return {
-    namespace: parts[0],
-    name: parts[1],
-    clientId: parts[2],
-    data: parts[3],
-  };
-}
-
 export function isFungible(poolId: string) {
   return poolId[0] === 'F';
 }
