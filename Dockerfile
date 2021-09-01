@@ -8,6 +8,7 @@ ADD solidity/ ./
 RUN npx truffle compile
 
 FROM node:14-alpine3.11
+RUN apk add curl
 WORKDIR /root
 ADD package*.json ./
 RUN npm install
