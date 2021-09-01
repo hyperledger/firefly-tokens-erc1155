@@ -22,8 +22,9 @@ import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces
 import {
   isFungible,
   packTokenId,
-  packTokenData,
   unpackTokenId,
+  encodeHex,
+  packTokenData,
   unpackTokenData,
 } from './tokens.util';
 import {
@@ -87,11 +88,15 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
+    const namespace = dto.namespace ?? '';
+    const name = dto.name ?? '';
+    const clientId = dto.clientId ?? '';
+    const data = dto.data ?? '';
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
-          data: packTokenData(dto.namespace, dto.name, dto.clientId),
+          data: packTokenData(namespace, name, clientId, data),
           is_fungible: dto.type === TokenType.FUNGIBLE,
         },
         this.postOptions(dto.requestId),
@@ -110,7 +115,7 @@ export class TokensService {
             type_id: typeId,
             to: [dto.to],
             amounts: [dto.amount],
-            data: [0],
+            data: dto.data === undefined ? [0] : encodeHex(dto.data),
           },
           this.postOptions(dto.requestId),
         )
@@ -128,7 +133,7 @@ export class TokensService {
           {
             type_id: typeId,
             to,
-            data: [0],
+            data: dto.data === undefined ? [0] : encodeHex(dto.data),
           },
           this.postOptions(dto.requestId),
         )
@@ -158,7 +163,7 @@ export class TokensService {
           to: dto.to,
           id: packTokenId(dto.poolId, dto.tokenIndex),
           amount: dto.amount,
-          data: [0],
+          data: dto.data === undefined ? [0] : encodeHex(dto.data),
         },
         this.postOptions(dto.requestId),
       )

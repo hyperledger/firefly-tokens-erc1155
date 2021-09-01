@@ -13,9 +13,9 @@ calls, and maps ethconnect events to outgoing websocket events.
 APIs all reside under `/api/v1`, and websocket notifications can be received by
 connecting to `/api/ws`.
 
-* `POST /pool` - Create a new token pool (inputs: type, namespace, name, clientId)
-* `POST /mint` - Mint new tokens (inputs: poolId, to, amount)
-* `POST /transfer` - Transfer tokens (inputs: poolId, tokenIndex, from, to, amount)
+* `POST /pool` - Create a new token pool (inputs: type, data)
+* `POST /mint` - Mint new tokens (inputs: poolId, to, amount, data)
+* `POST /transfer` - Transfer tokens (inputs: poolId, tokenIndex, from, to, amount, data)
 * `GET /balance` - Get token balance (inputs: poolId, tokenIndex, account)
 
 All POST APIs are async and return 202 immediately with a response of the form
@@ -29,9 +29,9 @@ not require any acknowledgment). Receipts can also be manually queried from the
 Successful operations will also result in a more detailed event of the form
 `{event: string, id: string, data: any}`, with the following event types:
 
-* `token-pool` - Token pool created (outputs: poolId, operator, type, namespace, name, clientId)
-* `token-mint` - Tokens minted (outputs: poolId, tokenIndex, operator, to, amount)
-* `token-transfer` - Tokens transferred (outputs: poolId, tokenIndex, operator, from, to, amount)
+* `token-pool` - Token pool created (outputs: poolId, operator, type, data)
+* `token-mint` - Tokens minted (outputs: poolId, tokenIndex, operator, to, amount, data)
+* `token-transfer` - Tokens transferred (outputs: poolId, tokenIndex, operator, from, to, amount, data)
 
 For these events, if multiple websocket clients are connected, only one will receive them.
 Each one _must_ be acknowledged by replying on the websocket with `{event: "ack", data: {id}}`.
