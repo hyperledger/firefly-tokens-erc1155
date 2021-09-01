@@ -63,20 +63,24 @@ export class TokenPool {
   type: TokenType;
 
   @ApiProperty()
-  @IsNotEmpty()
-  namespace: string;
+  @IsOptional()
+  namespace?: string; // TODO: remove
 
   @ApiProperty()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name?: string; // TODO: remove
 
   @ApiProperty()
-  @IsNotEmpty()
-  clientId: string;
+  @IsOptional()
+  clientId?: string; // TODO: remove
 
   @ApiProperty()
   @IsOptional()
   requestId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  data?: string;
 }
 
 export class TokenMint {
@@ -96,6 +100,10 @@ export class TokenMint {
   @ApiProperty()
   @IsOptional()
   requestId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  data?: string;
 }
 
 export class TokenBalanceQuery {
@@ -142,6 +150,10 @@ export class TokenTransfer {
   @ApiProperty()
   @IsOptional()
   requestId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  data?: string;
 }
 
 // Websocket notifications
@@ -165,16 +177,19 @@ export class TokenPoolEvent {
   type: TokenType;
 
   @ApiProperty()
-  namespace: string;
+  namespace: string; // TODO: remove
 
   @ApiProperty()
-  name: string;
+  name: string; // TODO: remove
 
   @ApiProperty()
-  clientId: string;
+  clientId: string; // TODO: remove
 
   @ApiProperty()
   operator: string;
+
+  @ApiProperty()
+  data: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
@@ -195,6 +210,9 @@ export class TokenMintEvent {
 
   @ApiProperty()
   operator: string;
+
+  @ApiProperty()
+  data: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
@@ -218,6 +236,9 @@ export class TokenTransferEvent {
 
   @ApiProperty()
   operator: string;
+
+  @ApiProperty()
+  data: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;

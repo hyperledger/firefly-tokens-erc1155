@@ -143,7 +143,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x746573746e7300746f6b656e310031',
+        data: '0x746573746e7300746f6b656e31003100',
         is_fungible: true,
       },
       {
@@ -176,7 +176,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x746573746e7300746f6b656e310031',
+        data: '0x746573746e7300746f6b656e31003100',
         is_fungible: false,
       },
       OPTIONS,

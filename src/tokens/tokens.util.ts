@@ -22,8 +22,8 @@ export function decodeHex(data: string) {
   return Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
 }
 
-export function packTokenData(namespace: string, name: string, client_id: string) {
-  return encodeHex([namespace, name, client_id].join('\0'));
+export function packTokenData(namespace: string, name: string, client_id: string, data: string) {
+  return encodeHex([namespace, name, client_id, data].join('\0'));
 }
 
 export function unpackTokenData(data: string) {
@@ -32,18 +32,19 @@ export function unpackTokenData(data: string) {
     namespace: parts[0],
     name: parts[1],
     clientId: parts[2],
+    data: parts[3],
   };
 }
 
-export function isFungible(pool_id: string) {
-  return pool_id[0] === 'F';
+export function isFungible(poolId: string) {
+  return poolId[0] === 'F';
 }
 
-export function packTokenId(pool_id: string, token_index = '0') {
+export function packTokenId(poolId: string, tokenIndex = '0') {
   return (
-    (BigInt(isFungible(pool_id) ? 0 : 1) << BigInt(255)) |
-    (BigInt(pool_id.substr(1)) << BigInt(128)) |
-    BigInt(token_index)
+    (BigInt(isFungible(poolId) ? 0 : 1) << BigInt(255)) |
+    (BigInt(poolId.substr(1)) << BigInt(128)) |
+    BigInt(tokenIndex)
   ).toString();
 }
 

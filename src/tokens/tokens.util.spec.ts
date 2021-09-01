@@ -14,18 +14,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { packTokenId, packTokenData, unpackTokenId, unpackTokenData } from './tokens.util';
+import {
+  decodeHex,
+  encodeHex,
+  packTokenData,
+  packTokenId,
+  unpackTokenData,
+  unpackTokenId,
+} from './tokens.util';
 
 describe('Util', () => {
-  it('packTokenUri', () => {
-    expect(packTokenData('ns', 'name', 'id')).toEqual('0x6e73006e616d65006964');
+  it('encodeHex', () => {
+    expect(encodeHex('hello')).toEqual('0x68656c6c6f');
+    expect(encodeHex('')).toEqual('0x');
   });
 
-  it('unpackTokenUri', () => {
-    expect(unpackTokenData('0x6e73006e616d65006964')).toEqual({
+  it('decodeHex', () => {
+    expect(decodeHex('0x68656c6c6f')).toEqual('hello');
+    expect(decodeHex('')).toEqual('');
+    expect(decodeHex('0x')).toEqual('');
+    expect(decodeHex('0x0')).toEqual('');
+  });
+
+  it('packTokenData', () => {
+    expect(packTokenData('ns', 'name', 'id', 'test')).toEqual('0x6e73006e616d650069640074657374');
+    expect(packTokenData('', '', '', 'test')).toEqual('0x00000074657374');
+    expect(packTokenData('', '', '', '')).toEqual('0x000000');
+  });
+
+  it('unpackTokenData', () => {
+    expect(unpackTokenData('0x6e73006e616d650069640074657374')).toEqual({
       namespace: 'ns',
       name: 'name',
       clientId: 'id',
+      data: 'test',
+    });
+    expect(unpackTokenData('0x00000074657374')).toEqual({
+      namespace: '',
+      name: '',
+      clientId: '',
+      data: 'test',
+    });
+    expect(unpackTokenData('0x000000')).toEqual({
+      namespace: '',
+      name: '',
+      clientId: '',
+      data: '',
     });
   });
 
