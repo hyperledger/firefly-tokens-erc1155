@@ -125,9 +125,7 @@ describe('AppController (e2e)', () => {
   it('Create fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.FUNGIBLE,
-      namespace: 'testns',
-      name: 'token1',
-      clientId: '1',
+      data: 'test',
       requestId: '12345',
     };
     const response: EthConnectAsyncResponse = {
@@ -143,7 +141,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x746573746e7300746f6b656e31003100',
+        data: '0x74657374',
         is_fungible: true,
       },
       {
@@ -159,9 +157,7 @@ describe('AppController (e2e)', () => {
   it('Create non-fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
-      namespace: 'testns',
-      name: 'token1',
-      clientId: '1',
+      data: 'test',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -176,7 +172,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x746573746e7300746f6b656e31003100',
+        data: '0x74657374',
         is_fungible: false,
       },
       OPTIONS,
@@ -313,7 +309,7 @@ describe('AppController (e2e)', () => {
             data: {
               operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
-              data: '0x6e73006e616d65006964',
+              data: '0x74657374',
             },
           },
         ]);
@@ -324,9 +320,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            namespace: 'ns',
-            name: 'name',
-            clientId: 'id',
+            data: 'test',
             poolId: 'F1',
             type: 'fungible',
             operator: 'bob',

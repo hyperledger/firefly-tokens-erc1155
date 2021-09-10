@@ -64,18 +64,6 @@ export class TokenPool {
 
   @ApiProperty()
   @IsOptional()
-  namespace?: string; // TODO: remove
-
-  @ApiProperty()
-  @IsOptional()
-  name?: string; // TODO: remove
-
-  @ApiProperty()
-  @IsOptional()
-  clientId?: string; // TODO: remove
-
-  @ApiProperty()
-  @IsOptional()
   requestId?: string;
 
   @ApiProperty()
@@ -175,15 +163,6 @@ export class TokenPoolEvent {
 
   @ApiProperty()
   type: TokenType;
-
-  @ApiProperty()
-  namespace: string; // TODO: remove
-
-  @ApiProperty()
-  name: string; // TODO: remove
-
-  @ApiProperty()
-  clientId: string; // TODO: remove
 
   @ApiProperty()
   operator: string;

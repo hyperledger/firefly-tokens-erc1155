@@ -17,9 +17,7 @@
 import {
   decodeHex,
   encodeHex,
-  packTokenData,
   packTokenId,
-  unpackTokenData,
   unpackTokenId,
 } from './tokens.util';
 
@@ -34,33 +32,6 @@ describe('Util', () => {
     expect(decodeHex('')).toEqual('');
     expect(decodeHex('0x')).toEqual('');
     expect(decodeHex('0x0')).toEqual('');
-  });
-
-  it('packTokenData', () => {
-    expect(packTokenData('ns', 'name', 'id', 'test')).toEqual('0x6e73006e616d650069640074657374');
-    expect(packTokenData('', '', '', 'test')).toEqual('0x00000074657374');
-    expect(packTokenData('', '', '', '')).toEqual('0x000000');
-  });
-
-  it('unpackTokenData', () => {
-    expect(unpackTokenData('0x6e73006e616d650069640074657374')).toEqual({
-      namespace: 'ns',
-      name: 'name',
-      clientId: 'id',
-      data: 'test',
-    });
-    expect(unpackTokenData('0x00000074657374')).toEqual({
-      namespace: '',
-      name: '',
-      clientId: '',
-      data: 'test',
-    });
-    expect(unpackTokenData('0x000000')).toEqual({
-      namespace: '',
-      name: '',
-      clientId: '',
-      data: '',
-    });
   });
 
   it('packTokenId', () => {
