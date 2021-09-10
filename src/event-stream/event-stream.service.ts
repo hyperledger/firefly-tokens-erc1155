@@ -24,6 +24,7 @@ import {
 } from './event-stream.interfaces';
 
 const RECONNECT_TIME = 5000;
+const PING_INTERVAL = 10000;
 const PING_TIMEOUT = 60000;
 
 export class EventStreamSocket {
@@ -75,7 +76,8 @@ export class EventStreamSocket {
         this.handleMessage(JSON.parse(message));
       })
       .on('pong', () => {
-        this.ping();
+        clearTimeout(this.pingTimeout);
+        setTimeout(() => this.ping(), PING_INTERVAL);
       })
       .on('error', err => {
         this.logger.error(`Event stream websocket error: ${err}`);
@@ -84,7 +86,6 @@ export class EventStreamSocket {
 
   private ping() {
     this.ws.ping();
-    clearTimeout(this.pingTimeout);
     this.pingTimeout = setTimeout(() => {
       this.logger.error('Event stream ping timeout');
       this.ws.terminate();
