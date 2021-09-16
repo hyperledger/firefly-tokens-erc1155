@@ -361,6 +361,10 @@ describe('AppController (e2e)', () => {
                 transactionHash: '0x123',
               },
             },
+            inputMethod: 'mintFungible',
+            inputArgs: {
+              data: '0x68656c6c6f',
+            },
           },
         ]);
       })
@@ -375,6 +379,7 @@ describe('AppController (e2e)', () => {
             to: 'A',
             amount: 5,
             operator: 'A',
+            data: 'hello',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',

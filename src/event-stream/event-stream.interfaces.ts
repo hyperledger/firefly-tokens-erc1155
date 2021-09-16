@@ -34,6 +34,8 @@ export interface Event {
   transactionIndex: string;
   transactionHash: string;
   data: any;
+  inputMethod?: string;
+  inputArgs?: Record<string, any>;
 }
 
 export class EventStreamReplyHeaders {
