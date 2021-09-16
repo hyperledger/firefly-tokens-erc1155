@@ -215,6 +215,8 @@ class TokenListener implements EventListener {
 
   private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
     const { data } = event;
+    const inputData = event.inputArgs?.data;
+
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // should not happen
       return undefined;
@@ -229,6 +231,7 @@ class TokenListener implements EventListener {
           to: data.to,
           amount: data.value,
           operator: data.operator,
+          data: inputData === undefined ? undefined : decodeHex(inputData),
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,
@@ -251,6 +254,7 @@ class TokenListener implements EventListener {
           to: data.to,
           amount: data.value,
           operator: data.operator,
+          data: inputData === undefined ? undefined : decodeHex(inputData),
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,

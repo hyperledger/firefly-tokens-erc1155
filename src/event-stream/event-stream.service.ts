@@ -137,6 +137,7 @@ export class EventStreamService {
       type: 'websocket',
       websocket: { topic },
       blockedReryDelaySec: 30, // intentional due to spelling error in ethconnect
+      inputs: true,
     };
 
     const { data: existingStreams } = await this.http
