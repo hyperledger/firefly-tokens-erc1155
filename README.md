@@ -1,7 +1,7 @@
 # FireFly Tokens Microservice for ERC1155
 
-This project provides a thin shim between [FireFly](https://github.com/hyperledger-labs/firefly)
-and an ERC1155 contract exposed via [ethconnect](https://github.com/hyperledger-labs/firefly-ethconnect).
+This project provides a thin shim between [FireFly](https://github.com/hyperledger/firefly)
+and an ERC1155 contract exposed via [ethconnect](https://github.com/hyperledger/firefly-ethconnect).
 
 Based on [Node.js](http://nodejs.org) and [Nest](http://nestjs.com).
 
