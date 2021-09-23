@@ -57,18 +57,36 @@ export enum TokenType {
   NONFUNGIBLE = 'nonfungible',
 }
 
+const trackingIdDescription =
+  'Optional ID provided by the client for correlating related events. This field ' +
+  'will not be used or inspected by the server, but will be associated with the ' +
+  'token pool and returned alongside other pool info.';
+const requestIdDescription =
+  'Optional ID to identify this request. Must be unique for every request. ' +
+  'If none is provided, one will be assigned and returned in the 202 response.';
+const poolConfigDescription =
+  'Optional configuration info for the token pool. Reserved for future use.';
+
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
   @IsDefined()
   type: TokenType;
 
-  @ApiProperty()
+  @ApiProperty({ description: trackingIdDescription })
+  @IsOptional()
+  trackingId?: string;
+
+  @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
 
+  @ApiProperty({ description: poolConfigDescription })
+  @IsOptional()
+  config?: any;
+
   @ApiProperty()
   @IsOptional()
-  data?: string;
+  data?: string; // TODO: remove
 }
 
 export class TokenMint {
@@ -85,7 +103,7 @@ export class TokenMint {
   @Min(1)
   amount: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
 
@@ -135,7 +153,7 @@ export class TokenTransfer {
   @Min(1)
   amount: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
 
@@ -168,7 +186,10 @@ export class TokenPoolEvent {
   operator: string;
 
   @ApiProperty()
-  data: string;
+  trackingId?: string;
+
+  @ApiProperty()
+  data?: string; // TODO: remove
 
   @ApiProperty()
   transaction: BlockchainTransaction;
