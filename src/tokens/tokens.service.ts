@@ -19,13 +19,7 @@ import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
-import {
-  isFungible,
-  packTokenId,
-  unpackTokenId,
-  encodeHex,
-  decodeHex,
-} from './tokens.util';
+import { isFungible, packTokenId, unpackTokenId, encodeHex, decodeHex } from './tokens.util';
 import {
   AsyncResponse,
   EthConnectAsyncResponse,
@@ -82,24 +76,28 @@ export class TokensService {
   async getReceipt(id: string): Promise<EventStreamReply> {
     const response = await this.http
       .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
-          validateStatus: status => {
-            return status < 300 || status === 404;
-          },
+        validateStatus: status => {
+          return status < 300 || status === 404;
+        },
       })
       .toPromise();
     if (response.status === 404) {
-      throw new NotFoundException()
+      throw new NotFoundException();
     }
     return response.data;
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
+    const dataToPack = {
+      trackingId: dto.trackingId,
+      data: dto.data, // TODO: remove
+    };
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
           is_fungible: dto.type === TokenType.FUNGIBLE,
-          data: encodeHex(dto.data ?? ''),
+          data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
       )
@@ -192,13 +190,20 @@ class TokenListener implements EventListener {
   private transformTokenCreateEvent(event: TokenCreateEvent): WebSocketMessage {
     const { data } = event;
     const parts = unpackTokenId(data.type_id);
+    let unpackedData: any;
+    try {
+      unpackedData = JSON.parse(decodeHex(data.data));
+    } catch (err) {
+      unpackedData = {};
+    }
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
         poolId: parts.poolId,
         type: parts.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
-        data: decodeHex(data.data),
+        trackingId: unpackedData.trackingId,
+        data: unpackedData.data, // TODO: remove
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,

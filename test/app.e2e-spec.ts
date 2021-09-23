@@ -125,30 +125,31 @@ describe('AppController (e2e)', () => {
   it('Create fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.FUNGIBLE,
+      requestId: 'op1',
+      trackingId: 'tx1',
       data: 'test',
-      requestId: '12345',
     };
     const response: EthConnectAsyncResponse = {
-      id: '12345',
+      id: 'op1',
       sent: true,
     };
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/pool').send(request).expect(202).expect({ id: '12345' });
+    await server.post('/pool').send(request).expect(202).expect({ id: 'op1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x74657374',
+        data: '0x7b22747261636b696e674964223a22747831222c2264617461223a2274657374227d',
         is_fungible: true,
       },
       {
         ...OPTIONS,
         params: {
           ...OPTIONS.params,
-          'fly-id': '12345',
+          'fly-id': 'op1',
         },
       },
     );
@@ -172,7 +173,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x74657374',
+        data: '0x7b2264617461223a2274657374227d',
         is_fungible: false,
       },
       OPTIONS,
@@ -309,7 +310,7 @@ describe('AppController (e2e)', () => {
             data: {
               operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
-              data: '0x74657374',
+              data: '0x7b22747261636b696e674964223a22747831222c2264617461223a2274657374227d',
             },
           },
         ]);
@@ -321,6 +322,7 @@ describe('AppController (e2e)', () => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             data: 'test',
+            trackingId: 'tx1',
             poolId: 'F1',
             type: 'fungible',
             operator: 'bob',
