@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpService, Injectable, Logger } from '@nestjs/common';
+import { HttpService, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
@@ -81,8 +81,15 @@ export class TokensService {
 
   async getReceipt(id: string): Promise<EventStreamReply> {
     const response = await this.http
-      .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`)
+      .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
+          validateStatus: status => {
+            return status < 300 || status === 404;
+          },
+      })
       .toPromise();
+    if (response.status === 404) {
+      throw new NotFoundException()
+    }
     return response.data;
   }
 
