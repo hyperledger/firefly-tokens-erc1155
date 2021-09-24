@@ -5,7 +5,7 @@
 repository:
   name: firefly-tokens-erc1155
   description: ERC1155 token integration
-  homepage: https://github.com/hyperledger-labs/firefly-tokens-erc1155
+  homepage: https://github.com/hyperledger/firefly-tokens-erc1155
   default_branch: main
   has_downloads: true
   has_issues: true

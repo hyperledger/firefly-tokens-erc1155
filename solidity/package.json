@@ -1,5 +1,5 @@
 {
-  "name": "@hyperledger-labs/firefly-tokens-erc1155-contracts",
+  "name": "@hyperledger/firefly-tokens-erc1155-contracts",
   "version": "0.0.1",
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
