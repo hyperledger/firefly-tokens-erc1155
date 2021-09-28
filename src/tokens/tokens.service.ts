@@ -24,6 +24,7 @@ import {
   AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
+  PackedTokenData,
   TokenBalance,
   TokenBalanceQuery,
   TokenCreateEvent,
@@ -88,7 +89,7 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
-    const dataToPack = {
+    const dataToPack: PackedTokenData = {
       trackingId: dto.trackingId,
       data: dto.data, // TODO: remove
     };
@@ -107,6 +108,10 @@ export class TokensService {
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
     const typeId = packTokenId(dto.poolId);
+    const dataToPack: PackedTokenData = {
+      trackingId: dto.trackingId,
+      data: dto.data,
+    };
     if (isFungible(dto.poolId)) {
       const response = await this.http
         .post<EthConnectAsyncResponse>(
@@ -115,7 +120,7 @@ export class TokensService {
             type_id: typeId,
             to: [dto.to],
             amounts: [dto.amount],
-            data: dto.data === undefined ? [0] : encodeHex(dto.data),
+            data: encodeHex(JSON.stringify(dataToPack)),
           },
           this.postOptions(dto.requestId),
         )
@@ -133,7 +138,7 @@ export class TokensService {
           {
             type_id: typeId,
             to,
-            data: dto.data === undefined ? [0] : encodeHex(dto.data),
+            data: encodeHex(JSON.stringify(dataToPack)),
           },
           this.postOptions(dto.requestId),
         )
@@ -155,6 +160,10 @@ export class TokensService {
   }
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
+    const dataToPack: PackedTokenData = {
+      trackingId: dto.trackingId,
+      data: dto.data,
+    };
     const response = await this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/safeTransferFrom`,
@@ -163,7 +172,7 @@ export class TokensService {
           to: dto.to,
           id: packTokenId(dto.poolId, dto.tokenIndex),
           amount: dto.amount,
-          data: dto.data === undefined ? [0] : encodeHex(dto.data),
+          data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
       )
@@ -187,15 +196,18 @@ class TokenListener implements EventListener {
     }
   }
 
+  private safeUnpackData(data: string | undefined): PackedTokenData {
+    try {
+      return data === undefined ? {} : (JSON.parse(decodeHex(data)) as PackedTokenData);
+    } catch (err) {
+      return {};
+    }
+  }
+
   private transformTokenCreateEvent(event: TokenCreateEvent): WebSocketMessage {
     const { data } = event;
     const parts = unpackTokenId(data.type_id);
-    let unpackedData: any;
-    try {
-      unpackedData = JSON.parse(decodeHex(data.data));
-    } catch (err) {
-      unpackedData = {};
-    }
+    const unpackedData = this.safeUnpackData(data.data);
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
@@ -215,7 +227,7 @@ class TokenListener implements EventListener {
 
   private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
     const { data } = event;
-    const inputData = event.inputArgs?.data;
+    const unpackedData = this.safeUnpackData(event.inputArgs?.data);
 
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // should not happen
@@ -231,7 +243,8 @@ class TokenListener implements EventListener {
           to: data.to,
           amount: data.value,
           operator: data.operator,
-          data: inputData === undefined ? undefined : decodeHex(inputData),
+          trackingId: unpackedData.trackingId,
+          data: unpackedData.data,
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,
@@ -254,7 +267,8 @@ class TokenListener implements EventListener {
           to: data.to,
           amount: data.value,
           operator: data.operator,
-          data: inputData === undefined ? undefined : decodeHex(inputData),
+          trackingId: unpackedData.trackingId,
+          data: unpackedData.data,
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,

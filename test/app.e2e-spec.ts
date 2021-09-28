@@ -185,6 +185,8 @@ describe('AppController (e2e)', () => {
       poolId: 'F1',
       to: '1',
       amount: 2,
+      trackingId: 'abc',
+      data: 'test',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -202,7 +204,7 @@ describe('AppController (e2e)', () => {
         type_id: '340282366920938463463374607431768211456',
         to: ['1'],
         amounts: [2],
-        data: [0],
+        data: '0x7b22747261636b696e674964223a22616263222c2264617461223a2274657374227d',
       },
       OPTIONS,
     );
@@ -229,7 +231,7 @@ describe('AppController (e2e)', () => {
       {
         type_id: '57896044618658097711785492504343953926975274699741220483192166611388333031424',
         to: ['1', '1'],
-        data: [0],
+        data: '0x7b7d',
       },
       OPTIONS,
     );
@@ -289,7 +291,7 @@ describe('AppController (e2e)', () => {
         from: '1',
         to: '2',
         amount: 2,
-        data: [0],
+        data: '0x7b7d',
       },
       OPTIONS,
     );
@@ -363,7 +365,7 @@ describe('AppController (e2e)', () => {
             },
             inputMethod: 'mintFungible',
             inputArgs: {
-              data: '0x68656c6c6f',
+              data: '0x7b22747261636b696e674964223a22616263222c2264617461223a2274657374227d',
             },
           },
         ]);
@@ -379,7 +381,8 @@ describe('AppController (e2e)', () => {
             to: 'A',
             amount: 5,
             operator: 'A',
-            data: 'hello',
+            trackingId: 'abc',
+            data: 'test',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
