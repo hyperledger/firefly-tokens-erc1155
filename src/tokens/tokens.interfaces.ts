@@ -46,6 +46,11 @@ export interface TransferSingleEvent extends Event {
   };
 }
 
+export interface PackedTokenData {
+  trackingId?: string;
+  data?: any;
+}
+
 // REST API requests and responses
 export class AsyncResponse {
   @ApiProperty()
@@ -60,7 +65,7 @@ export enum TokenType {
 const trackingIdDescription =
   'Optional ID provided by the client for correlating related events. This field ' +
   'will not be used or inspected by the server, but will be associated with the ' +
-  'token pool and returned alongside other pool info.';
+  'transaction and returned in any triggered events.';
 const requestIdDescription =
   'Optional ID to identify this request. Must be unique for every request. ' +
   'If none is provided, one will be assigned and returned in the 202 response.';
@@ -102,6 +107,10 @@ export class TokenMint {
   @IsInt()
   @Min(1)
   amount: number;
+
+  @ApiProperty({ description: trackingIdDescription })
+  @IsOptional()
+  trackingId?: string;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
@@ -152,6 +161,10 @@ export class TokenTransfer {
   @IsInt()
   @Min(1)
   amount: number;
+
+  @ApiProperty({ description: trackingIdDescription })
+  @IsOptional()
+  trackingId?: string;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
@@ -212,7 +225,10 @@ export class TokenMintEvent {
   operator: string;
 
   @ApiProperty()
-  data: string;
+  trackingId?: string;
+
+  @ApiProperty()
+  data?: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
@@ -238,7 +254,10 @@ export class TokenTransferEvent {
   operator: string;
 
   @ApiProperty()
-  data: string;
+  trackingId?: string;
+
+  @ApiProperty()
+  data?: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
