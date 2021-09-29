@@ -85,11 +85,13 @@ export class EventStreamSocket {
   }
 
   private ping() {
-    this.ws.ping();
-    this.pingTimeout = setTimeout(() => {
-      this.logger.error('Event stream ping timeout');
-      this.ws.terminate();
-    }, PING_TIMEOUT);
+    if (this.ws !== undefined && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.ping();
+      this.pingTimeout = setTimeout(() => {
+        this.logger.error('Event stream ping timeout');
+        this.ws.terminate();
+      }, PING_TIMEOUT);
+    }
   }
 
   private produce(message: any) {
