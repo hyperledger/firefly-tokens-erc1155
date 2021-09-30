@@ -25,6 +25,8 @@ import {
   EthConnectReturn,
   TokenBalance,
   TokenBalanceQuery,
+  TokenBurn,
+  TokenBurnEvent,
   TokenCreateEvent,
   TokenMint,
   TokenMintEvent,
@@ -237,33 +239,34 @@ describe('AppController (e2e)', () => {
     );
   });
 
-  it('Query balance', async () => {
-    const request: TokenBalanceQuery = {
-      account: '1',
-      poolId: 'F1',
-      tokenIndex: '0',
+  it('Burn token', async () => {
+    const request: TokenBurn = {
+      poolId: 'N1',
+      tokenIndex: '1',
+      from: 'A',
+      amount: 1,
+      trackingId: 'tx1',
     };
-    const response: EthConnectReturn = {
-      output: '1',
+    const response: EthConnectAsyncResponse = {
+      id: '1',
+      sent: true,
     };
 
-    http.get = jest.fn(() => new FakeObservable(response));
+    http.post = jest.fn(() => new FakeObservable(response));
 
-    await server
-      .get('/balance')
-      .query(request)
-      .expect(200)
-      .expect(<TokenBalance>{
-        balance: 1,
-      });
+    await server.post('/burn').send(request).expect(202).expect({ id: '1' });
 
-    expect(http.get).toHaveBeenCalledTimes(1);
-    expect(http.get).toHaveBeenCalledWith(`${INSTANCE_URL}/balanceOf`, {
-      params: {
-        account: '1',
-        id: '340282366920938463463374607431768211456',
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(http.post).toHaveBeenCalledWith(
+      `${INSTANCE_URL}/burn`,
+      {
+        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+        from: 'A',
+        amount: 1,
+        data: '0x7b22747261636b696e674964223a22747831227d',
       },
-    });
+      OPTIONS,
+    );
   });
 
   it('Transfer token', async () => {
@@ -295,6 +298,35 @@ describe('AppController (e2e)', () => {
       },
       OPTIONS,
     );
+  });
+
+  it('Query balance', async () => {
+    const request: TokenBalanceQuery = {
+      account: '1',
+      poolId: 'F1',
+      tokenIndex: '0',
+    };
+    const response: EthConnectReturn = {
+      output: '1',
+    };
+
+    http.get = jest.fn(() => new FakeObservable(response));
+
+    await server
+      .get('/balance')
+      .query(request)
+      .expect(200)
+      .expect(<TokenBalance>{
+        balance: 1,
+      });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${INSTANCE_URL}/balanceOf`, {
+      params: {
+        account: '1',
+        id: '340282366920938463463374607431768211456',
+      },
+    });
   });
 
   it('Websocket: token pool event', () => {
@@ -383,6 +415,60 @@ describe('AppController (e2e)', () => {
             operator: 'A',
             trackingId: 'abc',
             data: 'test',
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Websocket: token burn event', () => {
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          <TransferSingleEvent>{
+            signature: transferSingleEventSignature,
+            address: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            data: {
+              id: '340282366920938463463374607431768211456',
+              from: 'A',
+              to: ZERO_ADDRESS,
+              operator: 'A',
+              value: 1,
+              transaction: {
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+              },
+            },
+            inputMethod: 'burn',
+            inputArgs: {
+              data: '0x7b22747261636b696e674964223a22747831227d',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-burn',
+          data: <TokenBurnEvent>{
+            poolId: 'F1',
+            tokenIndex: '0',
+            from: 'A',
+            amount: 1,
+            operator: 'A',
+            trackingId: 'tx1',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',

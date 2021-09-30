@@ -27,6 +27,8 @@ import {
   PackedTokenData,
   TokenBalance,
   TokenBalanceQuery,
+  TokenBurn,
+  TokenBurnEvent,
   TokenCreateEvent,
   TokenMint,
   TokenMintEvent,
@@ -147,18 +149,6 @@ export class TokensService {
     }
   }
 
-  async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
-    const response = await this.http
-      .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
-        params: {
-          account: dto.account,
-          id: packTokenId(dto.poolId, dto.tokenIndex),
-        },
-      })
-      .toPromise();
-    return { balance: parseInt(response.data.output) };
-  }
-
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const dataToPack: PackedTokenData = {
       trackingId: dto.trackingId,
@@ -178,6 +168,38 @@ export class TokensService {
       )
       .toPromise();
     return { id: response.data.id };
+  }
+
+  async burn(dto: TokenBurn): Promise<AsyncResponse> {
+    const dataToPack: PackedTokenData = {
+      trackingId: dto.trackingId,
+      data: dto.data,
+    };
+    const response = await this.http
+      .post<EthConnectAsyncResponse>(
+        `${this.instanceUrl}/burn`,
+        {
+          from: dto.from,
+          id: packTokenId(dto.poolId, dto.tokenIndex),
+          amount: dto.amount,
+          data: encodeHex(JSON.stringify(dataToPack)),
+        },
+        this.postOptions(dto.requestId),
+      )
+      .toPromise();
+    return { id: response.data.id };
+  }
+
+  async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
+    const response = await this.http
+      .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
+        params: {
+          account: dto.account,
+          id: packTokenId(dto.poolId, dto.tokenIndex),
+        },
+      })
+      .toPromise();
+    return { balance: parseInt(response.data.output) };
   }
 }
 
@@ -254,7 +276,24 @@ class TokenListener implements EventListener {
       };
     } else if (data.to === ZERO_ADDRESS) {
       // burn
-      return undefined;
+      const parts = unpackTokenId(data.id);
+      return {
+        event: 'token-burn',
+        data: <TokenBurnEvent>{
+          poolId: parts.poolId,
+          tokenIndex: parts.tokenIndex,
+          from: data.from,
+          amount: data.value,
+          operator: data.operator,
+          trackingId: unpackedData.trackingId,
+          data: unpackedData.data,
+          transaction: {
+            blockNumber: event.blockNumber,
+            transactionIndex: event.transactionIndex,
+            transactionHash: event.transactionHash,
+          },
+        },
+      };
     } else {
       // transfer
       const parts = unpackTokenId(data.id);
