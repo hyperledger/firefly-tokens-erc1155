@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { IsDefined, IsInt, IsNotEmpty, IsOptional, Min } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
@@ -94,33 +94,6 @@ export class TokenPool {
   data?: string; // TODO: remove
 }
 
-export class TokenMint {
-  @ApiProperty()
-  @IsNotEmpty()
-  poolId: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  to: string;
-
-  @ApiProperty()
-  @IsInt()
-  @Min(1)
-  amount: number;
-
-  @ApiProperty({ description: trackingIdDescription })
-  @IsOptional()
-  trackingId?: string;
-
-  @ApiProperty({ description: requestIdDescription })
-  @IsOptional()
-  requestId?: string;
-
-  @ApiProperty()
-  @IsOptional()
-  data?: string;
-}
-
 export class TokenBalanceQuery {
   @ApiProperty()
   @IsNotEmpty()
@@ -175,6 +148,9 @@ export class TokenTransfer {
   data?: string;
 }
 
+export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {}
+export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
+
 // Websocket notifications
 
 export class BlockchainTransaction {
@@ -188,7 +164,7 @@ export class BlockchainTransaction {
   transactionHash: string;
 }
 
-export class TokenPoolEvent {
+class tokenEventBase {
   @ApiProperty()
   poolId: string;
 
@@ -202,42 +178,15 @@ export class TokenPoolEvent {
   trackingId?: string;
 
   @ApiProperty()
+  transaction: BlockchainTransaction;
+}
+
+export class TokenPoolEvent extends tokenEventBase {
+  @ApiProperty()
   data?: string; // TODO: remove
-
-  @ApiProperty()
-  transaction: BlockchainTransaction;
 }
 
-export class TokenMintEvent {
-  @ApiProperty()
-  poolId: string;
-
-  @ApiProperty()
-  tokenIndex: string;
-
-  @ApiProperty()
-  to: string;
-
-  @ApiProperty()
-  amount: number;
-
-  @ApiProperty()
-  operator: string;
-
-  @ApiProperty()
-  trackingId?: string;
-
-  @ApiProperty()
-  data?: string;
-
-  @ApiProperty()
-  transaction: BlockchainTransaction;
-}
-
-export class TokenTransferEvent {
-  @ApiProperty()
-  poolId: string;
-
+export class TokenTransferEvent extends tokenEventBase {
   @ApiProperty()
   tokenIndex: string;
 
@@ -251,14 +200,8 @@ export class TokenTransferEvent {
   amount: number;
 
   @ApiProperty()
-  operator: string;
-
-  @ApiProperty()
-  trackingId?: string;
-
-  @ApiProperty()
   data?: string;
-
-  @ApiProperty()
-  transaction: BlockchainTransaction;
 }
+
+export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
+export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) {}

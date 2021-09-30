@@ -21,6 +21,7 @@ import {
   AsyncResponse,
   TokenBalance,
   TokenBalanceQuery,
+  TokenBurn,
   TokenMint,
   TokenPool,
   TokenTransfer,
@@ -57,11 +58,17 @@ export class TokensController {
     return this.service.mint(dto);
   }
 
-  @Get('balance')
-  @ApiOperation({ summary: 'Retrieve a token balance' })
-  @ApiResponse({ status: 200, type: TokenBalance })
-  balance(@Query() query: TokenBalanceQuery) {
-    return this.service.balance(query);
+  @Post('burn')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Burn tokens',
+    description:
+      'Will be followed by a websocket notification with event=token-burn and data=TokenBurnEvent',
+  })
+  @ApiBody({ type: TokenBurn })
+  @ApiResponse({ status: 202, type: AsyncResponse })
+  burn(@Body() dto: TokenBurn) {
+    return this.service.burn(dto);
   }
 
   @Post('transfer')
@@ -75,6 +82,13 @@ export class TokensController {
   @ApiResponse({ status: 202, type: AsyncResponse })
   transfer(@Body() dto: TokenTransfer) {
     return this.service.transfer(dto);
+  }
+
+  @Get('balance')
+  @ApiOperation({ summary: 'Retrieve a token balance' })
+  @ApiResponse({ status: 200, type: TokenBalance })
+  balance(@Query() query: TokenBalanceQuery) {
+    return this.service.balance(query);
   }
 
   @Get('receipt/:id')

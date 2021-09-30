@@ -25,7 +25,12 @@ import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
-import { TokenPoolEvent, TokenMintEvent, TokenTransferEvent } from './tokens/tokens.interfaces';
+import {
+  TokenPoolEvent,
+  TokenMintEvent,
+  TokenTransferEvent,
+  TokenBurnEvent,
+} from './tokens/tokens.interfaces';
 import { AppService } from './app.service';
 
 const API_DESCRIPTION = `
@@ -54,7 +59,13 @@ async function bootstrap() {
 
   const apiConfig = getApiConfig();
   const api = SwaggerModule.createDocument(app, apiConfig, {
-    extraModels: [EventStreamReply, TokenPoolEvent, TokenMintEvent, TokenTransferEvent],
+    extraModels: [
+      EventStreamReply,
+      TokenPoolEvent,
+      TokenMintEvent,
+      TokenBurnEvent,
+      TokenTransferEvent,
+    ],
   });
   const config = app.get(ConfigService);
 
