@@ -40,6 +40,6 @@ export function unpackTokenId(id: string) {
   return {
     isFungible: isFungible,
     poolId: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
-    tokenIndex: BigInt.asUintN(128, val).toString(),
+    tokenIndex: isFungible ? undefined : BigInt.asUintN(128, val).toString(),
   };
 }

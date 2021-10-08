@@ -282,7 +282,6 @@ describe('AppController (e2e)', () => {
   it('Transfer token', async () => {
     const request: TokenTransfer = {
       poolId: 'F1',
-      tokenIndex: '0',
       from: '1',
       to: '2',
       amount: '2',
@@ -419,7 +418,6 @@ describe('AppController (e2e)', () => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             poolId: 'F1',
-            tokenIndex: '0',
             to: 'A',
             amount: '5',
             operator: 'A',
@@ -449,7 +447,7 @@ describe('AppController (e2e)', () => {
             transactionIndex: '0x0',
             transactionHash: '0x123',
             data: {
-              id: '340282366920938463463374607431768211456',
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: ZERO_ADDRESS,
               operator: 'A',
@@ -473,8 +471,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
-            poolId: 'F1',
-            tokenIndex: '0',
+            poolId: 'N1',
+            tokenIndex: '1',
             from: 'A',
             amount: '1',
             operator: 'A',
