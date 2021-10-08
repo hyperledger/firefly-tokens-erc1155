@@ -119,8 +119,8 @@ export class TokenTransfer {
   poolId: string;
 
   @ApiProperty()
-  @IsNotEmpty()
-  tokenIndex: string;
+  @IsOptional()
+  tokenIndex?: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -187,7 +187,7 @@ export class TokenPoolEvent extends tokenEventBase {
 
 export class TokenTransferEvent extends tokenEventBase {
   @ApiProperty()
-  tokenIndex: string;
+  tokenIndex?: string;
 
   @ApiProperty()
   from: string;

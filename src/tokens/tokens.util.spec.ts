@@ -40,7 +40,6 @@ describe('Util', () => {
     expect(unpackTokenId('340282366920938463463374607431768211456')).toEqual({
       isFungible: true,
       poolId: 'F1',
-      tokenIndex: '0',
     });
     expect(
       unpackTokenId(
