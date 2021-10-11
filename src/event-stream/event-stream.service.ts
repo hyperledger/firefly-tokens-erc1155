@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpService, Injectable, Logger } from '@nestjs/common';
-import { AxiosResponse } from 'axios';
+import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
 import {
@@ -144,16 +144,16 @@ export class EventStreamService {
       inputs: true,
     };
 
-    const existingStreamRes: AxiosResponse<EventStream[]> = await lastValueFrom(this.http
+    const existingStreamRes = await lastValueFrom(this.http
       .get<EventStream[]>(`${baseUrl}/eventstreams`));
     const stream = existingStreamRes.data.find(s => s.name === streamDetails.name);
     if (stream) {
-      const patchedStreamRes: AxiosResponse<EventStream> = await lastValueFrom(this.http
+      const patchedStreamRes = await lastValueFrom(this.http
         .patch<EventStream>(`${baseUrl}/eventstreams/${stream.id}`, streamDetails));
       this.logger.log(`Event stream for ${topic}: ${stream.id}`);
       return patchedStreamRes.data;
     }
-    const newStreamRes: AxiosResponse<EventStream> = await lastValueFrom(this.http
+    const newStreamRes = await lastValueFrom(this.http
       .post<EventStream>(`${baseUrl}/eventstreams`, streamDetails));
     this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
@@ -164,7 +164,7 @@ export class EventStreamService {
     event: string,
     streamId: string,
   ): Promise<EventStreamSubscription> {
-    const response: AxiosResponse<EventStreamSubscription> = await lastValueFrom(this.http
+    const response = await lastValueFrom(this.http
       .post<EventStreamSubscription>(`${instanceUrl}/${event}`, {
         name: event,
         description: event,
@@ -181,7 +181,7 @@ export class EventStreamService {
     streamId: string,
     subscriptions: string[],
   ): Promise<EventStreamSubscription[]> {
-    const existingRes: AxiosResponse<EventStreamSubscription[]> = await lastValueFrom(this.http
+    const existingRes = await lastValueFrom(this.http
       .get<EventStreamSubscription[]>(`${baseUrl}/subscriptions`));
     const results: EventStreamSubscription[] = [];
     for (const eventName of subscriptions) {

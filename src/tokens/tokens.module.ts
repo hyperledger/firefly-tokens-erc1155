@@ -14,7 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpModule, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { EventStreamProxyModule } from '../eventstream-proxy/eventstream-proxy.module';
 import { TokensController } from './tokens.controller';
 import { TokensService } from './tokens.service';

@@ -15,11 +15,15 @@
 // limitations under the License.
 
 import { Server } from 'http';
-import { Test, TestingModule } from '@nestjs/testing';
-import { HttpService, INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'superwstest';
+import { HttpService } from '@nestjs/axios';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
-import { TokensService } from '../src/tokens/tokens.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import request from 'superwstest';
+import { Event, EventStreamReply } from '../src/event-stream/event-stream.interfaces';
+import { EventStreamService } from '../src/event-stream/event-stream.service';
+import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
+import { ReceiptEvent } from '../src/eventstream-proxy/eventstream-proxy.interfaces';
 import {
   EthConnectAsyncResponse,
   EthConnectReturn,
@@ -35,13 +39,10 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
-  TransferSingleEvent,
+  TransferSingleEvent
 } from '../src/tokens/tokens.interfaces';
-import { EventStreamService } from '../src/event-stream/event-stream.service';
-import { Event, EventStreamReply } from '../src/event-stream/event-stream.interfaces';
-import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
+import { TokensService } from '../src/tokens/tokens.service';
 import { WebSocketMessage } from '../src/websocket-events/websocket-events.base';
-import { ReceiptEvent } from '../src/eventstream-proxy/eventstream-proxy.interfaces';
 import { AppModule } from './../src/app.module';
 
 const BASE_URL = 'http://eth';

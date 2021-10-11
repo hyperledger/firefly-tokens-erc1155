@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpService, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { AxiosResponse } from 'axios';
+import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
@@ -79,7 +79,7 @@ export class TokensService {
   }
 
   async getReceipt(id: string): Promise<EventStreamReply> {
-    const response: AxiosResponse<EventStreamReply> = await lastValueFrom(this.http
+    const response = await lastValueFrom(this.http
       .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
         validateStatus: status => {
           return status < 300 || status === 404;
