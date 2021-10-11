@@ -129,6 +129,9 @@ export class TokensService {
         .toPromise();
       return { id: response.data.id };
     } else {
+      // In the case of a non-fungible token:
+      // - We parse the value as a whole integer count of NFTs to mint
+      // - We require the number to be small enough to express as a JS number (we're packing into an array)
       const to: string[] = [];
       const amount = parseInt(dto.amount);
       for (let i = 0; i < amount; i++) {
