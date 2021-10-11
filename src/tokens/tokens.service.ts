@@ -130,7 +130,8 @@ export class TokensService {
       return { id: response.data.id };
     } else {
       const to: string[] = [];
-      for (let i = 0; i < dto.amount; i++) {
+      const amount = parseInt(dto.amount);
+      for (let i = 0; i < amount; i++) {
         to.push(dto.to);
       }
 
@@ -199,7 +200,7 @@ export class TokensService {
         },
       })
       .toPromise();
-    return { balance: parseInt(response.data.output) };
+    return { balance: response.data.output };
   }
 }
 

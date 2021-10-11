@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { IsDefined, IsInt, IsNotEmpty, IsOptional, Min } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsOptional } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
 // Ethconnect interfaces
@@ -42,7 +42,7 @@ export interface TransferSingleEvent extends Event {
     to: string;
     operator: string;
     id: string;
-    value: number;
+    value: string;
   };
 }
 
@@ -110,7 +110,7 @@ export class TokenBalanceQuery {
 
 export class TokenBalance {
   @ApiProperty()
-  balance: number;
+  balance: string;
 }
 
 export class TokenTransfer {
@@ -131,9 +131,8 @@ export class TokenTransfer {
   to: string;
 
   @ApiProperty()
-  @IsInt()
-  @Min(1)
-  amount: number;
+  @IsNotEmpty()
+  amount: string;
 
   @ApiProperty({ description: trackingIdDescription })
   @IsOptional()
@@ -197,7 +196,7 @@ export class TokenTransferEvent extends tokenEventBase {
   to: string;
 
   @ApiProperty()
-  amount: number;
+  amount: string;
 
   @ApiProperty()
   data?: string;
