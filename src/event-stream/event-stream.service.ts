@@ -14,13 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpService, Injectable, Logger } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
+import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
 import {
   Event,
   EventStream,
   EventStreamReply,
-  EventStreamSubscription,
+  EventStreamSubscription
 } from './event-stream.interfaces';
 
 const RECONNECT_TIME = 5000;
@@ -142,22 +144,19 @@ export class EventStreamService {
       inputs: true,
     };
 
-    const { data: existingStreams } = await this.http
-      .get<EventStream[]>(`${baseUrl}/eventstreams`)
-      .toPromise();
-    const stream = existingStreams.find(s => s.name === streamDetails.name);
+    const existingStreamRes = await lastValueFrom(this.http
+      .get<EventStream[]>(`${baseUrl}/eventstreams`));
+    const stream = existingStreamRes.data.find(s => s.name === streamDetails.name);
     if (stream) {
-      const { data: patchedStream } = await this.http
-        .patch<EventStream>(`${baseUrl}/eventstreams/${stream.id}`, streamDetails)
-        .toPromise();
+      const patchedStreamRes = await lastValueFrom(this.http
+        .patch<EventStream>(`${baseUrl}/eventstreams/${stream.id}`, streamDetails));
       this.logger.log(`Event stream for ${topic}: ${stream.id}`);
-      return patchedStream;
+      return patchedStreamRes.data;
     }
-    const { data: newStream } = await this.http
-      .post<EventStream>(`${baseUrl}/eventstreams`, streamDetails)
-      .toPromise();
-    this.logger.log(`Event stream for ${topic}: ${newStream.id}`);
-    return newStream;
+    const newStreamRes = await lastValueFrom(this.http
+      .post<EventStream>(`${baseUrl}/eventstreams`, streamDetails));
+    this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
+    return newStreamRes.data;
   }
 
   private async createSubscription(
@@ -165,14 +164,13 @@ export class EventStreamService {
     event: string,
     streamId: string,
   ): Promise<EventStreamSubscription> {
-    const response = await this.http
+    const response = await lastValueFrom(this.http
       .post<EventStreamSubscription>(`${instanceUrl}/${event}`, {
         name: event,
         description: event,
         stream: streamId,
         fromBlock: '0', // subscribe from the start of the chain
-      })
-      .toPromise();
+      }));
     this.logger.log(`Created subscription ${event}: ${response.data.id}`);
     return response.data;
   }
@@ -183,12 +181,11 @@ export class EventStreamService {
     streamId: string,
     subscriptions: string[],
   ): Promise<EventStreamSubscription[]> {
-    const { data: existing } = await this.http
-      .get<EventStreamSubscription[]>(`${baseUrl}/subscriptions`)
-      .toPromise();
+    const existingRes = await lastValueFrom(this.http
+      .get<EventStreamSubscription[]>(`${baseUrl}/subscriptions`));
     const results: EventStreamSubscription[] = [];
     for (const eventName of subscriptions) {
-      const sub = existing.find(s => s.name === eventName && s.stream === streamId);
+      const sub = existingRes.data.find(s => s.name === eventName && s.stream === streamId);
       if (sub) {
         this.logger.log(`Subscription for ${eventName}: ${sub.id}`);
         results.push(sub);

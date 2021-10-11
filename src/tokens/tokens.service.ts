@@ -14,12 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { HttpService, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { WebSocketMessage } from '../websocket-events/websocket-events.base';
-import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
-import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
+import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { lastValueFrom } from 'rxjs';
 import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
-import { isFungible, packTokenId, unpackTokenId, encodeHex, decodeHex } from './tokens.util';
+import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
+import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
+import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import {
   AsyncResponse,
   EthConnectAsyncResponse,
@@ -37,8 +38,9 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
-  TransferSingleEvent,
+  TransferSingleEvent
 } from './tokens.interfaces';
+import { decodeHex, encodeHex, isFungible, packTokenId, unpackTokenId } from './tokens.util';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -77,13 +79,12 @@ export class TokensService {
   }
 
   async getReceipt(id: string): Promise<EventStreamReply> {
-    const response = await this.http
+    const response = await lastValueFrom(this.http
       .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
         validateStatus: status => {
           return status < 300 || status === 404;
         },
-      })
-      .toPromise();
+      }));
     if (response.status === 404) {
       throw new NotFoundException();
     }
@@ -95,7 +96,7 @@ export class TokensService {
       trackingId: dto.trackingId,
       data: dto.data, // TODO: remove
     };
-    const response = await this.http
+    const response = await lastValueFrom(this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
@@ -103,8 +104,7 @@ export class TokensService {
           data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
-      )
-      .toPromise();
+      ));
     return { id: response.data.id };
   }
 
@@ -115,7 +115,7 @@ export class TokensService {
       data: dto.data,
     };
     if (isFungible(dto.poolId)) {
-      const response = await this.http
+      const response = await lastValueFrom(this.http
         .post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintFungible`,
           {
@@ -125,8 +125,7 @@ export class TokensService {
             data: encodeHex(JSON.stringify(dataToPack)),
           },
           this.postOptions(dto.requestId),
-        )
-        .toPromise();
+        ));
       return { id: response.data.id };
     } else {
       // In the case of a non-fungible token:
@@ -138,7 +137,7 @@ export class TokensService {
         to.push(dto.to);
       }
 
-      const response = await this.http
+      const response = await lastValueFrom(this.http
         .post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintNonFungible`,
           {
@@ -147,8 +146,7 @@ export class TokensService {
             data: encodeHex(JSON.stringify(dataToPack)),
           },
           this.postOptions(dto.requestId),
-        )
-        .toPromise();
+        ));
       return { id: response.data.id };
     }
   }
@@ -158,7 +156,7 @@ export class TokensService {
       trackingId: dto.trackingId,
       data: dto.data,
     };
-    const response = await this.http
+    const response = await lastValueFrom(this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/safeTransferFrom`,
         {
@@ -169,8 +167,7 @@ export class TokensService {
           data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
-      )
-      .toPromise();
+      ));
     return { id: response.data.id };
   }
 
@@ -179,7 +176,7 @@ export class TokensService {
       trackingId: dto.trackingId,
       data: dto.data,
     };
-    const response = await this.http
+    const response = await lastValueFrom(this.http
       .post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/burn`,
         {
@@ -189,20 +186,18 @@ export class TokensService {
           data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
-      )
-      .toPromise();
+      ));
     return { id: response.data.id };
   }
 
   async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
-    const response = await this.http
+    const response = await lastValueFrom(this.http
       .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
           account: dto.account,
           id: packTokenId(dto.poolId, dto.tokenIndex),
         },
-      })
-      .toPromise();
+      }));
     return { balance: response.data.output };
   }
 }
