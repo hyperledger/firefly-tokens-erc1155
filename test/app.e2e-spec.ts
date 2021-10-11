@@ -15,6 +15,8 @@
 // limitations under the License.
 
 import { Server } from 'http';
+import { Observer } from 'rxjs';
+import { AxiosResponse } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
@@ -63,8 +65,15 @@ const transferSingleEventSignature = 'TransferSingle(address,address,address,uin
 class FakeObservable<T> {
   constructor(public data: T) {}
 
-  toPromise() {
-    return this;
+  subscribe(observer?: Partial<Observer<AxiosResponse<T>>>) {
+    observer?.next && observer?.next({
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+      data: this.data,
+    });
+    observer?.complete && observer?.complete();
   }
 }
 
