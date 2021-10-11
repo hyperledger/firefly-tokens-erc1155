@@ -186,7 +186,7 @@ describe('AppController (e2e)', () => {
     const request: TokenMint = {
       poolId: 'F1',
       to: '1',
-      amount: 2,
+      amount: '2',
       trackingId: 'abc',
       data: 'test',
     };
@@ -205,7 +205,7 @@ describe('AppController (e2e)', () => {
       {
         type_id: '340282366920938463463374607431768211456',
         to: ['1'],
-        amounts: [2],
+        amounts: ['2'],
         data: '0x7b22747261636b696e674964223a22616263222c2264617461223a2274657374227d',
       },
       OPTIONS,
@@ -216,7 +216,7 @@ describe('AppController (e2e)', () => {
     const request: TokenMint = {
       poolId: 'N1',
       to: '1',
-      amount: 2,
+      amount: '2',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -244,7 +244,7 @@ describe('AppController (e2e)', () => {
       poolId: 'N1',
       tokenIndex: '1',
       from: 'A',
-      amount: 1,
+      amount: '1',
       trackingId: 'tx1',
     };
     const response: EthConnectAsyncResponse = {
@@ -262,7 +262,7 @@ describe('AppController (e2e)', () => {
       {
         id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
         from: 'A',
-        amount: 1,
+        amount: '1',
         data: '0x7b22747261636b696e674964223a22747831227d',
       },
       OPTIONS,
@@ -275,7 +275,7 @@ describe('AppController (e2e)', () => {
       tokenIndex: '0',
       from: '1',
       to: '2',
-      amount: 2,
+      amount: '2',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -293,7 +293,7 @@ describe('AppController (e2e)', () => {
         id: '340282366920938463463374607431768211456',
         from: '1',
         to: '2',
-        amount: 2,
+        amount: '2',
         data: '0x7b7d',
       },
       OPTIONS,
@@ -317,7 +317,7 @@ describe('AppController (e2e)', () => {
       .query(request)
       .expect(200)
       .expect(<TokenBalance>{
-        balance: 1,
+        balance: '1',
       });
 
     expect(http.get).toHaveBeenCalledTimes(1);
@@ -388,7 +388,7 @@ describe('AppController (e2e)', () => {
               from: ZERO_ADDRESS,
               to: 'A',
               operator: 'A',
-              value: 5,
+              value: '5',
               transaction: {
                 blockNumber: '1',
                 transactionIndex: '0x0',
@@ -411,7 +411,7 @@ describe('AppController (e2e)', () => {
             poolId: 'F1',
             tokenIndex: '0',
             to: 'A',
-            amount: 5,
+            amount: '5',
             operator: 'A',
             trackingId: 'abc',
             data: 'test',
@@ -443,7 +443,7 @@ describe('AppController (e2e)', () => {
               from: 'A',
               to: ZERO_ADDRESS,
               operator: 'A',
-              value: 1,
+              value: '1',
               transaction: {
                 blockNumber: '1',
                 transactionIndex: '0x0',
@@ -466,7 +466,7 @@ describe('AppController (e2e)', () => {
             poolId: 'F1',
             tokenIndex: '0',
             from: 'A',
-            amount: 1,
+            amount: '1',
             operator: 'A',
             trackingId: 'tx1',
             transaction: {
@@ -497,7 +497,7 @@ describe('AppController (e2e)', () => {
               from: 'A',
               to: 'B',
               operator: 'A',
-              value: 1,
+              value: '1',
             },
           },
         ]);
@@ -512,7 +512,7 @@ describe('AppController (e2e)', () => {
             tokenIndex: '1',
             from: 'A',
             to: 'B',
-            amount: 1,
+            amount: '1',
             operator: 'A',
             transaction: {
               blockNumber: '1',
@@ -665,7 +665,7 @@ describe('AppController (e2e)', () => {
         from: ZERO_ADDRESS,
         to: 'A',
         operator: 'A',
-        value: 5,
+        value: '5',
       },
     };
 
