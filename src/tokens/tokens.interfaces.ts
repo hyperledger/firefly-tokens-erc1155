@@ -182,6 +182,9 @@ class tokenEventBase {
 
 export class TokenPoolEvent extends tokenEventBase {
   @ApiProperty()
+  standard: string;
+
+  @ApiProperty()
   data?: string; // TODO: remove
 }
 
