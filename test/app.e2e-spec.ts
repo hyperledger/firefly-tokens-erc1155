@@ -367,6 +367,7 @@ describe('AppController (e2e)', () => {
           data: <TokenPoolEvent>{
             data: 'test',
             trackingId: 'tx1',
+            standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
             operator: 'bob',

@@ -42,6 +42,7 @@ import {
 } from './tokens.interfaces';
 import { decodeHex, encodeHex, isFungible, packTokenId, unpackTokenId } from './tokens.util';
 
+const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
@@ -234,13 +235,14 @@ class TokenListener implements EventListener {
 
   private transformTokenCreateEvent(event: TokenCreateEvent): WebSocketMessage {
     const { data } = event;
-    const parts = unpackTokenId(data.type_id);
+    const unpackedId = unpackTokenId(data.type_id);
     const unpackedData = this.safeUnpackData(data.data);
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
-        poolId: parts.poolId,
-        type: parts.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+        standard: TOKEN_STANDARD,
+        poolId: unpackedId.poolId,
+        type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
         trackingId: unpackedData.trackingId,
         data: unpackedData.data, // TODO: remove
@@ -255,6 +257,7 @@ class TokenListener implements EventListener {
 
   private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
     const { data } = event;
+    const unpackedId = unpackTokenId(data.id);
     const unpackedData = this.safeUnpackData(event.inputArgs?.data);
 
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
@@ -262,12 +265,11 @@ class TokenListener implements EventListener {
       return undefined;
     } else if (data.from === ZERO_ADDRESS) {
       // mint
-      const parts = unpackTokenId(data.id);
       return {
         event: 'token-mint',
         data: <TokenMintEvent>{
-          poolId: parts.poolId,
-          tokenIndex: parts.tokenIndex,
+          poolId: unpackedId.poolId,
+          tokenIndex: unpackedId.tokenIndex,
           to: data.to,
           amount: data.value,
           operator: data.operator,
@@ -282,12 +284,11 @@ class TokenListener implements EventListener {
       };
     } else if (data.to === ZERO_ADDRESS) {
       // burn
-      const parts = unpackTokenId(data.id);
       return {
         event: 'token-burn',
         data: <TokenBurnEvent>{
-          poolId: parts.poolId,
-          tokenIndex: parts.tokenIndex,
+          poolId: unpackedId.poolId,
+          tokenIndex: unpackedId.tokenIndex,
           from: data.from,
           amount: data.value,
           operator: data.operator,
@@ -302,12 +303,11 @@ class TokenListener implements EventListener {
       };
     } else {
       // transfer
-      const parts = unpackTokenId(data.id);
       return {
         event: 'token-transfer',
         data: <TokenTransferEvent>{
-          poolId: parts.poolId,
-          tokenIndex: parts.tokenIndex,
+          poolId: unpackedId.poolId,
+          tokenIndex: unpackedId.tokenIndex,
           from: data.from,
           to: data.to,
           amount: data.value,
