@@ -41,7 +41,7 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
-  TransferSingleEvent
+  TransferSingleEvent,
 } from '../src/tokens/tokens.interfaces';
 import { TokensService } from '../src/tokens/tokens.service';
 import { WebSocketMessage } from '../src/websocket-events/websocket-events.base';
@@ -66,13 +66,14 @@ class FakeObservable<T> {
   constructor(public data: T) {}
 
   subscribe(observer?: Partial<Observer<AxiosResponse<T>>>) {
-    observer?.next && observer?.next({
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {},
-      data: this.data,
-    });
+    observer?.next &&
+      observer?.next({
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {},
+        data: this.data,
+      });
     observer?.complete && observer?.complete();
   }
 }

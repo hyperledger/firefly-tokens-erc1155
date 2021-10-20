@@ -38,7 +38,7 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
-  TransferSingleEvent
+  TransferSingleEvent,
 } from './tokens.interfaces';
 import { decodeHex, encodeHex, isFungible, packTokenId, unpackTokenId } from './tokens.util';
 
@@ -79,12 +79,13 @@ export class TokensService {
   }
 
   async getReceipt(id: string): Promise<EventStreamReply> {
-    const response = await lastValueFrom(this.http
-      .get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
+    const response = await lastValueFrom(
+      this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
         validateStatus: status => {
           return status < 300 || status === 404;
         },
-      }));
+      }),
+    );
     if (response.status === 404) {
       throw new NotFoundException();
     }
@@ -96,15 +97,16 @@ export class TokensService {
       trackingId: dto.trackingId,
       data: dto.data, // TODO: remove
     };
-    const response = await lastValueFrom(this.http
-      .post<EthConnectAsyncResponse>(
+    const response = await lastValueFrom(
+      this.http.post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
           is_fungible: dto.type === TokenType.FUNGIBLE,
           data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
-      ));
+      ),
+    );
     return { id: response.data.id };
   }
 
@@ -115,8 +117,8 @@ export class TokensService {
       data: dto.data,
     };
     if (isFungible(dto.poolId)) {
-      const response = await lastValueFrom(this.http
-        .post<EthConnectAsyncResponse>(
+      const response = await lastValueFrom(
+        this.http.post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintFungible`,
           {
             type_id: typeId,
@@ -125,7 +127,8 @@ export class TokensService {
             data: encodeHex(JSON.stringify(dataToPack)),
           },
           this.postOptions(dto.requestId),
-        ));
+        ),
+      );
       return { id: response.data.id };
     } else {
       // In the case of a non-fungible token:
@@ -137,8 +140,8 @@ export class TokensService {
         to.push(dto.to);
       }
 
-      const response = await lastValueFrom(this.http
-        .post<EthConnectAsyncResponse>(
+      const response = await lastValueFrom(
+        this.http.post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintNonFungible`,
           {
             type_id: typeId,
@@ -146,7 +149,8 @@ export class TokensService {
             data: encodeHex(JSON.stringify(dataToPack)),
           },
           this.postOptions(dto.requestId),
-        ));
+        ),
+      );
       return { id: response.data.id };
     }
   }
@@ -156,8 +160,8 @@ export class TokensService {
       trackingId: dto.trackingId,
       data: dto.data,
     };
-    const response = await lastValueFrom(this.http
-      .post<EthConnectAsyncResponse>(
+    const response = await lastValueFrom(
+      this.http.post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/safeTransferFrom`,
         {
           from: dto.from,
@@ -167,7 +171,8 @@ export class TokensService {
           data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
-      ));
+      ),
+    );
     return { id: response.data.id };
   }
 
@@ -176,8 +181,8 @@ export class TokensService {
       trackingId: dto.trackingId,
       data: dto.data,
     };
-    const response = await lastValueFrom(this.http
-      .post<EthConnectAsyncResponse>(
+    const response = await lastValueFrom(
+      this.http.post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/burn`,
         {
           from: dto.from,
@@ -186,18 +191,20 @@ export class TokensService {
           data: encodeHex(JSON.stringify(dataToPack)),
         },
         this.postOptions(dto.requestId),
-      ));
+      ),
+    );
     return { id: response.data.id };
   }
 
   async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
-    const response = await lastValueFrom(this.http
-      .get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
+    const response = await lastValueFrom(
+      this.http.get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
           account: dto.account,
           id: packTokenId(dto.poolId, dto.tokenIndex),
         },
-      }));
+      }),
+    );
     return { balance: response.data.output };
   }
 }
