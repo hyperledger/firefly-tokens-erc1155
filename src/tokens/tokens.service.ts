@@ -52,27 +52,25 @@ const transferSingleEventSignature = 'TransferSingle(address,address,address,uin
 export class TokensService {
   baseUrl: string;
   instanceUrl: string;
-  identity: string;
   shortPrefix: string;
 
   constructor(private http: HttpService, proxy: EventStreamProxyGateway) {
     proxy.addListener(new TokenListener());
   }
 
-  configure(baseUrl: string, instanceUrl: string, identity: string, shortPrefix: string) {
+  configure(baseUrl: string, instanceUrl: string, shortPrefix: string) {
     this.baseUrl = baseUrl;
     this.instanceUrl = instanceUrl;
-    this.identity = identity;
     this.shortPrefix = shortPrefix;
   }
 
-  private postOptions(operator?: string, requestId?: string) {
+  private postOptions(operator: string, requestId?: string) {
     const from = `${this.shortPrefix}-from`;
     const sync = `${this.shortPrefix}-sync`;
     const id = `${this.shortPrefix}-id`;
     return {
       params: {
-        [from]: operator ?? this.identity,
+        [from]: operator,
         [sync]: 'false',
         [id]: requestId,
       },
