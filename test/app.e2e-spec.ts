@@ -172,6 +172,7 @@ describe('AppController (e2e)', () => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
       data: 'test',
+      operator: '0xabc',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -189,7 +190,13 @@ describe('AppController (e2e)', () => {
         data: '0x7b2264617461223a2274657374227d',
         is_fungible: false,
       },
-      OPTIONS,
+      {
+        ...OPTIONS,
+        params: {
+          ...OPTIONS.params,
+          'fly-from': '0xabc',
+        },
+      },
     );
   });
 

@@ -66,13 +66,13 @@ export class TokensService {
     this.shortPrefix = shortPrefix;
   }
 
-  private postOptions(requestId?: string) {
+  private postOptions(operator?: string, requestId?: string) {
     const from = `${this.shortPrefix}-from`;
     const sync = `${this.shortPrefix}-sync`;
     const id = `${this.shortPrefix}-id`;
     return {
       params: {
-        [from]: this.identity,
+        [from]: operator ?? this.identity,
         [sync]: 'false',
         [id]: requestId,
       },
@@ -105,7 +105,7 @@ export class TokensService {
           is_fungible: dto.type === TokenType.FUNGIBLE,
           data: encodeHex(JSON.stringify(dataToPack)),
         },
-        this.postOptions(dto.requestId),
+        this.postOptions(dto.operator, dto.requestId),
       ),
     );
     return { id: response.data.id };
@@ -127,7 +127,7 @@ export class TokensService {
             amounts: [dto.amount],
             data: encodeHex(JSON.stringify(dataToPack)),
           },
-          this.postOptions(dto.requestId),
+          this.postOptions(dto.operator, dto.requestId),
         ),
       );
       return { id: response.data.id };
@@ -149,7 +149,7 @@ export class TokensService {
             to,
             data: encodeHex(JSON.stringify(dataToPack)),
           },
-          this.postOptions(dto.requestId),
+          this.postOptions(dto.operator, dto.requestId),
         ),
       );
       return { id: response.data.id };
@@ -171,7 +171,7 @@ export class TokensService {
           amount: dto.amount,
           data: encodeHex(JSON.stringify(dataToPack)),
         },
-        this.postOptions(dto.requestId),
+        this.postOptions(dto.operator, dto.requestId),
       ),
     );
     return { id: response.data.id };
@@ -191,7 +191,7 @@ export class TokensService {
           amount: dto.amount,
           data: encodeHex(JSON.stringify(dataToPack)),
         },
-        this.postOptions(dto.requestId),
+        this.postOptions(dto.operator, dto.requestId),
       ),
     );
     return { id: response.data.id };

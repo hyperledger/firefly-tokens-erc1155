@@ -77,6 +77,10 @@ export class TokenPool {
   @IsDefined()
   type: TokenType;
 
+  @ApiProperty()
+  @IsOptional()
+  operator?: string;
+
   @ApiProperty({ description: trackingIdDescription })
   @IsOptional()
   trackingId?: string;
@@ -121,6 +125,10 @@ export class TokenTransfer {
   @ApiProperty()
   @IsOptional()
   tokenIndex?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  operator?: string;
 
   @ApiProperty()
   @IsNotEmpty()
