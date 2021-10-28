@@ -15,6 +15,7 @@ connecting to `/api/ws`.
 
 * `POST /pool` - Create a new token pool (inputs: type, data)
 * `POST /mint` - Mint new tokens (inputs: poolId, to, amount, data)
+* `POST /burn` - Burn tokens (inputs: poolId, tokenIndex, from, amount, data)
 * `POST /transfer` - Transfer tokens (inputs: poolId, tokenIndex, from, to, amount, data)
 * `GET /balance` - Get token balance (inputs: poolId, tokenIndex, account)
 
@@ -31,6 +32,7 @@ Successful operations will also result in a more detailed event of the form
 
 * `token-pool` - Token pool created (outputs: poolId, operator, type, data)
 * `token-mint` - Tokens minted (outputs: poolId, tokenIndex, operator, to, amount, data)
+* `token-burn` - Tokens burned (outputs: poolId, tokenIndex, operator, from, amount, data)
 * `token-transfer` - Tokens transferred (outputs: poolId, tokenIndex, operator, from, to, amount, data)
 
 For these events, if multiple websocket clients are connected, only one will receive them.
