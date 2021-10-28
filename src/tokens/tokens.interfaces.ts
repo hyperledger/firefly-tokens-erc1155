@@ -92,10 +92,6 @@ export class TokenPool {
   @ApiProperty({ description: poolConfigDescription })
   @IsOptional()
   config?: any;
-
-  @ApiProperty()
-  @IsOptional()
-  data?: string; // TODO: remove
 }
 
 export class TokenBalanceQuery {
@@ -191,9 +187,6 @@ class tokenEventBase {
 export class TokenPoolEvent extends tokenEventBase {
   @ApiProperty()
   standard: string;
-
-  @ApiProperty()
-  data?: string; // TODO: remove
 }
 
 export class TokenTransferEvent extends tokenEventBase {

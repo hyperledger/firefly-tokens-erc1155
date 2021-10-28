@@ -140,7 +140,6 @@ describe('AppController (e2e)', () => {
       type: TokenType.FUNGIBLE,
       requestId: 'op1',
       trackingId: 'tx1',
-      data: 'test',
       operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
@@ -156,7 +155,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x7b22747261636b696e674964223a22747831222c2264617461223a2274657374227d',
+        data: '0x7b22747261636b696e674964223a22747831227d',
         is_fungible: true,
       },
       {
@@ -172,7 +171,6 @@ describe('AppController (e2e)', () => {
   it('Create non-fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
-      data: 'test',
       operator: '0xabc',
     };
     const response: EthConnectAsyncResponse = {
@@ -188,7 +186,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x7b2264617461223a2274657374227d',
+        data: '0x7b7d',
         is_fungible: false,
       },
       {
@@ -377,7 +375,6 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            data: 'test',
             trackingId: 'tx1',
             standard: 'ERC1155',
             poolId: 'F1',
