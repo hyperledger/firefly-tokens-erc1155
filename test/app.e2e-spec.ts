@@ -125,7 +125,7 @@ describe('AppController (e2e)', () => {
     await app.init();
 
     app.get(EventStreamProxyGateway).configure('url', 'topic');
-    app.get(TokensService).configure(BASE_URL, INSTANCE_URL, IDENTITY, PREFIX);
+    app.get(TokensService).configure(BASE_URL, INSTANCE_URL, PREFIX);
 
     (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());
@@ -141,6 +141,7 @@ describe('AppController (e2e)', () => {
       requestId: 'op1',
       trackingId: 'tx1',
       data: 'test',
+      operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: 'op1',
@@ -207,6 +208,7 @@ describe('AppController (e2e)', () => {
       amount: '2',
       trackingId: 'abc',
       data: 'test',
+      operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -235,6 +237,7 @@ describe('AppController (e2e)', () => {
       poolId: 'N1',
       to: '1',
       amount: '2',
+      operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -264,6 +267,7 @@ describe('AppController (e2e)', () => {
       from: 'A',
       amount: '1',
       trackingId: 'tx1',
+      operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -293,6 +297,7 @@ describe('AppController (e2e)', () => {
       from: '1',
       to: '2',
       amount: '2',
+      operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
