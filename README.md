@@ -8,35 +8,52 @@ Based on [Node.js](http://nodejs.org) and [Nest](http://nestjs.com).
 This service is entirely stateless - it maps incoming REST operations directly to ethconnect
 calls, and maps ethconnect events to outgoing websocket events.
 
-## API Overview
+## POST APIs
 
-APIs all reside under `/api/v1`, and websocket notifications can be received by
-connecting to `/api/ws`.
+The following POST APIs are exposed under `/api/v1`:
 
-* `POST /pool` - Create a new token pool (inputs: type, data)
+* `POST /pool` - Create a new token pool (inputs: type)
 * `POST /mint` - Mint new tokens (inputs: poolId, to, amount, data)
 * `POST /burn` - Burn tokens (inputs: poolId, tokenIndex, from, amount, data)
 * `POST /transfer` - Transfer tokens (inputs: poolId, tokenIndex, from, to, amount, data)
-* `GET /balance` - Get token balance (inputs: poolId, tokenIndex, account)
 
-All POST APIs are async and return 202 immediately with a response of the form
-`{id: string}`. When the operation finishes, the result will be reported on the
-websocket with the event:
+All requests may be optionally accompanied by two user-supplied IDs to assist in tracking:
+* `requestId` - Must be unique for every request, will be returned in the "receipt" websocket event
+* `trackingId` - May be unique or reused, will be returned in any other websocket events
+  triggered by a successful transaction
+
+All APIs are async and return 202 immediately with a response of the form `{id: string}`.
+If no `requestId` was provided, this will be a randomly assigned ID. Clients should
+subscribe to the websocket (see below) in order to receive feedback when the async
+operation completes.
+
+## Websocket events
+
+Websocket notifications can be received by connecting to `/api/ws`.
+All events have the form `{event: string, id: string, data: any}`.
+
+When any POST operation completes, it will trigger a websocket event of the form:
 `{event: "receipt", data: {id: string, success: bool, message?: string}}`.
 This event is sent to all connected websocket clients and is informative only (does
-not require any acknowledgment). Receipts can also be manually queried from the
-`GET /receipt/:id` API.
+not require any acknowledgment).
 
-Successful operations will also result in a more detailed event of the form
-`{event: string, id: string, data: any}`, with the following event types:
+Successful POST operations will also result in a detailed event corresponding to the type of
+transaction that was performed. The events and corresponding data items are:
 
 * `token-pool` - Token pool created (outputs: poolId, operator, type, data)
 * `token-mint` - Tokens minted (outputs: poolId, tokenIndex, operator, to, amount, data)
 * `token-burn` - Tokens burned (outputs: poolId, tokenIndex, operator, from, amount, data)
 * `token-transfer` - Tokens transferred (outputs: poolId, tokenIndex, operator, from, to, amount, data)
 
-For these events, if multiple websocket clients are connected, only one will receive them.
-Each one _must_ be acknowledged by replying on the websocket with `{event: "ack", data: {id}}`.
+If multiple websocket clients are connected, only one will receive these events.
+Each one of these _must_ be acknowledged by replying on the websocket with `{event: "ack", data: {id}}`.
+
+## GET APIs
+
+The following GET APIs are exposed under `/api/v1`:
+
+* `GET /balance` - Get token balance (inputs: poolId, tokenIndex, account)
+* `GET /receipt/:id` - Get receipt for a previous request
 
 ## Installation
 
