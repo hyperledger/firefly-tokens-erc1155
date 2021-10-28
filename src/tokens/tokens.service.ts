@@ -94,7 +94,6 @@ export class TokensService {
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
     const dataToPack: PackedTokenData = {
       trackingId: dto.trackingId,
-      data: dto.data, // TODO: remove
     };
     const response = await lastValueFrom(
       this.http.post<EthConnectAsyncResponse>(
@@ -243,7 +242,6 @@ class TokenListener implements EventListener {
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
         trackingId: unpackedData.trackingId,
-        data: unpackedData.data, // TODO: remove
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
