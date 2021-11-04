@@ -74,7 +74,6 @@ async function bootstrap() {
   const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
   const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
-  const identity = config.get<string>('ETHCONNECT_IDENTITY', '');
   const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
   const autoInit = config.get<string>('AUTO_INIT', 'true');
 
@@ -83,7 +82,7 @@ async function bootstrap() {
 
   app.get(AppService).configure(ethConnectUrl, instanceUrl, topic);
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
-  app.get(TokensService).configure(ethConnectUrl, instanceUrl, identity, shortPrefix);
+  app.get(TokensService).configure(ethConnectUrl, instanceUrl, shortPrefix);
 
   if (autoInit !== 'false') {
     await app.get(AppService).init();
