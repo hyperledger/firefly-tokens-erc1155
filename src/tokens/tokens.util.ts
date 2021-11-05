@@ -15,11 +15,16 @@
 // limitations under the License.
 
 export function encodeHex(data: string) {
-  return '0x' + Buffer.from(data, 'utf8').toString('hex');
+  const encoded = Buffer.from(data, 'utf8').toString('hex');
+  // Ethconnect does not handle empty byte arguments well, so we encode a single null byte
+  // when there is no data.
+  // See https://github.com/hyperledger/firefly-ethconnect/issues/133
+  return encoded === '' ? '0x00' : '0x' + encoded;
 }
 
 export function decodeHex(data: string) {
-  return Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
+  const decoded = Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
+  return decoded === '\x00' ? '' : decoded;
 }
 
 export function isFungible(poolId: string) {

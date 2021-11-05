@@ -139,7 +139,7 @@ describe('AppController (e2e)', () => {
     const request: TokenPool = {
       type: TokenType.FUNGIBLE,
       requestId: 'op1',
-      trackingId: 'tx1',
+      data: 'tx1',
       operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
@@ -155,7 +155,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x7b22747261636b696e674964223a22747831227d',
+        data: '0x747831',
         is_fungible: true,
       },
       {
@@ -186,7 +186,7 @@ describe('AppController (e2e)', () => {
     expect(http.post).toHaveBeenCalledWith(
       `${INSTANCE_URL}/create`,
       {
-        data: '0x7b7d',
+        data: '0x00',
         is_fungible: false,
       },
       {
@@ -204,7 +204,6 @@ describe('AppController (e2e)', () => {
       poolId: 'F1',
       to: '1',
       amount: '2',
-      trackingId: 'abc',
       data: 'test',
       operator: IDENTITY,
     };
@@ -224,7 +223,7 @@ describe('AppController (e2e)', () => {
         type_id: '340282366920938463463374607431768211456',
         to: ['1'],
         amounts: ['2'],
-        data: '0x7b22747261636b696e674964223a22616263222c2264617461223a2274657374227d',
+        data: '0x74657374',
       },
       OPTIONS,
     );
@@ -252,7 +251,7 @@ describe('AppController (e2e)', () => {
       {
         type_id: '57896044618658097711785492504343953926975274699741220483192166611388333031424',
         to: ['1', '1'],
-        data: '0x7b7d',
+        data: '0x00',
       },
       OPTIONS,
     );
@@ -264,7 +263,7 @@ describe('AppController (e2e)', () => {
       tokenIndex: '1',
       from: 'A',
       amount: '1',
-      trackingId: 'tx1',
+      data: 'tx1',
       operator: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
@@ -283,7 +282,7 @@ describe('AppController (e2e)', () => {
         id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
         from: 'A',
         amount: '1',
-        data: '0x7b22747261636b696e674964223a22747831227d',
+        data: '0x747831',
       },
       OPTIONS,
     );
@@ -314,7 +313,7 @@ describe('AppController (e2e)', () => {
         from: '1',
         to: '2',
         amount: '2',
-        data: '0x7b7d',
+        data: '0x00',
       },
       OPTIONS,
     );
@@ -364,7 +363,7 @@ describe('AppController (e2e)', () => {
             data: {
               operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
-              data: '0x7b22747261636b696e674964223a22747831222c2264617461223a2274657374227d',
+              data: '0x00',
             },
           },
         ]);
@@ -375,11 +374,11 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            trackingId: 'tx1',
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
             operator: 'bob',
+            data: '',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
@@ -417,7 +416,7 @@ describe('AppController (e2e)', () => {
             },
             inputMethod: 'mintFungible',
             inputArgs: {
-              data: '0x7b22747261636b696e674964223a22616263222c2264617461223a2274657374227d',
+              data: '0x74657374',
             },
           },
         ]);
@@ -432,7 +431,6 @@ describe('AppController (e2e)', () => {
             to: 'A',
             amount: '5',
             operator: 'A',
-            trackingId: 'abc',
             data: 'test',
             transaction: {
               blockNumber: '1',
@@ -471,7 +469,7 @@ describe('AppController (e2e)', () => {
             },
             inputMethod: 'burn',
             inputArgs: {
-              data: '0x7b22747261636b696e674964223a22747831227d',
+              data: '0x74657374',
             },
           },
         ]);
@@ -487,7 +485,7 @@ describe('AppController (e2e)', () => {
             from: 'A',
             amount: '1',
             operator: 'A',
-            trackingId: 'tx1',
+            data: 'test',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
@@ -533,6 +531,7 @@ describe('AppController (e2e)', () => {
             to: 'B',
             amount: '1',
             operator: 'A',
+            data: '',
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',

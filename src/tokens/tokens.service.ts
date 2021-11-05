@@ -25,7 +25,6 @@ import {
   AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
-  PackedTokenData,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -92,15 +91,12 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
-    const dataToPack: PackedTokenData = {
-      trackingId: dto.trackingId,
-    };
     const response = await lastValueFrom(
       this.http.post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/create`,
         {
           is_fungible: dto.type === TokenType.FUNGIBLE,
-          data: encodeHex(JSON.stringify(dataToPack)),
+          data: encodeHex(dto.data ?? ''),
         },
         this.postOptions(dto.operator, dto.requestId),
       ),
@@ -110,10 +106,6 @@ export class TokensService {
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
     const typeId = packTokenId(dto.poolId);
-    const dataToPack: PackedTokenData = {
-      trackingId: dto.trackingId,
-      data: dto.data,
-    };
     if (isFungible(dto.poolId)) {
       const response = await lastValueFrom(
         this.http.post<EthConnectAsyncResponse>(
@@ -122,7 +114,7 @@ export class TokensService {
             type_id: typeId,
             to: [dto.to],
             amounts: [dto.amount],
-            data: encodeHex(JSON.stringify(dataToPack)),
+            data: encodeHex(dto.data ?? ''),
           },
           this.postOptions(dto.operator, dto.requestId),
         ),
@@ -144,7 +136,7 @@ export class TokensService {
           {
             type_id: typeId,
             to,
-            data: encodeHex(JSON.stringify(dataToPack)),
+            data: encodeHex(dto.data ?? ''),
           },
           this.postOptions(dto.operator, dto.requestId),
         ),
@@ -154,10 +146,6 @@ export class TokensService {
   }
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
-    const dataToPack: PackedTokenData = {
-      trackingId: dto.trackingId,
-      data: dto.data,
-    };
     const response = await lastValueFrom(
       this.http.post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/safeTransferFrom`,
@@ -166,7 +154,7 @@ export class TokensService {
           to: dto.to,
           id: packTokenId(dto.poolId, dto.tokenIndex),
           amount: dto.amount,
-          data: encodeHex(JSON.stringify(dataToPack)),
+          data: encodeHex(dto.data ?? ''),
         },
         this.postOptions(dto.operator, dto.requestId),
       ),
@@ -175,10 +163,6 @@ export class TokensService {
   }
 
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
-    const dataToPack: PackedTokenData = {
-      trackingId: dto.trackingId,
-      data: dto.data,
-    };
     const response = await lastValueFrom(
       this.http.post<EthConnectAsyncResponse>(
         `${this.instanceUrl}/burn`,
@@ -186,7 +170,7 @@ export class TokensService {
           from: dto.from,
           id: packTokenId(dto.poolId, dto.tokenIndex),
           amount: dto.amount,
-          data: encodeHex(JSON.stringify(dataToPack)),
+          data: encodeHex(dto.data ?? ''),
         },
         this.postOptions(dto.operator, dto.requestId),
       ),
@@ -222,18 +206,9 @@ class TokenListener implements EventListener {
     }
   }
 
-  private safeUnpackData(data: string | undefined): PackedTokenData {
-    try {
-      return data === undefined ? {} : (JSON.parse(decodeHex(data)) as PackedTokenData);
-    } catch (err) {
-      return {};
-    }
-  }
-
   private transformTokenCreateEvent(event: TokenCreateEvent): WebSocketMessage {
     const { data } = event;
     const unpackedId = unpackTokenId(data.type_id);
-    const unpackedData = this.safeUnpackData(data.data);
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
@@ -241,7 +216,7 @@ class TokenListener implements EventListener {
         poolId: unpackedId.poolId,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
-        trackingId: unpackedData.trackingId,
+        data: decodeHex(data.data ?? ''),
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
@@ -254,7 +229,7 @@ class TokenListener implements EventListener {
   private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
     const { data } = event;
     const unpackedId = unpackTokenId(data.id);
-    const unpackedData = this.safeUnpackData(event.inputArgs?.data);
+    const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // should not happen
@@ -269,8 +244,7 @@ class TokenListener implements EventListener {
           to: data.to,
           amount: data.value,
           operator: data.operator,
-          trackingId: unpackedData.trackingId,
-          data: unpackedData.data,
+          data: decodedData,
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,
@@ -288,8 +262,7 @@ class TokenListener implements EventListener {
           from: data.from,
           amount: data.value,
           operator: data.operator,
-          trackingId: unpackedData.trackingId,
-          data: unpackedData.data,
+          data: decodedData,
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,
@@ -308,8 +281,7 @@ class TokenListener implements EventListener {
           to: data.to,
           amount: data.value,
           operator: data.operator,
-          trackingId: unpackedData.trackingId,
-          data: unpackedData.data,
+          data: decodedData,
           transaction: {
             blockNumber: event.blockNumber,
             transactionIndex: event.transactionIndex,

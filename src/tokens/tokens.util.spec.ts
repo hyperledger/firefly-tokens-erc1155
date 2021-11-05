@@ -19,7 +19,7 @@ import { decodeHex, encodeHex, packTokenId, unpackTokenId } from './tokens.util'
 describe('Util', () => {
   it('encodeHex', () => {
     expect(encodeHex('hello')).toEqual('0x68656c6c6f');
-    expect(encodeHex('')).toEqual('0x');
+    expect(encodeHex('')).toEqual('0x00');
   });
 
   it('decodeHex', () => {
@@ -27,6 +27,7 @@ describe('Util', () => {
     expect(decodeHex('')).toEqual('');
     expect(decodeHex('0x')).toEqual('');
     expect(decodeHex('0x0')).toEqual('');
+    expect(decodeHex('0x00')).toEqual('');
   });
 
   it('packTokenId', () => {
