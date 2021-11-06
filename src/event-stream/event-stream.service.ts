@@ -130,9 +130,22 @@ export class EventStreamSocket {
 export class EventStreamService {
   private readonly logger = new Logger(EventStreamService.name);
 
+  private baseUrl: string;
+
   constructor(private http: HttpService) {}
 
-  async ensureEventStream(baseUrl: string, topic: string): Promise<EventStream> {
+  configure(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
+  async getEventStreams(): Promise<EventStream[]> {
+    const response = await lastValueFrom(
+      this.http.get<EventStream[]>(`${this.baseUrl}/eventstreams`),
+    );
+    return response.data;
+  }
+
+  async ensureEventStream(topic: string): Promise<EventStream> {
     const streamDetails = {
       name: topic,
       errorHandling: 'block',
@@ -144,35 +157,41 @@ export class EventStreamService {
       inputs: true,
     };
 
-    const existingStreamRes = await lastValueFrom(
-      this.http.get<EventStream[]>(`${baseUrl}/eventstreams`),
-    );
-    const stream = existingStreamRes.data.find(s => s.name === streamDetails.name);
+    const existingStreams = await this.getEventStreams();
+    const stream = existingStreams.find(s => s.name === streamDetails.name);
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
-        this.http.patch<EventStream>(`${baseUrl}/eventstreams/${stream.id}`, streamDetails),
+        this.http.patch<EventStream>(`${this.baseUrl}/eventstreams/${stream.id}`, streamDetails),
       );
       this.logger.log(`Event stream for ${topic}: ${stream.id}`);
       return patchedStreamRes.data;
     }
     const newStreamRes = await lastValueFrom(
-      this.http.post<EventStream>(`${baseUrl}/eventstreams`, streamDetails),
+      this.http.post<EventStream>(`${this.baseUrl}/eventstreams`, streamDetails),
     );
     this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
   }
 
+  async getSubscriptions(): Promise<EventStreamSubscription[]> {
+    const response = await lastValueFrom(
+      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`),
+    );
+    return response.data;
+  }
+
   private async createSubscription(
-    instanceUrl: string,
+    instancePath: string,
     event: string,
     streamId: string,
+    fromBlock = '0', // subscribe from the start of the chain by default
   ): Promise<EventStreamSubscription> {
     const response = await lastValueFrom(
-      this.http.post<EventStreamSubscription>(`${instanceUrl}/${event}`, {
+      this.http.post<EventStreamSubscription>(`${this.baseUrl}/${instancePath}/${event}`, {
         name: event,
         description: event,
         stream: streamId,
-        fromBlock: '0', // subscribe from the start of the chain
+        fromBlock,
       }),
     );
     this.logger.log(`Created subscription ${event}: ${response.data.id}`);
@@ -180,22 +199,19 @@ export class EventStreamService {
   }
 
   async ensureSubscriptions(
-    baseUrl: string,
-    instanceUrl: string,
+    instancePath: string,
     streamId: string,
     subscriptions: string[],
   ): Promise<EventStreamSubscription[]> {
-    const existingRes = await lastValueFrom(
-      this.http.get<EventStreamSubscription[]>(`${baseUrl}/subscriptions`),
-    );
+    const existingSubscriptions = await this.getSubscriptions();
     const results: EventStreamSubscription[] = [];
     for (const eventName of subscriptions) {
-      const sub = existingRes.data.find(s => s.name === eventName && s.stream === streamId);
+      const sub = existingSubscriptions.find(s => s.name === eventName && s.stream === streamId);
       if (sub) {
         this.logger.log(`Subscription for ${eventName}: ${sub.id}`);
         results.push(sub);
       } else {
-        const newSub = await this.createSubscription(instanceUrl, eventName, streamId);
+        const newSub = await this.createSubscription(instancePath, eventName, streamId);
         this.logger.log(`Subscription for ${eventName}: ${newSub.id}`);
         results.push(newSub);
       }
@@ -203,7 +219,7 @@ export class EventStreamService {
     return results;
   }
 
-  subscribe(
+  connect(
     url: string,
     topic: string,
     handleEvents: (events: Event[]) => void,

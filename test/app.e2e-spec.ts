@@ -48,7 +48,7 @@ import { WebSocketMessage } from '../src/websocket-events/websocket-events.base'
 import { AppModule } from './../src/app.module';
 
 const BASE_URL = 'http://eth';
-const INSTANCE_URL = `${BASE_URL}/tokens`;
+const INSTANCE_PATH = '/tokens';
 const IDENTITY = '0x1';
 const PREFIX = 'fly';
 const OPTIONS = {
@@ -88,7 +88,7 @@ describe('AppController (e2e)', () => {
   let eventHandler: (events: Event[]) => void;
   let receiptHandler: (receipt: EventStreamReply) => void;
   const eventstream = {
-    subscribe: (
+    connect: (
       url: string,
       topic: string,
       handleEvents: (events: Event[]) => void,
@@ -125,7 +125,7 @@ describe('AppController (e2e)', () => {
     await app.init();
 
     app.get(EventStreamProxyGateway).configure('url', 'topic');
-    app.get(TokensService).configure(BASE_URL, INSTANCE_URL, PREFIX);
+    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, PREFIX);
 
     (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());
@@ -153,7 +153,7 @@ describe('AppController (e2e)', () => {
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
-      `${INSTANCE_URL}/create`,
+      `${BASE_URL}${INSTANCE_PATH}/create`,
       {
         data: '0x747831',
         is_fungible: true,
@@ -184,7 +184,7 @@ describe('AppController (e2e)', () => {
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
-      `${INSTANCE_URL}/create`,
+      `${BASE_URL}${INSTANCE_PATH}/create`,
       {
         data: '0x00',
         is_fungible: false,
@@ -218,7 +218,7 @@ describe('AppController (e2e)', () => {
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
-      `${INSTANCE_URL}/mintFungible`,
+      `${BASE_URL}${INSTANCE_PATH}/mintFungible`,
       {
         type_id: '340282366920938463463374607431768211456',
         to: ['1'],
@@ -247,7 +247,7 @@ describe('AppController (e2e)', () => {
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
-      `${INSTANCE_URL}/mintNonFungible`,
+      `${BASE_URL}${INSTANCE_PATH}/mintNonFungible`,
       {
         type_id: '57896044618658097711785492504343953926975274699741220483192166611388333031424',
         to: ['1', '1'],
@@ -277,7 +277,7 @@ describe('AppController (e2e)', () => {
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
-      `${INSTANCE_URL}/burn`,
+      `${BASE_URL}${INSTANCE_PATH}/burn`,
       {
         id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
         from: 'A',
@@ -307,7 +307,7 @@ describe('AppController (e2e)', () => {
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
-      `${INSTANCE_URL}/safeTransferFrom`,
+      `${BASE_URL}${INSTANCE_PATH}/safeTransferFrom`,
       {
         id: '340282366920938463463374607431768211456',
         from: '1',
@@ -340,7 +340,7 @@ describe('AppController (e2e)', () => {
       });
 
     expect(http.get).toHaveBeenCalledTimes(1);
-    expect(http.get).toHaveBeenCalledWith(`${INSTANCE_URL}/balanceOf`, {
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/balanceOf`, {
       params: {
         account: '1',
         id: '340282366920938463463374607431768211456',

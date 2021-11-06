@@ -57,9 +57,9 @@ export class TokensService {
     proxy.addListener(new TokenListener());
   }
 
-  configure(baseUrl: string, instanceUrl: string, shortPrefix: string) {
+  configure(baseUrl: string, instancePath: string, shortPrefix: string) {
     this.baseUrl = baseUrl;
-    this.instanceUrl = instanceUrl;
+    this.instanceUrl = baseUrl + instancePath;
     this.shortPrefix = shortPrefix;
   }
 

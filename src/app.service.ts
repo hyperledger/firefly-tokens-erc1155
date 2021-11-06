@@ -21,25 +21,19 @@ const SUBSCRIPTIONS = ['TokenCreate', 'TransferSingle'];
 
 @Injectable()
 export class AppService {
-  private ethConnectUrl: string;
-  private instanceUrl: string;
+  private instancePath: string;
   private topic: string;
 
   constructor(private eventStream: EventStreamService) {}
 
-  configure(ethConnectUrl: string, instanceUrl: string, topic: string) {
-    this.ethConnectUrl = ethConnectUrl;
-    this.instanceUrl = instanceUrl;
+  configure(ethConnectUrl: string, instancePath: string, topic: string) {
+    this.eventStream.configure(ethConnectUrl);
+    this.instancePath = instancePath;
     this.topic = topic;
   }
 
   async init() {
-    const stream = await this.eventStream.ensureEventStream(this.ethConnectUrl, this.topic);
-    await this.eventStream.ensureSubscriptions(
-      this.ethConnectUrl,
-      this.instanceUrl,
-      stream.id,
-      SUBSCRIPTIONS,
-    );
+    const stream = await this.eventStream.ensureEventStream(this.topic);
+    await this.eventStream.ensureSubscriptions(this.instancePath, stream.id, SUBSCRIPTIONS);
   }
 }

@@ -64,7 +64,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     if (this.server.clients.size === 1 && this.url !== undefined && this.topic !== undefined) {
       this.logger.log(`Initializing event stream proxy`);
       this.setCurrentClient(client);
-      this.socket = this.eventstream.subscribe(
+      this.socket = this.eventstream.connect(
         this.url,
         this.topic,
         events => {
