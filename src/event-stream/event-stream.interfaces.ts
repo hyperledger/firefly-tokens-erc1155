@@ -28,6 +28,7 @@ export interface EventStreamSubscription {
 }
 
 export interface Event {
+  subId: string;
   signature: string;
   address: string;
   blockNumber: string;

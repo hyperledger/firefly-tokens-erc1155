@@ -24,6 +24,7 @@ import {
   TokenBurn,
   TokenMint,
   TokenPool,
+  TokenPoolActivate,
   TokenTransfer,
 } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
@@ -32,7 +33,14 @@ import { TokensService } from './tokens.service';
 export class TokensController {
   constructor(private readonly service: TokensService) {}
 
-  @Post('pool')
+  @Post('init')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Perform one-time initialization (if not auto-initialized)' })
+  async init() {
+    await this.service.init();
+  }
+
+  @Post('createpool')
   @HttpCode(202)
   @ApiOperation({
     summary: 'Create a new token pool',
@@ -43,6 +51,17 @@ export class TokensController {
   @ApiResponse({ status: 202, type: AsyncResponse })
   createPool(@Body() dto: TokenPool) {
     return this.service.createPool(dto);
+  }
+
+  @Post('activatepool')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Activate a token pool to begin receiving transfer events',
+    description: 'Will retrigger the token-pool event for this pool as a side-effect',
+  })
+  @ApiBody({ type: TokenPoolActivate })
+  async activatePool(@Body() dto: TokenPoolActivate) {
+    await this.service.activatePool(dto);
   }
 
   @Post('mint')

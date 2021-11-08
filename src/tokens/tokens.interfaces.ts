@@ -85,6 +85,34 @@ export class TokenPool {
   config?: any;
 }
 
+export class BlockchainTransaction {
+  @ApiProperty()
+  @IsNotEmpty()
+  blockNumber: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  transactionIndex: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  transactionHash: string;
+}
+
+export class TokenPoolActivate {
+  @ApiProperty()
+  @IsNotEmpty()
+  poolId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  transaction?: BlockchainTransaction;
+
+  @ApiProperty({ description: requestIdDescription })
+  @IsOptional()
+  requestId?: string;
+}
+
 export class TokenBalanceQuery {
   @ApiProperty()
   @IsNotEmpty()
@@ -142,17 +170,6 @@ export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
 export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 // Websocket notifications
-
-export class BlockchainTransaction {
-  @ApiProperty()
-  blockNumber: string;
-
-  @ApiProperty()
-  transactionIndex: string;
-
-  @ApiProperty()
-  transactionHash: string;
-}
 
 class tokenEventBase {
   @ApiProperty()

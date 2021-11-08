@@ -45,6 +45,8 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
   private listeners: EventListener[] = [];
   private awaitingAck: WebSocketMessageWithId[] = [];
   private currentClient: WebSocketEx | undefined;
+  private subscriptionNames = new Map<string, string>();
+  private queue = Promise.resolve();
 
   constructor(
     protected readonly logger: Logger,
@@ -61,48 +63,40 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
 
   handleConnection(client: WebSocketEx) {
     super.handleConnection(client);
-    if (this.server.clients.size === 1 && this.url !== undefined && this.topic !== undefined) {
+    if (this.server.clients.size === 1) {
       this.logger.log(`Initializing event stream proxy`);
       this.setCurrentClient(client);
-      this.socket = this.eventstream.connect(
-        this.url,
-        this.topic,
-        events => {
-          // This handler and all methods it calls must be synchronous in order to preserve ordering!
-          for (const event of events) {
-            this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
-            let newEvent: WebSocketMessage | undefined;
-            try {
-              newEvent = this.transformEvent(event);
-            } catch (err) {
-              this.logger.error(`Error processing event: ${err}`);
-              continue;
-            }
-            if (newEvent !== undefined) {
-              const message: WebSocketMessageWithId = { ...newEvent, id: uuidv4() };
-              this.awaitingAck.push(message);
-              this.currentClient?.send(JSON.stringify(message));
-            }
-          }
-          this.checkBatchComplete();
-        },
-        receipt => {
-          this.broadcast('receipt', <ReceiptEvent>{
-            id: receipt.headers.requestId,
-            success: receipt.headers.type === 'TransactionSuccess',
-            message: receipt.errorMessage,
-          });
-        },
-      );
+      this.startListening();
     }
+  }
+
+  private startListening() {
+    if (this.url === undefined || this.topic === undefined) {
+      return;
+    }
+    this.socket = this.eventstream.connect(
+      this.url,
+      this.topic,
+      events => {
+        for (const event of events) {
+          this.queue.finally(() => this.processEvent(event));
+        }
+        this.queue.finally(() => this.checkBatchComplete());
+      },
+      receipt => {
+        this.broadcast('receipt', <ReceiptEvent>{
+          id: receipt.headers.requestId,
+          success: receipt.headers.type === 'TransactionSuccess',
+          message: receipt.errorMessage,
+        });
+      },
+    );
   }
 
   handleDisconnect(client: WebSocketEx) {
     super.handleDisconnect(client);
     if (this.server.clients.size === 0) {
-      this.socket?.close();
-      this.socket = undefined;
-      this.currentClient = undefined;
+      this.stopListening();
     } else if (client.id === this.currentClient?.id) {
       for (const newClient of this.server.clients) {
         this.setCurrentClient(newClient as WebSocketEx);
@@ -111,13 +105,52 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     }
   }
 
+  private stopListening() {
+    this.socket?.close();
+    this.socket = undefined;
+    this.currentClient = undefined;
+  }
+
   addListener(listener: EventListener) {
     this.listeners.push(listener);
   }
 
-  private transformEvent(event: Event) {
+  private async processEvent(event: Event) {
+    this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
+    let newEvent: WebSocketMessage | undefined;
+    try {
+      newEvent = await this.transformEvent(event);
+    } catch (err) {
+      return;
+    }
+    if (newEvent !== undefined) {
+      const message: WebSocketMessageWithId = { ...newEvent, id: uuidv4() };
+      this.awaitingAck.push(message);
+      this.currentClient?.send(JSON.stringify(message));
+    }
+  }
+
+  private async getSubscriptionName(subId: string) {
+    const subName = this.subscriptionNames.get(subId);
+    if (subName !== undefined) {
+      return subName;
+    }
+    const sub = await this.eventstream.getSubscription(subId);
+    if (sub === undefined) {
+      return undefined;
+    }
+    this.subscriptionNames.set(subId, sub.name);
+    return sub.name;
+  }
+
+  private async transformEvent(event: Event) {
+    const subName = await this.getSubscriptionName(event.subId);
+    if (subName === undefined) {
+      this.logger.error(`Unknown subscription ID: ${event.subId}`);
+      return undefined;
+    }
     for (const listener of this.listeners) {
-      const newEvent = listener.transformEvent(event);
+      const newEvent = listener.transformEvent(subName, event);
       if (newEvent !== undefined) {
         return newEvent;
       }

@@ -14,7 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { decodeHex, encodeHex, packTokenId, unpackTokenId } from './tokens.util';
+import {
+  decodeHex,
+  encodeHex,
+  packSubscriptionName,
+  packTokenId,
+  unpackSubscriptionName,
+  unpackTokenId,
+} from './tokens.util';
 
 describe('Util', () => {
   it('encodeHex', () => {
@@ -50,6 +57,32 @@ describe('Util', () => {
       isFungible: false,
       poolId: 'N1',
       tokenIndex: '1',
+    });
+  });
+
+  it('packSubscriptionName', () => {
+    expect(packSubscriptionName('token', 'F1')).toEqual('token:F1');
+    expect(packSubscriptionName('token', 'N1', 'create')).toEqual('token:N1:create');
+    expect(packSubscriptionName('tok:en', 'N1', 'create')).toEqual('tok:en:N1:create');
+  });
+
+  it('unpackSubscriptionName', () => {
+    expect(unpackSubscriptionName('token', 'token:F1')).toEqual({
+      prefix: 'token',
+      poolId: 'F1',
+    });
+    expect(unpackSubscriptionName('token', 'token:N1:create')).toEqual({
+      prefix: 'token',
+      poolId: 'N1',
+      event: 'create',
+    });
+    expect(unpackSubscriptionName('tok:en', 'tok:en:N1:create')).toEqual({
+      prefix: 'tok:en',
+      poolId: 'N1',
+      event: 'create',
+    });
+    expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({
+      prefix: 'token',
     });
   });
 });

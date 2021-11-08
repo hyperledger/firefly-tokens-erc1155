@@ -22,7 +22,11 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'superwstest';
-import { Event, EventStreamReply } from '../src/event-stream/event-stream.interfaces';
+import {
+  Event,
+  EventStreamReply,
+  EventStreamSubscription,
+} from '../src/event-stream/event-stream.interfaces';
 import { EventStreamService } from '../src/event-stream/event-stream.service';
 import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
 import { ReceiptEvent } from '../src/eventstream-proxy/eventstream-proxy.interfaces';
@@ -50,6 +54,7 @@ import { AppModule } from './../src/app.module';
 const BASE_URL = 'http://eth';
 const INSTANCE_PATH = '/tokens';
 const IDENTITY = '0x1';
+const TOPIC = 'tokentest';
 const PREFIX = 'fly';
 const OPTIONS = {
   params: {
@@ -87,6 +92,7 @@ describe('AppController (e2e)', () => {
   };
   let eventHandler: (events: Event[]) => void;
   let receiptHandler: (receipt: EventStreamReply) => void;
+
   const eventstream = {
     connect: (
       url: string,
@@ -97,6 +103,8 @@ describe('AppController (e2e)', () => {
       eventHandler = handleEvents;
       receiptHandler = handleReceipt;
     },
+
+    getSubscription: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -104,6 +112,7 @@ describe('AppController (e2e)', () => {
       get: jest.fn(),
       post: jest.fn(),
     };
+    eventstream.getSubscription.mockReset();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -124,8 +133,8 @@ describe('AppController (e2e)', () => {
     );
     await app.init();
 
-    app.get(EventStreamProxyGateway).configure('url', 'topic');
-    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, PREFIX);
+    app.get(EventStreamProxyGateway).configure('url', TOPIC);
+    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX);
 
     (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());
@@ -149,7 +158,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/pool').send(request).expect(202).expect({ id: 'op1' });
+    await server.post('/createpool').send(request).expect(202).expect({ id: 'op1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -180,7 +189,7 @@ describe('AppController (e2e)', () => {
 
     http.post = jest.fn(() => new FakeObservable(response));
 
-    await server.post('/pool').send(request).expect(202).expect({ id: '1' });
+    await server.post('/createpool').send(request).expect(202).expect({ id: '1' });
 
     expect(http.post).toHaveBeenCalledTimes(1);
     expect(http.post).toHaveBeenCalledWith(
@@ -349,12 +358,62 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token pool event', () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':F1',
+    });
     return server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
           <TokenCreateEvent>{
+            subId: 'sb123',
+            signature: tokenCreateEventSignature,
+            address: 'bob',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            data: {
+              operator: 'bob',
+              type_id: '340282366920938463463374607431768211456',
+              data: '0x00',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-pool',
+          data: <TokenPoolEvent>{
+            standard: 'ERC1155',
+            poolId: 'F1',
+            type: 'fungible',
+            operator: 'bob',
+            data: '',
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Websocket: token pool event from base subscription', () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':base',
+    });
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          <TokenCreateEvent>{
+            subId: 'sb123',
             signature: tokenCreateEventSignature,
             address: 'bob',
             blockNumber: '1',
@@ -391,12 +450,16 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token mint event', () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':F1',
+    });
     return server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
           <TransferSingleEvent>{
+            subId: 'sb-123',
             signature: transferSingleEventSignature,
             address: '',
             blockNumber: '1',
@@ -444,12 +507,16 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token burn event', () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':N1',
+    });
     return server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
           <TransferSingleEvent>{
+            subId: 'sb-123',
             signature: transferSingleEventSignature,
             address: '',
             blockNumber: '1',
@@ -498,12 +565,16 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token transfer event', () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':N1',
+    });
     return server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
         eventHandler([
           <TransferSingleEvent>{
+            subId: 'sb123',
             signature: transferSingleEventSignature,
             address: '',
             blockNumber: '1',
@@ -539,6 +610,57 @@ describe('AppController (e2e)', () => {
             },
           },
         });
+        return true;
+      });
+  });
+
+  it('Websocket: token transfer event from wrong pool', () => {
+    eventstream.getSubscription
+      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':N1' })
+      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':N1' });
+
+    return server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          <TransferSingleEvent>{
+            subId: 'sb123',
+            signature: transferSingleEventSignature,
+            address: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            data: {
+              id: '340282366920938463463374607431768211456',
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              value: '1',
+            },
+          },
+          <TransferSingleEvent>{
+            subId: 'sb123',
+            signature: transferSingleEventSignature,
+            address: '',
+            blockNumber: '2',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            data: {
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              value: '1',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        // Only the second transfer should have been processed
+        expect(message.event).toEqual('token-transfer');
+        expect(message.data.poolId).toEqual('N1');
+        expect(message.data.transaction.blockNumber).toEqual('2');
         return true;
       });
   });
@@ -595,6 +717,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: disconnect and reconnect', async () => {
     const tokenPoolMessage: TokenCreateEvent = {
+      subId: 'sb-123',
       signature: tokenCreateEventSignature,
       address: 'bob',
       blockNumber: '1',
@@ -606,6 +729,10 @@ describe('AppController (e2e)', () => {
         data: '0x6e73006e616d65006964',
       },
     };
+
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':F1',
+    });
 
     await server
       .ws('/api/ws')
@@ -627,6 +754,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: client switchover', async () => {
     const tokenPoolMessage: TokenCreateEvent = {
+      subId: 'sb-123',
       signature: tokenCreateEventSignature,
       address: 'bob',
       blockNumber: '1',
@@ -638,6 +766,10 @@ describe('AppController (e2e)', () => {
         data: '0x6e73006e616d65006964',
       },
     };
+
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':F1',
+    });
 
     const ws1 = server.ws('/api/ws');
     const ws2 = server.ws('/api/ws');
@@ -661,6 +793,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: batch + ack + client switchover', async () => {
     const tokenPoolMessage: TokenCreateEvent = {
+      subId: 'sb-123',
       signature: tokenCreateEventSignature,
       address: 'bob',
       blockNumber: '1',
@@ -673,6 +806,7 @@ describe('AppController (e2e)', () => {
       },
     };
     const tokenMintMessage: TransferSingleEvent = {
+      subId: 'sb-123',
       signature: transferSingleEventSignature,
       address: '',
       blockNumber: '1',
@@ -686,6 +820,10 @@ describe('AppController (e2e)', () => {
         value: '5',
       },
     };
+
+    eventstream.getSubscription
+      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':F1' })
+      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':F1' });
 
     const ws1 = server.ws('/api/ws');
     const ws2 = server.ws('/api/ws');

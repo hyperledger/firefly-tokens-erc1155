@@ -17,7 +17,8 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
-import { Event, EventStreamReply } from '../event-stream/event-stream.interfaces';
+import { EventStreamService } from '../event-stream/event-stream.service';
+import { Event, EventStream, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
@@ -33,34 +34,64 @@ import {
   TokenMint,
   TokenMintEvent,
   TokenPool,
+  TokenPoolActivate,
   TokenPoolEvent,
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
   TransferSingleEvent,
 } from './tokens.interfaces';
-import { decodeHex, encodeHex, isFungible, packTokenId, unpackTokenId } from './tokens.util';
+import {
+  decodeHex,
+  encodeHex,
+  isFungible,
+  packSubscriptionName,
+  packTokenId,
+  unpackSubscriptionName,
+  unpackTokenId,
+} from './tokens.util';
 
 const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const BASE_SUBSCRIPTION_NAME = 'base';
 
+const tokenCreateEvent = 'TokenCreate';
 const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
+const transferSingleEvent = 'TransferSingle';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 
 @Injectable()
 export class TokensService {
   baseUrl: string;
+  instancePath: string;
   instanceUrl: string;
+  topic: string;
   shortPrefix: string;
+  stream: EventStream;
 
-  constructor(private http: HttpService, proxy: EventStreamProxyGateway) {
-    proxy.addListener(new TokenListener());
+  constructor(
+    private http: HttpService,
+    private eventstream: EventStreamService,
+    private proxy: EventStreamProxyGateway,
+  ) {}
+
+  configure(baseUrl: string, instancePath: string, topic: string, shortPrefix: string) {
+    this.baseUrl = baseUrl;
+    this.instancePath = instancePath;
+    this.instanceUrl = baseUrl + instancePath;
+    this.topic = topic;
+    this.shortPrefix = shortPrefix;
+    this.proxy.addListener(new TokenListener(this.topic));
   }
 
-  configure(baseUrl: string, instancePath: string, shortPrefix: string) {
-    this.baseUrl = baseUrl;
-    this.instanceUrl = baseUrl + instancePath;
-    this.shortPrefix = shortPrefix;
+  async init() {
+    this.stream = await this.eventstream.createOrUpdateStream(this.topic);
+    await this.eventstream.getOrCreateSubscription(
+      this.instancePath,
+      this.stream.id,
+      tokenCreateEvent,
+      packSubscriptionName(this.topic, BASE_SUBSCRIPTION_NAME),
+    );
   }
 
   private postOptions(operator: string, requestId?: string) {
@@ -79,9 +110,7 @@ export class TokensService {
   async getReceipt(id: string): Promise<EventStreamReply> {
     const response = await lastValueFrom(
       this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
-        validateStatus: status => {
-          return status < 300 || status === 404;
-        },
+        validateStatus: status => status < 300 || status === 404,
       }),
     );
     if (response.status === 404) {
@@ -102,6 +131,25 @@ export class TokensService {
       ),
     );
     return { id: response.data.id };
+  }
+
+  async activatePool(dto: TokenPoolActivate) {
+    await Promise.all([
+      this.eventstream.getOrCreateSubscription(
+        this.instancePath,
+        this.stream.id,
+        tokenCreateEvent,
+        packSubscriptionName(this.topic, dto.poolId, tokenCreateEvent),
+        dto.transaction?.blockNumber ?? '0',
+      ),
+      this.eventstream.getOrCreateSubscription(
+        this.instancePath,
+        this.stream.id,
+        transferSingleEvent,
+        packSubscriptionName(this.topic, dto.poolId, transferSingleEvent),
+        dto.transaction?.blockNumber ?? '0',
+      ),
+    ]);
   }
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
@@ -194,21 +242,33 @@ export class TokensService {
 class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  transformEvent(event: Event): WebSocketMessage | undefined {
+  constructor(private topic: string) {}
+
+  transformEvent(subName: string, event: Event): WebSocketMessage | undefined {
     switch (event.signature) {
       case tokenCreateEventSignature:
-        return this.transformTokenCreateEvent(event);
+        return this.transformTokenCreateEvent(subName, event);
       case transferSingleEventSignature:
-        return this.transformTransferSingleEvent(event);
+        return this.transformTransferSingleEvent(subName, event);
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
         return undefined;
     }
   }
 
-  private transformTokenCreateEvent(event: TokenCreateEvent): WebSocketMessage {
+  private transformTokenCreateEvent(
+    subName: string,
+    event: TokenCreateEvent,
+  ): WebSocketMessage | undefined {
     const { data } = event;
     const unpackedId = unpackTokenId(data.type_id);
+    const unpackedSub = unpackSubscriptionName(this.topic, subName);
+    const decodedData = decodeHex(data.data ?? '');
+
+    if (unpackedSub.poolId !== BASE_SUBSCRIPTION_NAME && unpackedSub.poolId !== unpackedId.poolId) {
+      return undefined;
+    }
+
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
@@ -216,7 +276,7 @@ class TokenListener implements EventListener {
         poolId: unpackedId.poolId,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
-        data: decodeHex(data.data ?? ''),
+        data: decodedData,
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
@@ -226,68 +286,49 @@ class TokenListener implements EventListener {
     };
   }
 
-  private transformTransferSingleEvent(event: TransferSingleEvent): WebSocketMessage | undefined {
+  private transformTransferSingleEvent(
+    subName: string,
+    event: TransferSingleEvent,
+  ): WebSocketMessage | undefined {
     const { data } = event;
     const unpackedId = unpackTokenId(data.id);
+    const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
+
+    if (unpackedSub.poolId !== unpackedId.poolId) {
+      return undefined;
+    }
+
+    const commonData = {
+      poolId: unpackedId.poolId,
+      tokenIndex: unpackedId.tokenIndex,
+      amount: data.value,
+      operator: data.operator,
+      data: decodedData,
+      transaction: {
+        blockNumber: event.blockNumber,
+        transactionIndex: event.transactionIndex,
+        transactionHash: event.transactionHash,
+      },
+    };
 
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
       // should not happen
       return undefined;
     } else if (data.from === ZERO_ADDRESS) {
-      // mint
       return {
         event: 'token-mint',
-        data: <TokenMintEvent>{
-          poolId: unpackedId.poolId,
-          tokenIndex: unpackedId.tokenIndex,
-          to: data.to,
-          amount: data.value,
-          operator: data.operator,
-          data: decodedData,
-          transaction: {
-            blockNumber: event.blockNumber,
-            transactionIndex: event.transactionIndex,
-            transactionHash: event.transactionHash,
-          },
-        },
+        data: <TokenMintEvent>{ ...commonData, to: data.to },
       };
     } else if (data.to === ZERO_ADDRESS) {
-      // burn
       return {
         event: 'token-burn',
-        data: <TokenBurnEvent>{
-          poolId: unpackedId.poolId,
-          tokenIndex: unpackedId.tokenIndex,
-          from: data.from,
-          amount: data.value,
-          operator: data.operator,
-          data: decodedData,
-          transaction: {
-            blockNumber: event.blockNumber,
-            transactionIndex: event.transactionIndex,
-            transactionHash: event.transactionHash,
-          },
-        },
+        data: <TokenBurnEvent>{ ...commonData, from: data.from },
       };
     } else {
-      // transfer
       return {
         event: 'token-transfer',
-        data: <TokenTransferEvent>{
-          poolId: unpackedId.poolId,
-          tokenIndex: unpackedId.tokenIndex,
-          from: data.from,
-          to: data.to,
-          amount: data.value,
-          operator: data.operator,
-          data: decodedData,
-          transaction: {
-            blockNumber: event.blockNumber,
-            transactionIndex: event.transactionIndex,
-            transactionHash: event.transactionHash,
-          },
-        },
+        data: <TokenTransferEvent>{ ...commonData, from: data.from, to: data.to },
       };
     }
   }

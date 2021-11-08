@@ -48,3 +48,21 @@ export function unpackTokenId(id: string) {
     tokenIndex: isFungible ? undefined : BigInt.asUintN(128, val).toString(),
   };
 }
+
+export function packSubscriptionName(prefix: string, poolId: string, event?: string) {
+  if (event === undefined) {
+    return [prefix, poolId].join(':');
+  }
+  return [prefix, poolId, event].join(':');
+}
+
+export function unpackSubscriptionName(prefix: string, data: string) {
+  const parts = data.startsWith(prefix + ':')
+    ? data.slice(prefix.length + 1).split(':', 2)
+    : undefined;
+  return {
+    prefix,
+    poolId: parts?.[0],
+    event: parts?.[1],
+  };
+}

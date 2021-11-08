@@ -16,6 +16,7 @@
 
 import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { TokensService } from './tokens.service';
 
@@ -29,6 +30,10 @@ describe('TokensService', () => {
         {
           provide: HttpService,
           useValue: jest.fn(),
+        },
+        {
+          provide: EventStreamService,
+          useValue: { addListener: jest.fn() },
         },
         {
           provide: EventStreamProxyGateway,
