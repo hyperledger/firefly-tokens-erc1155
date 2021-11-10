@@ -173,6 +173,11 @@ export class EventStreamService {
     return newStreamRes.data;
   }
 
+  async deleteStream(id: string) {
+    const response = await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`));
+    return response.data;
+  }
+
   async getSubscriptions(): Promise<EventStreamSubscription[]> {
     const response = await lastValueFrom(
       this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`),

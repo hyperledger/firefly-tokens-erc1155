@@ -62,6 +62,8 @@ const transferSingleEventSignature = 'TransferSingle(address,address,address,uin
 
 @Injectable()
 export class TokensService {
+  private readonly logger = new Logger(TokensService.name);
+
   baseUrl: string;
   instancePath: string;
   instanceUrl: string;
@@ -92,6 +94,31 @@ export class TokensService {
       tokenCreateEvent,
       packSubscriptionName(this.topic, BASE_SUBSCRIPTION_NAME),
     );
+  }
+
+  /**
+   * If there is an existing event stream whose subscriptions don't match the current
+   * naming format, delete the stream so we'll start over.
+   * This will cause redelivery of all token-pool events from block 0, which will poke
+   * FireFly to activate them and create the other necessary subscriptions.
+   *
+   * TODO: eventually this migration logic can be pruned
+   */
+  async migrate() {
+    const streams = await this.eventstream.getStreams();
+    const existingStream = streams.find(s => s.name === this.topic);
+    if (existingStream === undefined) {
+      return;
+    }
+    const subscriptions = await this.eventstream.getSubscriptions();
+    for (const sub of subscriptions.filter(s => s.stream === existingStream.id)) {
+      if (!sub.name.startsWith(this.topic)) {
+        this.logger.warn('Old event stream subscriptions found - deleting and recreating');
+        await this.eventstream.deleteStream(existingStream.id);
+        await this.init();
+        break;
+      }
+    }
   }
 
   private postOptions(operator: string, requestId?: string) {
