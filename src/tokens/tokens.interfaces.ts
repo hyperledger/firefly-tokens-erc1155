@@ -46,11 +46,6 @@ export interface TransferSingleEvent extends Event {
   };
 }
 
-export interface PackedTokenData {
-  trackingId?: string;
-  data?: any;
-}
-
 // REST API requests and responses
 export class AsyncResponse {
   @ApiProperty()
@@ -62,10 +57,6 @@ export enum TokenType {
   NONFUNGIBLE = 'nonfungible',
 }
 
-const trackingIdDescription =
-  'Optional ID provided by the client for correlating related events. This field ' +
-  'will not be used or inspected by the server, but will be associated with the ' +
-  'transaction and returned in any triggered events.';
 const requestIdDescription =
   'Optional ID to identify this request. Must be unique for every request. ' +
   'If none is provided, one will be assigned and returned in the 202 response.';
@@ -78,20 +69,48 @@ export class TokenPool {
   type: TokenType;
 
   @ApiProperty()
-  @IsDefined()
+  @IsNotEmpty()
   operator: string;
-
-  @ApiProperty({ description: trackingIdDescription })
-  @IsOptional()
-  trackingId?: string;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
 
+  @ApiProperty()
+  @IsOptional()
+  data?: string;
+
   @ApiProperty({ description: poolConfigDescription })
   @IsOptional()
   config?: any;
+}
+
+export class BlockchainTransaction {
+  @ApiProperty()
+  @IsNotEmpty()
+  blockNumber: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  transactionIndex: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  transactionHash: string;
+}
+
+export class TokenPoolActivate {
+  @ApiProperty()
+  @IsNotEmpty()
+  poolId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  transaction?: BlockchainTransaction;
+
+  @ApiProperty({ description: requestIdDescription })
+  @IsOptional()
+  requestId?: string;
 }
 
 export class TokenBalanceQuery {
@@ -123,7 +142,7 @@ export class TokenTransfer {
   tokenIndex?: string;
 
   @ApiProperty()
-  @IsDefined()
+  @IsNotEmpty()
   operator: string;
 
   @ApiProperty()
@@ -137,10 +156,6 @@ export class TokenTransfer {
   @ApiProperty()
   @IsNotEmpty()
   amount: string;
-
-  @ApiProperty({ description: trackingIdDescription })
-  @IsOptional()
-  trackingId?: string;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
@@ -156,17 +171,6 @@ export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 // Websocket notifications
 
-export class BlockchainTransaction {
-  @ApiProperty()
-  blockNumber: string;
-
-  @ApiProperty()
-  transactionIndex: string;
-
-  @ApiProperty()
-  transactionHash: string;
-}
-
 class tokenEventBase {
   @ApiProperty()
   poolId: string;
@@ -178,7 +182,7 @@ class tokenEventBase {
   operator: string;
 
   @ApiProperty()
-  trackingId?: string;
+  data?: string;
 
   @ApiProperty()
   transaction: BlockchainTransaction;
@@ -201,9 +205,6 @@ export class TokenTransferEvent extends tokenEventBase {
 
   @ApiProperty()
   amount: string;
-
-  @ApiProperty()
-  data?: string;
 }
 
 export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}

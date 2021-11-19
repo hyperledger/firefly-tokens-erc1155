@@ -31,7 +31,7 @@ import {
   TokenTransferEvent,
   TokenBurnEvent,
 } from './tokens/tokens.interfaces';
-import { AppService } from './app.service';
+import { EventStreamService } from './event-stream/event-stream.service';
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
@@ -77,15 +77,20 @@ async function bootstrap() {
   const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
   const autoInit = config.get<string>('AUTO_INIT', 'true');
 
-  const instanceUrl = ethConnectUrl + instancePath;
   const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
 
-  app.get(AppService).configure(ethConnectUrl, instanceUrl, topic);
+  app.get(EventStreamService).configure(ethConnectUrl);
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
-  app.get(TokensService).configure(ethConnectUrl, instanceUrl, shortPrefix);
+  app.get(TokensService).configure(ethConnectUrl, instancePath, topic, shortPrefix);
+
+  try {
+    await app.get(TokensService).migrate();
+  } catch (err) {
+    // do nothing
+  }
 
   if (autoInit !== 'false') {
-    await app.get(AppService).init();
+    await app.get(TokensService).init();
   }
 
   const port = config.get<number>('PORT', 3000);

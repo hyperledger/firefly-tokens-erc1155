@@ -130,9 +130,22 @@ export class EventStreamSocket {
 export class EventStreamService {
   private readonly logger = new Logger(EventStreamService.name);
 
+  private baseUrl: string;
+
   constructor(private http: HttpService) {}
 
-  async ensureEventStream(baseUrl: string, topic: string): Promise<EventStream> {
+  configure(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
+  async getStreams(): Promise<EventStream[]> {
+    const response = await lastValueFrom(
+      this.http.get<EventStream[]>(`${this.baseUrl}/eventstreams`),
+    );
+    return response.data;
+  }
+
+  async createOrUpdateStream(topic: string): Promise<EventStream> {
     const streamDetails = {
       name: topic,
       errorHandling: 'block',
@@ -144,66 +157,81 @@ export class EventStreamService {
       inputs: true,
     };
 
-    const existingStreamRes = await lastValueFrom(
-      this.http.get<EventStream[]>(`${baseUrl}/eventstreams`),
-    );
-    const stream = existingStreamRes.data.find(s => s.name === streamDetails.name);
+    const existingStreams = await this.getStreams();
+    const stream = existingStreams.find(s => s.name === streamDetails.name);
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
-        this.http.patch<EventStream>(`${baseUrl}/eventstreams/${stream.id}`, streamDetails),
+        this.http.patch<EventStream>(`${this.baseUrl}/eventstreams/${stream.id}`, streamDetails),
       );
       this.logger.log(`Event stream for ${topic}: ${stream.id}`);
       return patchedStreamRes.data;
     }
     const newStreamRes = await lastValueFrom(
-      this.http.post<EventStream>(`${baseUrl}/eventstreams`, streamDetails),
+      this.http.post<EventStream>(`${this.baseUrl}/eventstreams`, streamDetails),
     );
     this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
   }
 
-  private async createSubscription(
-    instanceUrl: string,
-    event: string,
+  async deleteStream(id: string) {
+    const response = await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`));
+    return response.data;
+  }
+
+  async getSubscriptions(): Promise<EventStreamSubscription[]> {
+    const response = await lastValueFrom(
+      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`),
+    );
+    return response.data;
+  }
+
+  async getSubscription(subId: string): Promise<EventStreamSubscription | undefined> {
+    const response = await lastValueFrom(
+      this.http.get<EventStreamSubscription>(`${this.baseUrl}/subscriptions/${subId}`, {
+        validateStatus: status => status < 300 || status === 404,
+      }),
+    );
+    if (response.status === 404) {
+      return undefined;
+    }
+    return response.data;
+  }
+
+  async createSubscription(
+    instancePath: string,
     streamId: string,
+    event: string,
+    name: string,
+    fromBlock = '0', // subscribe from the start of the chain by default
   ): Promise<EventStreamSubscription> {
     const response = await lastValueFrom(
-      this.http.post<EventStreamSubscription>(`${instanceUrl}/${event}`, {
-        name: event,
-        description: event,
+      this.http.post<EventStreamSubscription>(`${this.baseUrl}/${instancePath}/${event}`, {
+        name,
         stream: streamId,
-        fromBlock: '0', // subscribe from the start of the chain
+        fromBlock,
       }),
     );
     this.logger.log(`Created subscription ${event}: ${response.data.id}`);
     return response.data;
   }
 
-  async ensureSubscriptions(
-    baseUrl: string,
-    instanceUrl: string,
+  async getOrCreateSubscription(
+    instancePath: string,
     streamId: string,
-    subscriptions: string[],
-  ): Promise<EventStreamSubscription[]> {
-    const existingRes = await lastValueFrom(
-      this.http.get<EventStreamSubscription[]>(`${baseUrl}/subscriptions`),
-    );
-    const results: EventStreamSubscription[] = [];
-    for (const eventName of subscriptions) {
-      const sub = existingRes.data.find(s => s.name === eventName && s.stream === streamId);
-      if (sub) {
-        this.logger.log(`Subscription for ${eventName}: ${sub.id}`);
-        results.push(sub);
-      } else {
-        const newSub = await this.createSubscription(instanceUrl, eventName, streamId);
-        this.logger.log(`Subscription for ${eventName}: ${newSub.id}`);
-        results.push(newSub);
-      }
+    event: string,
+    name: string,
+    fromBlock = '0', // subscribe from the start of the chain by default
+  ): Promise<EventStreamSubscription> {
+    const existingSubscriptions = await this.getSubscriptions();
+    const sub = existingSubscriptions.find(s => s.name === name && s.stream === streamId);
+    if (sub) {
+      this.logger.log(`Existing subscription for ${event}: ${sub.id}`);
+      return sub;
     }
-    return results;
+    return this.createSubscription(instancePath, streamId, event, name, fromBlock);
   }
 
-  subscribe(
+  connect(
     url: string,
     topic: string,
     handleEvents: (events: Event[]) => void,

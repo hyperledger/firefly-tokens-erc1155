@@ -15,11 +15,16 @@
 // limitations under the License.
 
 export function encodeHex(data: string) {
-  return '0x' + Buffer.from(data, 'utf8').toString('hex');
+  const encoded = Buffer.from(data, 'utf8').toString('hex');
+  // Ethconnect does not handle empty byte arguments well, so we encode a single null byte
+  // when there is no data.
+  // See https://github.com/hyperledger/firefly-ethconnect/issues/133
+  return encoded === '' ? '0x00' : '0x' + encoded;
 }
 
 export function decodeHex(data: string) {
-  return Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
+  const decoded = Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
+  return decoded === '\x00' ? '' : decoded;
 }
 
 export function isFungible(poolId: string) {
@@ -41,5 +46,23 @@ export function unpackTokenId(id: string) {
     isFungible: isFungible,
     poolId: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
     tokenIndex: isFungible ? undefined : BigInt.asUintN(128, val).toString(),
+  };
+}
+
+export function packSubscriptionName(prefix: string, poolId: string, event?: string) {
+  if (event === undefined) {
+    return [prefix, poolId].join(':');
+  }
+  return [prefix, poolId, event].join(':');
+}
+
+export function unpackSubscriptionName(prefix: string, data: string) {
+  const parts = data.startsWith(prefix + ':')
+    ? data.slice(prefix.length + 1).split(':', 2)
+    : undefined;
+  return {
+    prefix,
+    poolId: parts?.[0],
+    event: parts?.[1],
   };
 }

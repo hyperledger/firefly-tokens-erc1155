@@ -12,15 +12,14 @@ calls, and maps ethconnect events to outgoing websocket events.
 
 The following POST APIs are exposed under `/api/v1`:
 
-* `POST /pool` - Create a new token pool (inputs: type)
+* `POST /createpool` - Create a new token pool (inputs: type, data)
+* `POST /activatepool` - Activate a token pool to begin receiving transfers (inputs: poolId)
 * `POST /mint` - Mint new tokens (inputs: poolId, to, amount, data)
 * `POST /burn` - Burn tokens (inputs: poolId, tokenIndex, from, amount, data)
 * `POST /transfer` - Transfer tokens (inputs: poolId, tokenIndex, from, to, amount, data)
 
-All requests may be optionally accompanied by two user-supplied IDs to assist in tracking:
-* `requestId` - Must be unique for every request, will be returned in the "receipt" websocket event
-* `trackingId` - May be unique or reused, will be returned in any other websocket events
-  triggered by a successful transaction
+All requests may be optionally accompanied by a `requestId`, which must be unique for every
+request and will be returned in the "receipt" websocket event.
 
 All APIs are async and return 202 immediately with a response of the form `{id: string}`.
 If no `requestId` was provided, this will be a randomly assigned ID. Clients should
