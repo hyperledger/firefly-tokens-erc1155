@@ -19,7 +19,10 @@ import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { Event } from '../event-stream/event-stream.interfaces';
 
 export interface EventListener {
-  transformEvent: (subName: string, event: Event) => WebSocketMessage | undefined;
+  transformEvent: (
+    subName: string,
+    event: Event,
+  ) => WebSocketMessage | undefined | Promise<WebSocketMessage | undefined>;
 }
 
 export class ReceiptEvent {

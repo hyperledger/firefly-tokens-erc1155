@@ -14,6 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * Encode a UTF-8 string into hex bytes with a leading 0x
+ */
 export function encodeHex(data: string) {
   const encoded = Buffer.from(data, 'utf8').toString('hex');
   // Ethconnect does not handle empty byte arguments well, so we encode a single null byte
@@ -22,9 +25,25 @@ export function encodeHex(data: string) {
   return encoded === '' ? '0x00' : '0x' + encoded;
 }
 
+/**
+ * Decode a series of hex bytes into a UTF-8 string
+ */
 export function decodeHex(data: string) {
   const decoded = Buffer.from(data.replace('0x', ''), 'hex').toString('utf8');
   return decoded === '\x00' ? '' : decoded;
+}
+
+/**
+ * Encode a number into hex, zero-padded to 64 characters (no leading 0x)
+ * See https://eips.ethereum.org/EIPS/eip-1155#metadata
+ */
+export function encodeHexIDForURI(id: string) {
+  const encoded = BigInt(id).toString(16);
+  const remainingLength = 64 - encoded.length;
+  if (remainingLength > 0) {
+    return '0'.repeat(remainingLength) + encoded;
+  }
+  return encoded;
 }
 
 export function isFungible(poolId: string) {

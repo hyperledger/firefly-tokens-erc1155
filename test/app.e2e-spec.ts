@@ -361,6 +361,7 @@ describe('AppController (e2e)', () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: TOPIC + ':F1',
     });
+
     return server
       .ws('/api/ws')
       .exec(() => {
@@ -407,6 +408,7 @@ describe('AppController (e2e)', () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: TOPIC + ':base',
     });
+
     return server
       .ws('/api/ws')
       .exec(() => {
@@ -449,11 +451,19 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('Websocket: token mint event', () => {
+  it('Websocket: token mint event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: TOPIC + ':F1',
     });
-    return server
+
+    http.get = jest.fn(
+      () =>
+        new FakeObservable(<EthConnectReturn>{
+          output: 'firefly://token/{id}',
+        }),
+    );
+
+    await server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
@@ -494,6 +504,7 @@ describe('AppController (e2e)', () => {
             to: 'A',
             amount: '5',
             operator: 'A',
+            uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
             data: 'test',
             transaction: {
               blockNumber: '1',
@@ -504,13 +515,24 @@ describe('AppController (e2e)', () => {
         });
         return true;
       });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
   });
 
-  it('Websocket: token burn event', () => {
+  it('Websocket: token burn event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: TOPIC + ':N1',
     });
-    return server
+
+    http.get = jest.fn(
+      () =>
+        new FakeObservable(<EthConnectReturn>{
+          output: 'firefly://token/{id}',
+        }),
+    );
+
+    await server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
@@ -552,6 +574,7 @@ describe('AppController (e2e)', () => {
             from: 'A',
             amount: '1',
             operator: 'A',
+            uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: 'test',
             transaction: {
               blockNumber: '1',
@@ -562,13 +585,24 @@ describe('AppController (e2e)', () => {
         });
         return true;
       });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
   });
 
-  it('Websocket: token transfer event', () => {
+  it('Websocket: token transfer event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: TOPIC + ':N1',
     });
-    return server
+
+    http.get = jest.fn(
+      () =>
+        new FakeObservable(<EthConnectReturn>{
+          output: 'firefly://token/{id}',
+        }),
+    );
+
+    await server
       .ws('/api/ws')
       .exec(() => {
         expect(eventHandler).toBeDefined();
@@ -602,6 +636,7 @@ describe('AppController (e2e)', () => {
             to: 'B',
             amount: '1',
             operator: 'A',
+            uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
             transaction: {
               blockNumber: '1',
@@ -612,6 +647,9 @@ describe('AppController (e2e)', () => {
         });
         return true;
       });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
   });
 
   it('Websocket: token transfer event from wrong pool', () => {

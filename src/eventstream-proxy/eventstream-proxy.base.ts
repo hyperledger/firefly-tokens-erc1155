@@ -154,7 +154,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       return undefined;
     }
     for (const listener of this.listeners) {
-      const newEvent = listener.transformEvent(subName, event);
+      const newEvent = await listener.transformEvent(subName, event);
       if (newEvent !== undefined) {
         return newEvent;
       }
