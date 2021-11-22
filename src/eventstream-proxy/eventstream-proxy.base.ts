@@ -70,6 +70,10 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     }
   }
 
+  private queueTask(task: () => void) {
+    this.queue = this.queue.finally(task);
+  }
+
   private startListening() {
     if (this.url === undefined || this.topic === undefined) {
       return;
@@ -79,9 +83,9 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       this.topic,
       events => {
         for (const event of events) {
-          this.queue.finally(() => this.processEvent(event));
+          this.queueTask(() => this.processEvent(event));
         }
-        this.queue.finally(() => this.checkBatchComplete());
+        this.queueTask(() => this.checkBatchComplete());
       },
       receipt => {
         this.broadcast('receipt', <ReceiptEvent>{
