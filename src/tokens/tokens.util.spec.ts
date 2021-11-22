@@ -17,6 +17,7 @@
 import {
   decodeHex,
   encodeHex,
+  encodeHexIDForURI,
   packSubscriptionName,
   packTokenId,
   unpackSubscriptionName,
@@ -27,6 +28,12 @@ describe('Util', () => {
   it('encodeHex', () => {
     expect(encodeHex('hello')).toEqual('0x68656c6c6f');
     expect(encodeHex('')).toEqual('0x00');
+  });
+
+  it('encodeHexIDForURI', () => {
+    expect(encodeHexIDForURI('314592')).toEqual(
+      '000000000000000000000000000000000000000000000000000000000004cce0',
+    );
   });
 
   it('decodeHex', () => {

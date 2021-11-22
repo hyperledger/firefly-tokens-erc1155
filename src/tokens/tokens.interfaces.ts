@@ -198,6 +198,9 @@ export class TokenTransferEvent extends tokenEventBase {
   tokenIndex?: string;
 
   @ApiProperty()
+  uri: string;
+
+  @ApiProperty()
   from: string;
 
   @ApiProperty()

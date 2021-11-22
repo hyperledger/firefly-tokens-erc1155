@@ -174,8 +174,7 @@ export class EventStreamService {
   }
 
   async deleteStream(id: string) {
-    const response = await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`));
-    return response.data;
+    await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`));
   }
 
   async getSubscriptions(): Promise<EventStreamSubscription[]> {

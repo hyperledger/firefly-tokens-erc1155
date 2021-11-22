@@ -44,6 +44,7 @@ import {
 import {
   decodeHex,
   encodeHex,
+  encodeHexIDForURI,
   isFungible,
   packSubscriptionName,
   packTokenId,
@@ -83,9 +84,12 @@ export class TokensService {
     this.instanceUrl = baseUrl + instancePath;
     this.topic = topic;
     this.shortPrefix = shortPrefix;
-    this.proxy.addListener(new TokenListener(this.topic));
+    this.proxy.addListener(new TokenListener(this.http, this.instanceUrl, this.topic));
   }
 
+  /**
+   * One-time initialization of event stream and base subscription.
+   */
   async init() {
     this.stream = await this.eventstream.createOrUpdateStream(this.topic);
     await this.eventstream.getOrCreateSubscription(
@@ -269,9 +273,11 @@ export class TokensService {
 class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  constructor(private topic: string) {}
+  private uriPattern: string | undefined;
 
-  transformEvent(subName: string, event: Event): WebSocketMessage | undefined {
+  constructor(private http: HttpService, private instanceUrl: string, private topic: string) {}
+
+  transformEvent(subName: string, event: Event) {
     switch (event.signature) {
       case tokenCreateEventSignature:
         return this.transformTokenCreateEvent(subName, event);
@@ -313,22 +319,28 @@ class TokenListener implements EventListener {
     };
   }
 
-  private transformTransferSingleEvent(
+  private async transformTransferSingleEvent(
     subName: string,
     event: TransferSingleEvent,
-  ): WebSocketMessage | undefined {
+  ): Promise<WebSocketMessage | undefined> {
     const { data } = event;
     const unpackedId = unpackTokenId(data.id);
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolId !== unpackedId.poolId) {
+      // this transfer is not from the subscribed pool
+      return undefined;
+    }
+    if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
+      // should not happen
       return undefined;
     }
 
     const commonData = {
       poolId: unpackedId.poolId,
       tokenIndex: unpackedId.tokenIndex,
+      uri: await this.getTokenUri(data.id),
       amount: data.value,
       operator: data.operator,
       data: decodedData,
@@ -339,10 +351,7 @@ class TokenListener implements EventListener {
       },
     };
 
-    if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
-      // should not happen
-      return undefined;
-    } else if (data.from === ZERO_ADDRESS) {
+    if (data.from === ZERO_ADDRESS) {
       return {
         event: 'token-mint',
         data: <TokenMintEvent>{ ...commonData, to: data.to },
@@ -358,5 +367,20 @@ class TokenListener implements EventListener {
         data: <TokenTransferEvent>{ ...commonData, from: data.from, to: data.to },
       };
     }
+  }
+
+  private async getTokenUri(id: string) {
+    if (this.uriPattern === undefined) {
+      // Fetch and cache the URI pattern (assume it is the same for all tokens)
+      try {
+        const response = await lastValueFrom(
+          this.http.get<EthConnectReturn>(`${this.instanceUrl}/uri?input=0`),
+        );
+        this.uriPattern = response.data.output;
+      } catch (err) {
+        return '';
+      }
+    }
+    return this.uriPattern.replace('{id}', encodeHexIDForURI(id));
   }
 }
