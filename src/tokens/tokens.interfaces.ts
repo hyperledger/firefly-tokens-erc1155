@@ -46,6 +46,16 @@ export interface TransferSingleEvent extends Event {
   };
 }
 
+export interface TransferBatchEvent extends Event {
+  data: {
+    from: string;
+    to: string;
+    operator: string;
+    ids: string[];
+    values: string[];
+  };
+}
+
 // REST API requests and responses
 export class AsyncResponse {
   @ApiProperty()

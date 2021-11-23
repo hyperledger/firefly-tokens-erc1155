@@ -45,6 +45,7 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
+  TransferBatchEvent,
   TransferSingleEvent,
 } from '../src/tokens/tokens.interfaces';
 import { TokensService } from '../src/tokens/tokens.service';
@@ -66,6 +67,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
+const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
 
 class FakeObservable<T> {
   constructor(public data: T) {}
@@ -701,6 +703,94 @@ describe('AppController (e2e)', () => {
         expect(message.data.transaction.blockNumber).toEqual('2');
         return true;
       });
+  });
+
+  it('Websocket: token batch transfer', async () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':N1',
+    });
+
+    http.get = jest.fn(
+      () =>
+        new FakeObservable(<EthConnectReturn>{
+          output: 'firefly://token/{id}',
+        }),
+    );
+
+    await server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          <TransferBatchEvent>{
+            subId: 'sb123',
+            signature: transferBatchEventSignature,
+            address: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            data: {
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              ids: [
+                '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                '57896044618658097711785492504343953926975274699741220483192166611388333031426',
+              ],
+              values: ['1', '1'],
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-transfer',
+          data: <TokenTransferEvent>{
+            poolId: 'N1',
+            tokenIndex: '1',
+            from: 'A',
+            to: 'B',
+            amount: '1',
+            operator: 'A',
+            uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
+            data: '',
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
+          },
+        });
+        return true;
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-transfer',
+          data: <TokenTransferEvent>{
+            poolId: 'N1',
+            tokenIndex: '2',
+            from: 'A',
+            to: 'B',
+            amount: '1',
+            operator: 'A',
+            uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000002',
+            data: '',
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+            },
+          },
+        });
+        return true;
+      });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
   });
 
   it('Websocket: success receipt', () => {

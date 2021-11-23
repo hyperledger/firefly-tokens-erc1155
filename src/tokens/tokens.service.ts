@@ -39,6 +39,7 @@ import {
   TokenTransfer,
   TokenTransferEvent,
   TokenType,
+  TransferBatchEvent,
   TransferSingleEvent,
 } from './tokens.interfaces';
 import {
@@ -60,6 +61,8 @@ const tokenCreateEvent = 'TokenCreate';
 const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
 const transferSingleEvent = 'TransferSingle';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
+const transferBatchEvent = 'TransferBatch';
+const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
 
 @Injectable()
 export class TokensService {
@@ -180,6 +183,13 @@ export class TokensService {
         packSubscriptionName(this.topic, dto.poolId, transferSingleEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
+      this.eventstream.getOrCreateSubscription(
+        this.instancePath,
+        this.stream.id,
+        transferBatchEvent,
+        packSubscriptionName(this.topic, dto.poolId, transferBatchEvent),
+        dto.transaction?.blockNumber ?? '0',
+      ),
     ]);
   }
 
@@ -285,6 +295,11 @@ class TokenListener implements EventListener {
       case transferSingleEventSignature:
         process(await this.transformTransferSingleEvent(subName, event));
         break;
+      case transferBatchEventSignature:
+        for (const msg of await this.transformTransferBatchEvent(subName, event)) {
+          process(msg);
+        }
+        break;
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
         return undefined;
@@ -369,6 +384,29 @@ class TokenListener implements EventListener {
         data: <TokenTransferEvent>{ ...commonData, from: data.from, to: data.to },
       };
     }
+  }
+
+  private async transformTransferBatchEvent(
+    subName: string,
+    event: TransferBatchEvent,
+  ): Promise<WebSocketMessage[]> {
+    const messages: WebSocketMessage[] = [];
+    for (let i = 0; i < event.data.ids.length; i++) {
+      const message = await this.transformTransferSingleEvent(subName, {
+        ...event,
+        data: {
+          from: event.data.from,
+          to: event.data.to,
+          operator: event.data.operator,
+          id: event.data.ids[i],
+          value: event.data.values[i],
+        },
+      });
+      if (message !== undefined) {
+        messages.push(message);
+      }
+    }
+    return messages;
   }
 
   private async getTokenUri(id: string) {
