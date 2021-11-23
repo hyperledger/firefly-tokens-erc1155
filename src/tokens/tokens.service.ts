@@ -352,6 +352,7 @@ class TokenListener implements EventListener {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
           transactionHash: event.transactionHash,
+          logIndex: event.logIndex,
         },
       },
     };
@@ -360,6 +361,7 @@ class TokenListener implements EventListener {
   private async transformTransferSingleEvent(
     subName: string,
     event: TransferSingleEvent,
+    eventIndex?: number,
   ): Promise<WebSocketMessage | undefined> {
     const { data } = event;
     const unpackedId = unpackTokenId(data.id);
@@ -375,7 +377,14 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
+    const txIndex = BigInt(event.transactionIndex).toString(10);
+    let transferId = [event.blockNumber, txIndex, event.logIndex].join('.');
+    if (eventIndex !== undefined) {
+      transferId += `.${eventIndex}`;
+    }
+
     const commonData = {
+      id: transferId,
       poolId: unpackedId.poolId,
       tokenIndex: unpackedId.tokenIndex,
       uri: await this.getTokenUri(data.id),
@@ -386,6 +395,7 @@ class TokenListener implements EventListener {
         blockNumber: event.blockNumber,
         transactionIndex: event.transactionIndex,
         transactionHash: event.transactionHash,
+        logIndex: event.logIndex,
       },
     };
 
@@ -413,16 +423,20 @@ class TokenListener implements EventListener {
   ): Promise<WebSocketMessage[]> {
     const messages: WebSocketMessage[] = [];
     for (let i = 0; i < event.data.ids.length; i++) {
-      const message = await this.transformTransferSingleEvent(subName, {
-        ...event,
-        data: {
-          from: event.data.from,
-          to: event.data.to,
-          operator: event.data.operator,
-          id: event.data.ids[i],
-          value: event.data.values[i],
+      const message = await this.transformTransferSingleEvent(
+        subName,
+        {
+          ...event,
+          data: {
+            from: event.data.from,
+            to: event.data.to,
+            operator: event.data.operator,
+            id: event.data.ids[i],
+            value: event.data.values[i],
+          },
         },
-      });
+        i,
+      );
       if (message !== undefined) {
         messages.push(message);
       }

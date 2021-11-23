@@ -107,6 +107,10 @@ export class BlockchainTransaction {
   @ApiProperty()
   @IsNotEmpty()
   transactionHash: string;
+
+  @ApiProperty()
+  @IsOptional() // only optional to support activating very old pools - TODO: remove eventually
+  logIndex: string;
 }
 
 export class TokenPoolActivate {
@@ -204,6 +208,9 @@ export class TokenPoolEvent extends tokenEventBase {
 }
 
 export class TokenTransferEvent extends tokenEventBase {
+  @ApiProperty()
+  id: string;
+
   @ApiProperty()
   tokenIndex?: string;
 
