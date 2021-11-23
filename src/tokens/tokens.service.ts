@@ -64,6 +64,8 @@ const transferSingleEventSignature = 'TransferSingle(address,address,address,uin
 const transferBatchEvent = 'TransferBatch';
 const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
 
+const ALL_SUBSCRIBED_EVENTS = [tokenCreateEvent, transferSingleEvent, transferBatchEvent];
+
 @Injectable()
 export class TokensService {
   private readonly logger = new Logger(TokensService.name);
@@ -105,9 +107,9 @@ export class TokensService {
 
   /**
    * If there is an existing event stream whose subscriptions don't match the current
-   * naming format, delete the stream so we'll start over.
-   * This will cause redelivery of all token-pool events from block 0, which will poke
-   * FireFly to activate them and create the other necessary subscriptions.
+   * events and naming format, delete the stream so we'll start over.
+   * This will cause redelivery of all token events, which will poke FireFly to
+   * (re)activate pools and (re)process all transfers.
    *
    * TODO: eventually this migration logic can be pruned
    */
@@ -118,9 +120,28 @@ export class TokensService {
       return;
     }
     const subscriptions = await this.eventstream.getSubscriptions();
+    if (subscriptions.length === 0) {
+      return;
+    }
+
+    const foundEvents = new Set<string>();
     for (const sub of subscriptions.filter(s => s.stream === existingStream.id)) {
-      if (!sub.name.startsWith(this.topic)) {
-        this.logger.warn('Old event stream subscriptions found - deleting and recreating');
+      const parts = unpackSubscriptionName(this.topic, sub.name);
+      if (parts.event !== undefined && parts.event !== '') {
+        foundEvents.add(parts.event);
+      }
+    }
+
+    if (foundEvents.size === 1 && foundEvents.has(BASE_SUBSCRIPTION_NAME)) {
+      // Special case - only the base subscription exists (with the correct name),
+      // but no pools have been activated. This is ok.
+      return;
+    }
+
+    // Otherwise, expect to have found subscriptions for each of the events.
+    for (const event of ALL_SUBSCRIBED_EVENTS) {
+      if (!foundEvents.has(event)) {
+        this.logger.warn('Incorrect event stream subscriptions found - deleting and recreating');
         await this.eventstream.deleteStream(existingStream.id);
         await this.init();
         break;
