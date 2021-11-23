@@ -121,16 +121,24 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
 
   private async processEvent(event: Event) {
     this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
-    let newEvent: WebSocketMessage | undefined;
-    try {
-      newEvent = await this.transformEvent(event);
-    } catch (err) {
+    const subName = await this.getSubscriptionName(event.subId);
+    if (subName === undefined) {
+      this.logger.error(`Unknown subscription ID: ${event.subId}`);
       return;
     }
-    if (newEvent !== undefined) {
-      const message: WebSocketMessageWithId = { ...newEvent, id: uuidv4() };
-      this.awaitingAck.push(message);
-      this.currentClient?.send(JSON.stringify(message));
+
+    for (const listener of this.listeners) {
+      try {
+        await listener.onEvent(subName, event, (newEvent: WebSocketMessage | undefined) => {
+          if (newEvent !== undefined) {
+            const message: WebSocketMessageWithId = { ...newEvent, id: uuidv4() };
+            this.awaitingAck.push(message);
+            this.currentClient?.send(JSON.stringify(message));
+          }
+        });
+      } catch (err) {
+        // do nothing
+      }
     }
   }
 
@@ -145,21 +153,6 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     }
     this.subscriptionNames.set(subId, sub.name);
     return sub.name;
-  }
-
-  private async transformEvent(event: Event) {
-    const subName = await this.getSubscriptionName(event.subId);
-    if (subName === undefined) {
-      this.logger.error(`Unknown subscription ID: ${event.subId}`);
-      return undefined;
-    }
-    for (const listener of this.listeners) {
-      const newEvent = await listener.transformEvent(subName, event);
-      if (newEvent !== undefined) {
-        return newEvent;
-      }
-    }
-    return undefined;
   }
 
   private setCurrentClient(client: WebSocketEx) {

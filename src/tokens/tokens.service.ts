@@ -20,7 +20,7 @@ import { lastValueFrom } from 'rxjs';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { Event, EventStream, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
-import { EventListener } from '../eventstream-proxy/eventstream-proxy.interfaces';
+import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import {
   AsyncResponse,
@@ -277,12 +277,14 @@ class TokenListener implements EventListener {
 
   constructor(private http: HttpService, private instanceUrl: string, private topic: string) {}
 
-  transformEvent(subName: string, event: Event) {
+  async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
       case tokenCreateEventSignature:
-        return this.transformTokenCreateEvent(subName, event);
+        process(this.transformTokenCreateEvent(subName, event));
+        break;
       case transferSingleEventSignature:
-        return this.transformTransferSingleEvent(subName, event);
+        process(await this.transformTransferSingleEvent(subName, event));
+        break;
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
         return undefined;
