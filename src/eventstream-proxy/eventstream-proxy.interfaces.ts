@@ -18,11 +18,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { Event } from '../event-stream/event-stream.interfaces';
 
+export interface EventProcessor {
+  (msg: WebSocketMessage | undefined): void;
+}
+
 export interface EventListener {
-  transformEvent: (
-    subName: string,
-    event: Event,
-  ) => WebSocketMessage | undefined | Promise<WebSocketMessage | undefined>;
+  onEvent: (subName: string, event: Event, process: EventProcessor) => void | Promise<void>;
 }
 
 export class ReceiptEvent {
