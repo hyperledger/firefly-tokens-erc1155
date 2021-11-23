@@ -34,6 +34,7 @@ export interface Event {
   blockNumber: string;
   transactionIndex: string;
   transactionHash: string;
+  logIndex: string;
   data: any;
   inputMethod?: string;
   inputArgs?: Record<string, any>;

@@ -477,6 +477,7 @@ describe('AppController (e2e)', () => {
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
+            logIndex: '1',
             data: {
               id: '340282366920938463463374607431768211456',
               from: ZERO_ADDRESS,
@@ -487,6 +488,7 @@ describe('AppController (e2e)', () => {
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
+                logIndex: '1',
               },
             },
             inputMethod: 'mintFungible',
@@ -502,6 +504,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
+            id: '1.0.1',
             poolId: 'F1',
             to: 'A',
             amount: '5',
@@ -512,6 +515,7 @@ describe('AppController (e2e)', () => {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              logIndex: '1',
             },
           },
         });
@@ -546,6 +550,7 @@ describe('AppController (e2e)', () => {
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
+            logIndex: '1',
             data: {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
@@ -571,6 +576,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
+            id: '1.0.1',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -582,6 +588,7 @@ describe('AppController (e2e)', () => {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              logIndex: '1',
             },
           },
         });
@@ -616,6 +623,7 @@ describe('AppController (e2e)', () => {
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
+            logIndex: '1',
             data: {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
@@ -632,6 +640,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
+            id: '1.0.1',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -644,6 +653,7 @@ describe('AppController (e2e)', () => {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              logIndex: '1',
             },
           },
         });
@@ -729,6 +739,7 @@ describe('AppController (e2e)', () => {
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
+            logIndex: '1',
             data: {
               from: 'A',
               to: 'B',
@@ -748,6 +759,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
+            id: '1.0.1.0',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -760,6 +772,7 @@ describe('AppController (e2e)', () => {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              logIndex: '1',
             },
           },
         });
@@ -771,6 +784,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
+            id: '1.0.1.1',
             poolId: 'N1',
             tokenIndex: '2',
             from: 'A',
@@ -783,6 +797,7 @@ describe('AppController (e2e)', () => {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              logIndex: '1',
             },
           },
         });
@@ -851,6 +866,7 @@ describe('AppController (e2e)', () => {
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
+      logIndex: '1',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -888,6 +904,7 @@ describe('AppController (e2e)', () => {
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
+      logIndex: '1',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -927,6 +944,7 @@ describe('AppController (e2e)', () => {
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
+      logIndex: '1',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -940,6 +958,7 @@ describe('AppController (e2e)', () => {
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
+      logIndex: '1',
       data: {
         id: '340282366920938463463374607431768211456',
         from: ZERO_ADDRESS,
