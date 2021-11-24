@@ -54,29 +54,38 @@ The following GET APIs are exposed under `/api/v1`:
 * `GET /balance` - Get token balance (inputs: poolId, tokenIndex, account)
 * `GET /receipt/:id` - Get receipt for a previous request
 
-## Installation
+## Running the service
+
+The easiest way to run this service is as part of a stack created via
+[firefly-cli](https://github.com/hyperledger/firefly-cli).
+
+To run manually, you first need to run an Ethereum blockchain node and an instance of
+[firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect), and deploy the
+[ERC1155 smart contract](solidity/contracts/ERC1155MixedFungible.sol).
+
+Then, adjust your configuration to point at the deployed contract by editing [.env](.env)
+or by setting the environment values directly in your shell.
+
+Install and run the application using npm:
 
 ```bash
+# install
 $ npm install
-```
 
-## Running the app
-
-```bash
-# development
+# run in development mode
 $ npm run start
 
-# watch mode
+# run in watch mode
 $ npm run start:dev
 
-# production mode
+# run in production mode
 $ npm run start:prod
 ```
 
 View the Swagger UI at http://localhost:3000/api<br />
 View the generated OpenAPI spec at http://localhost:3000/api-json
 
-## Test
+## Testing
 
 ```bash
 # unit tests
@@ -91,8 +100,3 @@ $ npm run lint
 # formatting
 $ npm run format
 ```
-
-## Configuration
-
-Configuration data will be read from the `.env` file by default.
-See [.env](.env) for a list of all config values.
