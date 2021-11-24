@@ -137,7 +137,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
           }
         });
       } catch (err) {
-        // do nothing
+        this.logger.error(`Error processing event: ${err}`);
       }
     }
   }
