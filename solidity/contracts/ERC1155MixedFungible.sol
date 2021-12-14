@@ -87,7 +87,7 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     // Reference:
     // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/extensions/ERC1155Burnable.sol
     function burn(address from, uint256 id, uint256 amount, bytes calldata data)
-        public
+        external
         virtual
     {
         require(
