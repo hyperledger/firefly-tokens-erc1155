@@ -136,7 +136,7 @@ describe('AppController (e2e)', () => {
     await app.init();
 
     app.get(EventStreamProxyGateway).configure('url', TOPIC);
-    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX);
+    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '');
 
     (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());
@@ -523,7 +523,7 @@ describe('AppController (e2e)', () => {
       });
 
     expect(http.get).toHaveBeenCalledTimes(1);
-    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
   });
 
   it('Websocket: token burn event', async () => {
@@ -596,7 +596,7 @@ describe('AppController (e2e)', () => {
       });
 
     expect(http.get).toHaveBeenCalledTimes(1);
-    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
   });
 
   it('Websocket: token transfer event', async () => {
@@ -661,7 +661,7 @@ describe('AppController (e2e)', () => {
       });
 
     expect(http.get).toHaveBeenCalledTimes(1);
-    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
   });
 
   it('Websocket: token transfer event from wrong pool', () => {
@@ -805,7 +805,7 @@ describe('AppController (e2e)', () => {
       });
 
     expect(http.get).toHaveBeenCalledTimes(1);
-    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
   });
 
   it('Websocket: success receipt', () => {
