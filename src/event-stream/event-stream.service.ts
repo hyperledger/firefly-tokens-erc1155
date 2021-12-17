@@ -15,6 +15,9 @@
 // limitations under the License.
 
 import { HttpService } from '@nestjs/axios';
+import {
+  AxiosRequestConfig,
+} from 'axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
@@ -40,6 +43,8 @@ export class EventStreamSocket {
   constructor(
     private url: string,
     private topic: string,
+    private username: string,
+    private password: string,
     private handleEvents: (events: Event[]) => void,
     private handleReceipt: (receipt: EventStreamReply) => void,
   ) {
@@ -50,7 +55,7 @@ export class EventStreamSocket {
     this.disconnectDetected = false;
     this.closeRequested = false;
 
-    this.ws = new WebSocket(this.url);
+    this.ws = new WebSocket(this.url, {auth:`${this.username}:${this.password}`});
     this.ws
       .on('open', () => {
         if (this.disconnectDetected) {
@@ -131,16 +136,33 @@ export class EventStreamService {
   private readonly logger = new Logger(EventStreamService.name);
 
   private baseUrl: string;
+  private username: string;
+  private password: string;
 
   constructor(private http: HttpService) {}
 
-  configure(baseUrl: string) {
+  configure(baseUrl: string, username: string, password: string) {
     this.baseUrl = baseUrl;
+    this.username = username;
+    this.password = password;
+  }
+
+  private basicAuth() {
+    let requestOptions: AxiosRequestConfig = {};
+    if (this.username && this.password) {
+      requestOptions.auth = {
+        username: this.username,
+        password: this.password,
+      }
+    }
+    return requestOptions;
   }
 
   async getStreams(): Promise<EventStream[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStream[]>(`${this.baseUrl}/eventstreams`),
+      this.http.get<EventStream[]>(`${this.baseUrl}/eventstreams`, {
+        ...this.basicAuth()
+      }),
     );
     return response.data;
   }
@@ -161,25 +183,33 @@ export class EventStreamService {
     const stream = existingStreams.find(s => s.name === streamDetails.name);
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
-        this.http.patch<EventStream>(`${this.baseUrl}/eventstreams/${stream.id}`, streamDetails),
+        this.http.patch<EventStream>(`${this.baseUrl}/eventstreams/${stream.id}`, {
+          ...streamDetails,
+        }, {
+          ...this.basicAuth(),
+        }),
       );
       this.logger.log(`Event stream for ${topic}: ${stream.id}`);
       return patchedStreamRes.data;
     }
     const newStreamRes = await lastValueFrom(
-      this.http.post<EventStream>(`${this.baseUrl}/eventstreams`, streamDetails),
+      this.http.post<EventStream>(`${this.baseUrl}/eventstreams`, {
+        ...streamDetails,
+      }, {
+        ...this.basicAuth()
+      }),
     );
     this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
   }
 
   async deleteStream(id: string) {
-    await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`));
+    await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`, {...this.basicAuth()}));
   }
 
   async getSubscriptions(): Promise<EventStreamSubscription[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`),
+      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`, {...this.basicAuth()}),
     );
     return response.data;
   }
@@ -188,6 +218,7 @@ export class EventStreamService {
     const response = await lastValueFrom(
       this.http.get<EventStreamSubscription>(`${this.baseUrl}/subscriptions/${subId}`, {
         validateStatus: status => status < 300 || status === 404,
+        ...this.basicAuth(),
       }),
     );
     if (response.status === 404) {
@@ -208,6 +239,8 @@ export class EventStreamService {
         name,
         stream: streamId,
         fromBlock,
+      }, {
+        ...this.basicAuth()
       }),
     );
     this.logger.log(`Created subscription ${event}: ${response.data.id}`);
@@ -236,6 +269,6 @@ export class EventStreamService {
     handleEvents: (events: Event[]) => void,
     handleReceipt: (receipt: EventStreamReply) => void,
   ) {
-    return new EventStreamSocket(url, topic, handleEvents, handleReceipt);
+    return new EventStreamSocket(url, topic, this.username, this.password, handleEvents, handleReceipt);
   }
 }
