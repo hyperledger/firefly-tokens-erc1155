@@ -55,7 +55,8 @@ export class EventStreamSocket {
     this.disconnectDetected = false;
     this.closeRequested = false;
 
-    this.ws = new WebSocket(this.url, {auth:`${this.username}:${this.password}`});
+    const auth = (this.username && this.password) ? {auth:`${this.username}:${this.password}`} : undefined
+    this.ws = new WebSocket(this.url, auth);
     this.ws
       .on('open', () => {
         if (this.disconnectDetected) {
