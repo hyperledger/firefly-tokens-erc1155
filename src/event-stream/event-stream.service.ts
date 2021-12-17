@@ -15,12 +15,10 @@
 // limitations under the License.
 
 import { HttpService } from '@nestjs/axios';
-import {
-  AxiosRequestConfig,
-} from 'axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
+import { basicAuth } from '../utils';
 import {
   Event,
   EventStream,
@@ -55,7 +53,8 @@ export class EventStreamSocket {
     this.disconnectDetected = false;
     this.closeRequested = false;
 
-    const auth = (this.username && this.password) ? {auth:`${this.username}:${this.password}`} : undefined
+    const auth =
+      this.username && this.password ? { auth: `${this.username}:${this.password}` } : undefined;
     this.ws = new WebSocket(this.url, auth);
     this.ws
       .on('open', () => {
@@ -148,21 +147,10 @@ export class EventStreamService {
     this.password = password;
   }
 
-  private basicAuth() {
-    let requestOptions: AxiosRequestConfig = {};
-    if (this.username && this.password) {
-      requestOptions.auth = {
-        username: this.username,
-        password: this.password,
-      }
-    }
-    return requestOptions;
-  }
-
   async getStreams(): Promise<EventStream[]> {
     const response = await lastValueFrom(
       this.http.get<EventStream[]>(`${this.baseUrl}/eventstreams`, {
-        ...this.basicAuth()
+        ...basicAuth(this.username, this.password),
       }),
     );
     return response.data;
@@ -184,33 +172,47 @@ export class EventStreamService {
     const stream = existingStreams.find(s => s.name === streamDetails.name);
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
-        this.http.patch<EventStream>(`${this.baseUrl}/eventstreams/${stream.id}`, {
-          ...streamDetails,
-        }, {
-          ...this.basicAuth(),
-        }),
+        this.http.patch<EventStream>(
+          `${this.baseUrl}/eventstreams/${stream.id}`,
+          {
+            ...streamDetails,
+          },
+          {
+            ...basicAuth(this.username, this.password),
+          },
+        ),
       );
       this.logger.log(`Event stream for ${topic}: ${stream.id}`);
       return patchedStreamRes.data;
     }
     const newStreamRes = await lastValueFrom(
-      this.http.post<EventStream>(`${this.baseUrl}/eventstreams`, {
-        ...streamDetails,
-      }, {
-        ...this.basicAuth()
-      }),
+      this.http.post<EventStream>(
+        `${this.baseUrl}/eventstreams`,
+        {
+          ...streamDetails,
+        },
+        {
+          ...basicAuth(this.username, this.password),
+        },
+      ),
     );
     this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
   }
 
   async deleteStream(id: string) {
-    await lastValueFrom(this.http.delete(`${this.baseUrl}/eventstreams/${id}`, {...this.basicAuth()}));
+    await lastValueFrom(
+      this.http.delete(`${this.baseUrl}/eventstreams/${id}`, {
+        ...basicAuth(this.username, this.password),
+      }),
+    );
   }
 
   async getSubscriptions(): Promise<EventStreamSubscription[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`, {...this.basicAuth()}),
+      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`, {
+        ...basicAuth(this.username, this.password),
+      }),
     );
     return response.data;
   }
@@ -219,7 +221,7 @@ export class EventStreamService {
     const response = await lastValueFrom(
       this.http.get<EventStreamSubscription>(`${this.baseUrl}/subscriptions/${subId}`, {
         validateStatus: status => status < 300 || status === 404,
-        ...this.basicAuth(),
+        ...basicAuth(this.username, this.password),
       }),
     );
     if (response.status === 404) {
@@ -236,13 +238,17 @@ export class EventStreamService {
     fromBlock = '0', // subscribe from the start of the chain by default
   ): Promise<EventStreamSubscription> {
     const response = await lastValueFrom(
-      this.http.post<EventStreamSubscription>(`${this.baseUrl}/${instancePath}/${event}`, {
-        name,
-        stream: streamId,
-        fromBlock,
-      }, {
-        ...this.basicAuth()
-      }),
+      this.http.post<EventStreamSubscription>(
+        `${this.baseUrl}/${instancePath}/${event}`,
+        {
+          name,
+          stream: streamId,
+          fromBlock,
+        },
+        {
+          ...basicAuth(this.username, this.password),
+        },
+      ),
     );
     this.logger.log(`Created subscription ${event}: ${response.data.id}`);
     return response.data;
@@ -270,6 +276,13 @@ export class EventStreamService {
     handleEvents: (events: Event[]) => void,
     handleReceipt: (receipt: EventStreamReply) => void,
   ) {
-    return new EventStreamSocket(url, topic, this.username, this.password, handleEvents, handleReceipt);
+    return new EventStreamSocket(
+      url,
+      topic,
+      this.username,
+      this.password,
+      handleEvents,
+      handleReceipt,
+    );
   }
 }

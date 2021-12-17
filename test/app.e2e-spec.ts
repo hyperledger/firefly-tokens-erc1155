@@ -136,7 +136,7 @@ describe('AppController (e2e)', () => {
     await app.init();
 
     app.get(EventStreamProxyGateway).configure('url', TOPIC);
-    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, "", "");
+    app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '');
 
     (app.getHttpServer() as Server).listen();
     server = request(app.getHttpServer());

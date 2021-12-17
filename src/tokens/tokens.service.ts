@@ -15,9 +15,7 @@
 // limitations under the License.
 
 import { HttpService } from '@nestjs/axios';
-import {
-  AxiosRequestConfig,
-} from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import { EventStreamService } from '../event-stream/event-stream.service';
@@ -25,6 +23,7 @@ import { Event, EventStream, EventStreamReply } from '../event-stream/event-stre
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
+import { basicAuth } from '../utils';
 import {
   AsyncResponse,
   EthConnectAsyncResponse,
@@ -88,7 +87,14 @@ export class TokensService {
     private proxy: EventStreamProxyGateway,
   ) {}
 
-  configure(baseUrl: string, instancePath: string, topic: string, shortPrefix: string, username: string, password: string) {
+  configure(
+    baseUrl: string,
+    instancePath: string,
+    topic: string,
+    shortPrefix: string,
+    username: string,
+    password: string,
+  ) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
     this.instanceUrl = baseUrl + instancePath;
@@ -96,7 +102,9 @@ export class TokensService {
     this.shortPrefix = shortPrefix;
     this.username = username;
     this.password = password;
-    this.proxy.addListener(new TokenListener(this.http, this.instanceUrl, this.topic, this.username, this.password));
+    this.proxy.addListener(
+      new TokenListener(this.http, this.instanceUrl, this.topic, this.username, this.password),
+    );
   }
 
   /**
@@ -161,34 +169,23 @@ export class TokensService {
     const sync = `${this.shortPrefix}-sync`;
     const id = `${this.shortPrefix}-id`;
 
-    let requestOptions: AxiosRequestConfig = {
+    const requestOptions: AxiosRequestConfig = {
       params: {
         [from]: operator,
         [sync]: 'false',
         [id]: requestId,
       },
-      ...this.basicAuth(),
+      ...basicAuth(this.username, this.password),
     };
 
     return requestOptions;
   }
 
-  private basicAuth() {
-    let requestOptions: AxiosRequestConfig = {};
-    if (this.username && this.password) {
-      requestOptions.auth = {
-        username: this.username,
-        password: this.password,
-      }
-    }
-    return requestOptions;
-  };
-
   async getReceipt(id: string): Promise<EventStreamReply> {
     const response = await lastValueFrom(
       this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
         validateStatus: status => status < 300 || status === 404,
-        ...this.basicAuth(),
+        ...basicAuth(this.username, this.password),
       }),
     );
     if (response.status === 404) {
@@ -318,7 +315,7 @@ export class TokensService {
           account: dto.account,
           id: packTokenId(dto.poolId, dto.tokenIndex),
         },
-        ...this.basicAuth(),
+        ...basicAuth(this.username, this.password),
       }),
     );
     return { balance: response.data.output };
@@ -330,7 +327,13 @@ class TokenListener implements EventListener {
 
   private uriPattern: string | undefined;
 
-  constructor(private http: HttpService, private instanceUrl: string, private topic: string, private username: string, private password: string) {}
+  constructor(
+    private http: HttpService,
+    private instanceUrl: string,
+    private topic: string,
+    private username: string,
+    private password: string,
+  ) {}
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
@@ -350,17 +353,6 @@ class TokenListener implements EventListener {
         return undefined;
     }
   }
-
-  private basicAuth() {
-    let requestOptions: AxiosRequestConfig = {};
-    if (this.username && this.password) {
-      requestOptions.auth = {
-        username: this.username,
-        password: this.password,
-      }
-    }
-    return requestOptions;
-  };
 
   private transformTokenCreateEvent(
     subName: string,
@@ -485,7 +477,7 @@ class TokenListener implements EventListener {
       try {
         const response = await lastValueFrom(
           this.http.get<EthConnectReturn>(`${this.instanceUrl}/uri?input=0`, {
-            ...this.basicAuth(),
+            ...basicAuth(this.username, this.password),
           }),
         );
         this.uriPattern = response.data.output;
