@@ -14,14 +14,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { TerminusModule } from "@nestjs/terminus";
-import { TokensModule } from './tokens/tokens.module';
-import { EventStreamModule } from './event-stream/event-stream.module';
-import { EventStreamProxyModule } from './eventstream-proxy/eventstream-proxy.module';
+import { Test, TestingModule } from '@nestjs/testing';
+import { HealthController } from './health.controller';
 
-@Module({
-  imports: [ConfigModule.forRoot(), TokensModule, EventStreamModule, EventStreamProxyModule, TerminusModule],
-})
-export class AppModule {}
+describe('HealthController', () => {
+  let controller: HealthController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [HealthController],
+    }).compile();
+
+    controller = module.get<HealthController>(HealthController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
