@@ -17,6 +17,7 @@
 import { Controller, Get } from '@nestjs/common';
 import {HealthCheckService, HealthCheck, HttpHealthIndicator} from '@nestjs/terminus';
 import {TokensService} from "../tokens/tokens.service";
+import {basicAuth} from "../utils";
 
 @Controller('health')
 export class HealthController {
@@ -37,8 +38,8 @@ export class HealthController {
     @HealthCheck()
     readiness() {
         return this.health.check([
-            () => this.http.pingCheck('ethconnect', this.tokensService.baseUrl),
-            () => this.http.pingCheck('ethconnect-contract', this.tokensService.instanceUrl),
+            () => this.http.pingCheck('ethconnect', `${this.tokensService.baseUrl}/contracts`, basicAuth(this.tokensService.username, this.tokensService.password)),
+            () => this.http.pingCheck('ethconnect-contract', this.tokensService.instanceUrl, basicAuth(this.tokensService.username, this.tokensService.password)),
         ]);
     }
 }
