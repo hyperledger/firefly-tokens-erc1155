@@ -30,5 +30,6 @@ import { TokensService } from './tokens.service';
   ],
   controllers: [TokensController],
   providers: [TokensService],
+  exports: [TokensService]
 })
 export class TokensModule {}

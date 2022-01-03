@@ -20,8 +20,10 @@ import { TerminusModule } from "@nestjs/terminus";
 import { TokensModule } from './tokens/tokens.module';
 import { EventStreamModule } from './event-stream/event-stream.module';
 import { EventStreamProxyModule } from './eventstream-proxy/eventstream-proxy.module';
+import {HealthController} from "./health/health.controller";
 
 @Module({
   imports: [ConfigModule.forRoot(), TokensModule, EventStreamModule, EventStreamProxyModule, TerminusModule],
+  controllers: [HealthController]
 })
 export class AppModule {}
