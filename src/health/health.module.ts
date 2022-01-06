@@ -27,8 +27,6 @@ import { HealthController } from './health.controller';
     HttpModule.register({
       timeout: 30000,
     }),
-    EventStreamModule,
-    EventStreamProxyModule,
     TokensModule,
     TerminusModule,
   ],
