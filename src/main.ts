@@ -14,19 +14,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ShutdownSignal, ValidationPipe} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {NestFactory} from '@nestjs/core';
-import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-import {WsAdapter} from '@nestjs/platform-ws';
-import {version as API_VERSION} from '../package.json';
-import {AppModule} from './app.module';
-import {RequestLoggingInterceptor} from './request-logging.interceptor';
-import {TokensService} from './tokens/tokens.service';
-import {EventStreamProxyGateway} from './eventstream-proxy/eventstream-proxy.gateway';
-import {EventStreamReply} from './event-stream/event-stream.interfaces';
-import {TokenBurnEvent, TokenMintEvent, TokenPoolEvent, TokenTransferEvent,} from './tokens/tokens.interfaces';
-import {EventStreamService} from './event-stream/event-stream.service';
+import { ShutdownSignal, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { WsAdapter } from '@nestjs/platform-ws';
+import { version as API_VERSION } from '../package.json';
+import { AppModule } from './app.module';
+import { RequestLoggingInterceptor } from './request-logging.interceptor';
+import { TokensService } from './tokens/tokens.service';
+import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
+import { EventStreamReply } from './event-stream/event-stream.interfaces';
+import {
+  TokenBurnEvent,
+  TokenMintEvent,
+  TokenPoolEvent,
+  TokenTransferEvent,
+} from './tokens/tokens.interfaces';
+import { EventStreamService } from './event-stream/event-stream.service';
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -15,9 +15,9 @@
 // limitations under the License.
 
 import { Test, TestingModule } from '@nestjs/testing';
+import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
+import { TokensService } from '../tokens/tokens.service';
 import { HealthController } from './health.controller';
-import {TokensService} from "../tokens/tokens.service";
-import {HealthCheckService, HttpHealthIndicator} from "@nestjs/terminus";
 
 describe('HealthController', () => {
   let controller: HealthController;
