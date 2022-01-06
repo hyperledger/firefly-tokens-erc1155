@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,10 +16,12 @@
 
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { EventStreamProxyModule } from '../eventstream-proxy/eventstream-proxy.module';
+import { TerminusModule } from '@nestjs/terminus';
+import { TokensModule } from '../tokens/tokens.module';
 import { EventStreamModule } from '../event-stream/event-stream.module';
-import { TokensController } from './tokens.controller';
-import { TokensService } from './tokens.service';
+import { EventStreamProxyModule } from '../eventstream-proxy/eventstream-proxy.module';
+import { HealthController } from './health.controller';
+
 @Module({
   imports: [
     HttpModule.register({
@@ -27,9 +29,9 @@ import { TokensService } from './tokens.service';
     }),
     EventStreamModule,
     EventStreamProxyModule,
+    TokensModule,
+    TerminusModule,
   ],
-  controllers: [TokensController],
-  providers: [TokensService],
-  exports: [TokensService],
+  controllers: [HealthController],
 })
-export class TokensModule {}
+export class HealthModule {}
