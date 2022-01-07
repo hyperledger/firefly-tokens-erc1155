@@ -35,6 +35,7 @@ export interface Event {
   transactionIndex: string;
   transactionHash: string;
   logIndex: string;
+  timestamp: string;
   data: any;
   inputMethod?: string;
   inputArgs?: Record<string, any>;

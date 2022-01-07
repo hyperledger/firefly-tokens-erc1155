@@ -376,6 +376,7 @@ describe('AppController (e2e)', () => {
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
+            timestamp: '2020-01-01 00:00:00Z',
             data: {
               operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
@@ -395,10 +396,17 @@ describe('AppController (e2e)', () => {
             type: 'fungible',
             operator: 'bob',
             data: '',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              operator: 'bob',
+              type_id: '340282366920938463463374607431768211456',
+              data: '0x00',
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              signature: tokenCreateEventSignature,
             },
           },
         });
@@ -423,6 +431,7 @@ describe('AppController (e2e)', () => {
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
+            timestamp: '2020-01-01 00:00:00Z',
             data: {
               operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
@@ -442,10 +451,17 @@ describe('AppController (e2e)', () => {
             type: 'fungible',
             operator: 'bob',
             data: '',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              operator: 'bob',
+              type_id: '340282366920938463463374607431768211456',
+              data: '0x00',
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
+              signature: tokenCreateEventSignature,
             },
           },
         });
@@ -478,6 +494,7 @@ describe('AppController (e2e)', () => {
             transactionIndex: '0x0',
             transactionHash: '0x123',
             logIndex: '1',
+            timestamp: '2020-01-01 00:00:00Z',
             data: {
               id: '340282366920938463463374607431768211456',
               from: ZERO_ADDRESS,
@@ -511,11 +528,26 @@ describe('AppController (e2e)', () => {
             operator: 'A',
             uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
             data: 'test',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              id: '340282366920938463463374607431768211456',
+              from: ZERO_ADDRESS,
+              to: 'A',
+              operator: 'A',
+              value: '5',
+              transaction: {
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+              },
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
               logIndex: '1',
+              signature: transferSingleEventSignature,
             },
           },
         });
@@ -551,6 +583,7 @@ describe('AppController (e2e)', () => {
             transactionIndex: '0x0',
             transactionHash: '0x123',
             logIndex: '1',
+            timestamp: '2020-01-01 00:00:00Z',
             data: {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
@@ -584,11 +617,25 @@ describe('AppController (e2e)', () => {
             operator: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: 'test',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+              from: 'A',
+              to: ZERO_ADDRESS,
+              operator: 'A',
+              value: '1',
+              transaction: {
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+              },
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
               logIndex: '1',
+              signature: transferSingleEventSignature,
             },
           },
         });
@@ -624,6 +671,7 @@ describe('AppController (e2e)', () => {
             transactionIndex: '0x0',
             transactionHash: '0x123',
             logIndex: '1',
+            timestamp: '2020-01-01 00:00:00Z',
             data: {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
@@ -649,11 +697,20 @@ describe('AppController (e2e)', () => {
             operator: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              value: '1',
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
               logIndex: '1',
+              signature: transferSingleEventSignature,
             },
           },
         });
@@ -740,6 +797,7 @@ describe('AppController (e2e)', () => {
             transactionIndex: '0x0',
             transactionHash: '0x123',
             logIndex: '1',
+            timestamp: '2020-01-01 00:00:00Z',
             data: {
               from: 'A',
               to: 'B',
@@ -768,11 +826,20 @@ describe('AppController (e2e)', () => {
             operator: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+              value: '1',
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
               logIndex: '1',
+              signature: transferBatchEventSignature,
             },
           },
         });
@@ -793,11 +860,20 @@ describe('AppController (e2e)', () => {
             operator: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000002',
             data: '',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              from: 'A',
+              to: 'B',
+              operator: 'A',
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031426',
+              value: '1',
+            },
             transaction: {
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
               logIndex: '1',
+              signature: transferBatchEventSignature,
             },
           },
         });
@@ -867,6 +943,7 @@ describe('AppController (e2e)', () => {
       transactionIndex: '0x0',
       transactionHash: '0x123',
       logIndex: '1',
+      timestamp: '2020-01-01 00:00:00Z',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -905,6 +982,7 @@ describe('AppController (e2e)', () => {
       transactionIndex: '0x0',
       transactionHash: '0x123',
       logIndex: '1',
+      timestamp: '2020-01-01 00:00:00Z',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -945,6 +1023,7 @@ describe('AppController (e2e)', () => {
       transactionIndex: '0x0',
       transactionHash: '0x123',
       logIndex: '1',
+      timestamp: '2020-01-01 00:00:00Z',
       data: {
         operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
@@ -959,6 +1038,7 @@ describe('AppController (e2e)', () => {
       transactionIndex: '0x0',
       transactionHash: '0x123',
       logIndex: '1',
+      timestamp: '2020-01-01 00:00:00Z',
       data: {
         id: '340282366920938463463374607431768211456',
         from: ZERO_ADDRESS,

@@ -375,11 +375,14 @@ class TokenListener implements EventListener {
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         operator: data.operator,
         data: decodedData,
+        timestamp: event.timestamp,
+        rawOutput: data,
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
           transactionHash: event.transactionHash,
           logIndex: event.logIndex,
+          signature: event.signature,
         },
       },
     };
@@ -410,7 +413,7 @@ class TokenListener implements EventListener {
       transferId += `.${eventIndex}`;
     }
 
-    const commonData = {
+    const commonData = <TokenTransferEvent>{
       id: transferId,
       poolId: unpackedId.poolId,
       tokenIndex: unpackedId.tokenIndex,
@@ -418,11 +421,14 @@ class TokenListener implements EventListener {
       amount: data.value,
       operator: data.operator,
       data: decodedData,
+      timestamp: event.timestamp,
+      rawOutput: data,
       transaction: {
         blockNumber: event.blockNumber,
         transactionIndex: event.transactionIndex,
         transactionHash: event.transactionHash,
         logIndex: event.logIndex,
+        signature: event.signature,
       },
     };
 
