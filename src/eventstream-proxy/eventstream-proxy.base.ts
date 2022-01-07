@@ -147,12 +147,17 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     if (subName !== undefined) {
       return subName;
     }
-    const sub = await this.eventstream.getSubscription(subId);
-    if (sub === undefined) {
-      return undefined;
+
+    try {
+      const sub = await this.eventstream.getSubscription(subId);
+      if (sub !== undefined) {
+        this.subscriptionNames.set(subId, sub.name);
+        return sub.name;
+      }
+    } catch (err) {
+      this.logger.error(`Error looking up subscription: ${err}`);
     }
-    this.subscriptionNames.set(subId, sub.name);
-    return sub.name;
+    return undefined;
   }
 
   private setCurrentClient(client: WebSocketEx) {
