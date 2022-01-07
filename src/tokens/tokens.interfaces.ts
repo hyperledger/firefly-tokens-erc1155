@@ -111,6 +111,10 @@ export class BlockchainTransaction {
   @ApiProperty()
   @IsOptional() // only optional to support activating very old pools - TODO: remove eventually
   logIndex: string;
+
+  @ApiProperty()
+  @IsOptional()
+  signature: string;
 }
 
 export class TokenPoolActivate {
@@ -200,6 +204,12 @@ class tokenEventBase {
 
   @ApiProperty()
   transaction: BlockchainTransaction;
+
+  @ApiProperty()
+  timestamp: string;
+
+  @ApiProperty()
+  rawOutput: any;
 }
 
 export class TokenPoolEvent extends tokenEventBase {
