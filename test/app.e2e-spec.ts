@@ -532,7 +532,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
-            id: '1.0.1',
+            id: '000000000001/000000/000001',
             poolId: 'F1',
             to: 'A',
             amount: '5',
@@ -620,7 +620,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
-            id: '1.0.1',
+            id: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -699,7 +699,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            id: '1.0.1',
+            id: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -828,7 +828,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            id: '1.0.1.0',
+            id: '000000000001/000000/000001/000000',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -862,7 +862,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            id: '1.0.1.1',
+            id: '000000000001/000000/000001/000001',
             poolId: 'N1',
             tokenIndex: '2',
             from: 'A',
