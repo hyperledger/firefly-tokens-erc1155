@@ -407,10 +407,17 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
+    // This intentionally matches the formatting of protocol IDs for blockchain events in FireFly core
+    const blockNumber = event.blockNumber ?? '0';
     const txIndex = BigInt(event.transactionIndex).toString(10);
-    let transferId = [event.blockNumber, txIndex, event.logIndex].join('.');
+    const logIndex = event.logIndex ?? '0';
+    let transferId = [
+      blockNumber.padStart(12, '0'),
+      txIndex.padStart(6, '0'),
+      logIndex.padStart(6, '0'),
+    ].join('/');
     if (eventIndex !== undefined) {
-      transferId += `.${eventIndex}`;
+      transferId += '/' + eventIndex.toString(10).padStart(6, '0');
     }
 
     const commonData = <TokenTransferEvent>{
