@@ -25,9 +25,11 @@ import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { basicAuth } from '../utils';
 import {
+  // ApprovalForAllEvent,
   AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
+  // TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -65,8 +67,10 @@ const transferSingleEvent = 'TransferSingle';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 const transferBatchEvent = 'TransferBatch';
 const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
+const approvalForAllEvent = 'ApprovalForAll';
+const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
 
-const ALL_SUBSCRIBED_EVENTS = [tokenCreateEvent, transferSingleEvent, transferBatchEvent];
+const ALL_SUBSCRIBED_EVENTS = [tokenCreateEvent, transferSingleEvent, transferBatchEvent, approvalForAllEvent];
 
 @Injectable()
 export class TokensService {
@@ -164,14 +168,14 @@ export class TokensService {
     }
   }
 
-  private postOptions(operator: string, requestId?: string) {
+  private postOptions(signer: string, requestId?: string) {
     const from = `${this.shortPrefix}-from`;
     const sync = `${this.shortPrefix}-sync`;
     const id = `${this.shortPrefix}-id`;
 
     const requestOptions: AxiosRequestConfig = {
       params: {
-        [from]: operator,
+        [from]: signer,
         [sync]: 'false',
         [id]: requestId,
       },
@@ -202,7 +206,7 @@ export class TokensService {
           is_fungible: dto.type === TokenType.FUNGIBLE,
           data: encodeHex(dto.data ?? ''),
         },
-        this.postOptions(dto.operator, dto.requestId),
+        this.postOptions(dto.signer, dto.requestId),
       ),
     );
     return { id: response.data.id };
@@ -231,6 +235,13 @@ export class TokensService {
         packSubscriptionName(this.topic, dto.poolId, transferBatchEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
+      this.eventstream.getOrCreateSubscription(
+        this.instancePath,
+        this.stream.id,
+        approvalForAllEvent,
+        packSubscriptionName(this.topic, dto.poolId, approvalForAllEvent),
+        dto.transaction?.blockNumber ?? '0',
+      ),
     ]);
   }
 
@@ -246,7 +257,7 @@ export class TokensService {
             amounts: [dto.amount],
             data: encodeHex(dto.data ?? ''),
           },
-          this.postOptions(dto.operator, dto.requestId),
+          this.postOptions(dto.signer, dto.requestId),
         ),
       );
       return { id: response.data.id };
@@ -268,12 +279,26 @@ export class TokensService {
             to,
             data: encodeHex(dto.data ?? ''),
           },
-          this.postOptions(dto.operator, dto.requestId),
+          this.postOptions(dto.signer, dto.requestId),
         ),
       );
       return { id: response.data.id };
     }
   }
+
+  // async approve(dto: TokenApproval): Promise<AsyncResponse> {
+  //   const response = await lastValueFrom(
+  //     this.http.post<EthConnectAsyncResponse>(
+  //       `${this.instanceUrl}/setApprovalForAll`,
+  //       {
+  //         operator: dto.spender,
+  //         approved: dto.approved
+  //       },
+  //       this.postOptions(dto.signer, dto.requestId),
+  //     ),
+  //   );
+  //   return { id: response.data.id };
+  // }
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const response = await lastValueFrom(
@@ -286,7 +311,7 @@ export class TokensService {
           amount: dto.amount,
           data: encodeHex(dto.data ?? ''),
         },
-        this.postOptions(dto.operator, dto.requestId),
+        this.postOptions(dto.signer, dto.requestId),
       ),
     );
     return { id: response.data.id };
@@ -302,7 +327,7 @@ export class TokensService {
           amount: dto.amount,
           data: encodeHex(dto.data ?? ''),
         },
-        this.postOptions(dto.operator, dto.requestId),
+        this.postOptions(dto.signer, dto.requestId),
       ),
     );
     return { id: response.data.id };
@@ -348,11 +373,31 @@ class TokenListener implements EventListener {
           process(msg);
         }
         break;
+      case approvalForAllEventSignature:
+        process(this.transformTokenCreateEvent(subName, event));
+        break;
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
         return undefined;
     }
   }
+
+  // private transformApprovalForAllEvent(
+  //   subName: string,
+  //   event: ApprovalForAllEvent
+  // ): WebSocketMessage | undefined {
+  //   const { data } = event;
+  //   const unpackedSub = unpackSubscriptionName(this.topic, subName);
+
+  //   return {
+  //     event: 'token-approve',
+  //     data: {
+  //       operator: data.account,
+  //       spender: data.operator,
+  //       approved: data.approved,
+  //     }
+  //   };
+  // };
 
   private transformTokenCreateEvent(
     subName: string,
@@ -373,7 +418,7 @@ class TokenListener implements EventListener {
         standard: TOKEN_STANDARD,
         poolId: unpackedId.poolId,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
-        operator: data.operator,
+        signer: data.signer,
         data: decodedData,
         timestamp: event.timestamp,
         rawOutput: data,
@@ -426,7 +471,7 @@ class TokenListener implements EventListener {
       tokenIndex: unpackedId.tokenIndex,
       uri: await this.getTokenUri(data.id),
       amount: data.value,
-      operator: data.operator,
+      signer: data.signer,
       data: decodedData,
       timestamp: event.timestamp,
       rawOutput: data,
@@ -470,7 +515,7 @@ class TokenListener implements EventListener {
           data: {
             from: event.data.from,
             to: event.data.to,
-            operator: event.data.operator,
+            signer: event.data.signer,
             id: event.data.ids[i],
             value: event.data.values[i],
           },

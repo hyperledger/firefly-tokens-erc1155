@@ -30,17 +30,25 @@ export interface EthConnectReturn {
 
 export interface TokenCreateEvent extends Event {
   data: {
-    operator: string;
+    signer: string;
     type_id: string;
     data: string;
   };
 }
 
+// export interface ApprovalForAllEvent extends Event {
+//   data: {
+//     account: string;
+//     operator: string;
+//     approved: boolean;
+//   };
+// }
+
 export interface TransferSingleEvent extends Event {
   data: {
     from: string;
     to: string;
-    operator: string;
+    signer: string;
     id: string;
     value: string;
   };
@@ -50,7 +58,7 @@ export interface TransferBatchEvent extends Event {
   data: {
     from: string;
     to: string;
-    operator: string;
+    signer: string;
     ids: string[];
     values: string[];
   };
@@ -80,7 +88,7 @@ export class TokenPool {
 
   @ApiProperty()
   @IsNotEmpty()
-  operator: string;
+  signer: string;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
@@ -93,6 +101,24 @@ export class TokenPool {
   @ApiProperty({ description: poolConfigDescription })
   @IsOptional()
   config?: any;
+}
+
+export class TokenApproval {
+  @ApiProperty()
+  @IsNotEmpty()
+  signer: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  spender: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  approved: boolean;
+
+  @ApiProperty({ description: requestIdDescription })
+  @IsOptional()
+  requestId?: string;
 }
 
 export class BlockchainTransaction {
@@ -161,7 +187,7 @@ export class TokenTransfer {
 
   @ApiProperty()
   @IsNotEmpty()
-  operator: string;
+  signer: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -197,7 +223,7 @@ class tokenEventBase {
   type: TokenType;
 
   @ApiProperty()
-  operator: string;
+  signer: string;
 
   @ApiProperty()
   data?: string;
