@@ -146,7 +146,7 @@ describe('AppController (e2e)', () => {
       type: TokenType.FUNGIBLE,
       requestId: 'op1',
       data: 'tx1',
-      operator: IDENTITY,
+      signer: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: 'op1',
@@ -177,7 +177,7 @@ describe('AppController (e2e)', () => {
   it('Create non-fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
-      operator: '0xabc',
+      signer: '0xabc',
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -227,7 +227,7 @@ describe('AppController (e2e)', () => {
       to: '1',
       amount: '2',
       data: 'test',
-      operator: IDENTITY,
+      signer: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -256,7 +256,7 @@ describe('AppController (e2e)', () => {
       poolId: 'N1',
       to: '1',
       amount: '2',
-      operator: IDENTITY,
+      signer: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -286,7 +286,7 @@ describe('AppController (e2e)', () => {
       from: 'A',
       amount: '1',
       data: 'tx1',
-      operator: IDENTITY,
+      signer: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -316,7 +316,7 @@ describe('AppController (e2e)', () => {
       from: '1',
       to: '2',
       amount: '2',
-      operator: IDENTITY,
+      signer: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
       id: '1',
@@ -389,7 +389,7 @@ describe('AppController (e2e)', () => {
             transactionHash: '0x123',
             timestamp: '2020-01-01 00:00:00Z',
             data: {
-              operator: 'bob',
+              signer: 'bob',
               type_id: '340282366920938463463374607431768211456',
               data: '0x00',
             },
@@ -405,7 +405,7 @@ describe('AppController (e2e)', () => {
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
-            operator: 'bob',
+            signer: 'bob',
             data: '',
             timestamp: '2020-01-01 00:00:00Z',
             rawOutput: {
@@ -444,7 +444,7 @@ describe('AppController (e2e)', () => {
             transactionHash: '0x123',
             timestamp: '2020-01-01 00:00:00Z',
             data: {
-              operator: 'bob',
+              signer: 'bob',
               type_id: '340282366920938463463374607431768211456',
               data: '0x00',
             },
@@ -460,7 +460,7 @@ describe('AppController (e2e)', () => {
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
-            operator: 'bob',
+            signer: 'bob',
             data: '',
             timestamp: '2020-01-01 00:00:00Z',
             rawOutput: {
@@ -510,7 +510,7 @@ describe('AppController (e2e)', () => {
               id: '340282366920938463463374607431768211456',
               from: ZERO_ADDRESS,
               to: 'A',
-              operator: 'A',
+              signer: 'A',
               value: '5',
               transaction: {
                 blockNumber: '1',
@@ -536,7 +536,7 @@ describe('AppController (e2e)', () => {
             poolId: 'F1',
             to: 'A',
             amount: '5',
-            operator: 'A',
+            signer: 'A',
             uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
             data: 'test',
             timestamp: '2020-01-01 00:00:00Z',
@@ -599,7 +599,7 @@ describe('AppController (e2e)', () => {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: ZERO_ADDRESS,
-              operator: 'A',
+              signer: 'A',
               value: '1',
               transaction: {
                 blockNumber: '1',
@@ -625,7 +625,7 @@ describe('AppController (e2e)', () => {
             tokenIndex: '1',
             from: 'A',
             amount: '1',
-            operator: 'A',
+            signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: 'test',
             timestamp: '2020-01-01 00:00:00Z',
@@ -687,7 +687,7 @@ describe('AppController (e2e)', () => {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: 'B',
-              operator: 'A',
+              signer: 'A',
               value: '1',
             },
           },
@@ -705,7 +705,7 @@ describe('AppController (e2e)', () => {
             from: 'A',
             to: 'B',
             amount: '1',
-            operator: 'A',
+            signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
             timestamp: '2020-01-01 00:00:00Z',
@@ -753,7 +753,7 @@ describe('AppController (e2e)', () => {
               id: '340282366920938463463374607431768211456',
               from: 'A',
               to: 'B',
-              operator: 'A',
+              signer: 'A',
               value: '1',
             },
           },
@@ -768,7 +768,7 @@ describe('AppController (e2e)', () => {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: 'B',
-              operator: 'A',
+              signer: 'A',
               value: '1',
             },
           },
@@ -812,7 +812,7 @@ describe('AppController (e2e)', () => {
             data: {
               from: 'A',
               to: 'B',
-              operator: 'A',
+              signer: 'A',
               ids: [
                 '57896044618658097711785492504343953926975274699741220483192166611388333031425',
                 '57896044618658097711785492504343953926975274699741220483192166611388333031426',
@@ -834,7 +834,7 @@ describe('AppController (e2e)', () => {
             from: 'A',
             to: 'B',
             amount: '1',
-            operator: 'A',
+            signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
             timestamp: '2020-01-01 00:00:00Z',
@@ -868,7 +868,7 @@ describe('AppController (e2e)', () => {
             from: 'A',
             to: 'B',
             amount: '1',
-            operator: 'A',
+            signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000002',
             data: '',
             timestamp: '2020-01-01 00:00:00Z',
@@ -956,7 +956,7 @@ describe('AppController (e2e)', () => {
       logIndex: '1',
       timestamp: '2020-01-01 00:00:00Z',
       data: {
-        operator: 'bob',
+        signer: 'bob',
         type_id: '340282366920938463463374607431768211456',
         data: '0x6e73006e616d65006964',
       },
@@ -995,7 +995,7 @@ describe('AppController (e2e)', () => {
       logIndex: '1',
       timestamp: '2020-01-01 00:00:00Z',
       data: {
-        operator: 'bob',
+        signer: 'bob',
         type_id: '340282366920938463463374607431768211456',
         data: '0x6e73006e616d65006964',
       },
@@ -1036,7 +1036,7 @@ describe('AppController (e2e)', () => {
       logIndex: '1',
       timestamp: '2020-01-01 00:00:00Z',
       data: {
-        operator: 'bob',
+        signer: 'bob',
         type_id: '340282366920938463463374607431768211456',
         data: '0x6e73006e616d65006964',
       },
@@ -1054,7 +1054,7 @@ describe('AppController (e2e)', () => {
         id: '340282366920938463463374607431768211456',
         from: ZERO_ADDRESS,
         to: 'A',
-        operator: 'A',
+        signer: 'A',
         value: '5',
       },
     };
