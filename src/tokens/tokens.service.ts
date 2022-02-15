@@ -25,11 +25,11 @@ import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { basicAuth } from '../utils';
 import {
-  // ApprovalForAllEvent,
+  ApprovalForAllEvent,
   AsyncResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
-  // TokenApproval,
+  TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -240,7 +240,7 @@ export class TokensService {
         this.stream.id,
         approvalForAllEvent,
         packSubscriptionName(this.topic, dto.poolId, approvalForAllEvent),
-        dto.transaction?.blockNumber ?? '0',
+        '0',
       ),
     ]);
   }
@@ -286,19 +286,20 @@ export class TokensService {
     }
   }
 
-  // async approve(dto: TokenApproval): Promise<AsyncResponse> {
-  //   const response = await lastValueFrom(
-  //     this.http.post<EthConnectAsyncResponse>(
-  //       `${this.instanceUrl}/setApprovalForAll`,
-  //       {
-  //         operator: dto.spender,
-  //         approved: dto.approved
-  //       },
-  //       this.postOptions(dto.signer, dto.requestId),
-  //     ),
-  //   );
-  //   return { id: response.data.id };
-  // }
+  async approval(dto: TokenApproval): Promise<AsyncResponse> {
+    const response = await lastValueFrom(
+      this.http.post<EthConnectAsyncResponse>(
+        `${this.instanceUrl}/setApprovalForAllWithData`,
+        {
+          operator: dto.operator,
+          approved: dto.approved,
+          data: encodeHex(dto.data ?? ''),
+        },
+        this.postOptions(dto.owner, dto.requestId),
+      ),
+    );
+    return { id: response.data.id };
+  }
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const response = await lastValueFrom(
@@ -368,6 +369,9 @@ class TokenListener implements EventListener {
       case transferSingleEventSignature:
         process(await this.transformTransferSingleEvent(subName, event));
         break;
+      case approvalForAllEventSignature:
+        process(await this.transformApprovalForAllEvent(subName, event));
+        break;
       case transferBatchEventSignature:
         for (const msg of await this.transformTransferBatchEvent(subName, event)) {
           process(msg);
@@ -382,22 +386,34 @@ class TokenListener implements EventListener {
     }
   }
 
-  // private transformApprovalForAllEvent(
-  //   subName: string,
-  //   event: ApprovalForAllEvent
-  // ): WebSocketMessage | undefined {
-  //   const { data } = event;
-  //   const unpackedSub = unpackSubscriptionName(this.topic, subName);
-
-  //   return {
-  //     event: 'token-approve',
-  //     data: {
-  //       operator: data.account,
-  //       spender: data.operator,
-  //       approved: data.approved,
-  //     }
-  //   };
-  // };
+  private transformApprovalForAllEvent(
+    subName: string,
+    event: ApprovalForAllEvent
+  ): WebSocketMessage | undefined {
+    const { data } = event;
+    const unpackedSub = unpackSubscriptionName(this.topic, subName);
+    const decodedData = decodeHex(event.inputArgs?.data ?? '');
+    return {
+      event: 'token-approval',
+      data: {
+        id: `${data.account}:${data.operator}`,
+        signer: data.account,
+        operator: data.operator,
+        poolId: unpackedSub.poolId,
+        approved: data.approved,
+        rawOutput: data,
+        data: decodedData,
+        timestamp: event.timestamp,
+        transaction: {
+          blockNumber: event.blockNumber,
+          transactionIndex: event.transactionIndex,
+          transactionHash: event.transactionHash,
+          logIndex: event.logIndex,
+          signature: event.signature,
+        },
+      }
+    };
+  };
 
   private transformTokenCreateEvent(
     subName: string,
@@ -418,7 +434,7 @@ class TokenListener implements EventListener {
         standard: TOKEN_STANDARD,
         poolId: unpackedId.poolId,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
-        signer: data.signer,
+        signer: data.operator,
         data: decodedData,
         timestamp: event.timestamp,
         rawOutput: data,
@@ -471,7 +487,7 @@ class TokenListener implements EventListener {
       tokenIndex: unpackedId.tokenIndex,
       uri: await this.getTokenUri(data.id),
       amount: data.value,
-      signer: data.signer,
+      signer: data.operator,
       data: decodedData,
       timestamp: event.timestamp,
       rawOutput: data,
@@ -515,7 +531,7 @@ class TokenListener implements EventListener {
           data: {
             from: event.data.from,
             to: event.data.to,
-            signer: event.data.signer,
+            operator: event.data.operator,
             id: event.data.ids[i],
             value: event.data.values[i],
           },

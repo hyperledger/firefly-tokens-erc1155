@@ -208,7 +208,7 @@ describe('AppController (e2e)', () => {
   it('Create pool - unrecognized fields', async () => {
     const request = {
       type: TokenType.FUNGIBLE,
-      operator: IDENTITY,
+      signer: IDENTITY,
       isBestPool: true, // will be stripped but will not cause an error
     };
     const response: EthConnectAsyncResponse = {
@@ -389,7 +389,7 @@ describe('AppController (e2e)', () => {
             transactionHash: '0x123',
             timestamp: '2020-01-01 00:00:00Z',
             data: {
-              signer: 'bob',
+              operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
               data: '0x00',
             },
@@ -444,7 +444,7 @@ describe('AppController (e2e)', () => {
             transactionHash: '0x123',
             timestamp: '2020-01-01 00:00:00Z',
             data: {
-              signer: 'bob',
+              operator: 'bob',
               type_id: '340282366920938463463374607431768211456',
               data: '0x00',
             },
@@ -510,7 +510,7 @@ describe('AppController (e2e)', () => {
               id: '340282366920938463463374607431768211456',
               from: ZERO_ADDRESS,
               to: 'A',
-              signer: 'A',
+              operator: 'A',
               value: '5',
               transaction: {
                 blockNumber: '1',
@@ -599,7 +599,7 @@ describe('AppController (e2e)', () => {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: ZERO_ADDRESS,
-              signer: 'A',
+              operator: 'A',
               value: '1',
               transaction: {
                 blockNumber: '1',
@@ -687,7 +687,7 @@ describe('AppController (e2e)', () => {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: 'B',
-              signer: 'A',
+              operator: 'A',
               value: '1',
             },
           },
@@ -753,7 +753,7 @@ describe('AppController (e2e)', () => {
               id: '340282366920938463463374607431768211456',
               from: 'A',
               to: 'B',
-              signer: 'A',
+              operator: 'A',
               value: '1',
             },
           },
@@ -768,7 +768,7 @@ describe('AppController (e2e)', () => {
               id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: 'A',
               to: 'B',
-              signer: 'A',
+              operator: 'A',
               value: '1',
             },
           },
@@ -812,7 +812,7 @@ describe('AppController (e2e)', () => {
             data: {
               from: 'A',
               to: 'B',
-              signer: 'A',
+              operator: 'A',
               ids: [
                 '57896044618658097711785492504343953926975274699741220483192166611388333031425',
                 '57896044618658097711785492504343953926975274699741220483192166611388333031426',
@@ -956,7 +956,7 @@ describe('AppController (e2e)', () => {
       logIndex: '1',
       timestamp: '2020-01-01 00:00:00Z',
       data: {
-        signer: 'bob',
+        operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
         data: '0x6e73006e616d65006964',
       },
@@ -995,7 +995,7 @@ describe('AppController (e2e)', () => {
       logIndex: '1',
       timestamp: '2020-01-01 00:00:00Z',
       data: {
-        signer: 'bob',
+        operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
         data: '0x6e73006e616d65006964',
       },
@@ -1036,7 +1036,7 @@ describe('AppController (e2e)', () => {
       logIndex: '1',
       timestamp: '2020-01-01 00:00:00Z',
       data: {
-        signer: 'bob',
+        operator: 'bob',
         type_id: '340282366920938463463374607431768211456',
         data: '0x6e73006e616d65006964',
       },
@@ -1054,7 +1054,7 @@ describe('AppController (e2e)', () => {
         id: '340282366920938463463374607431768211456',
         from: ZERO_ADDRESS,
         to: 'A',
-        signer: 'A',
+        operator: 'A',
         value: '5',
       },
     };
