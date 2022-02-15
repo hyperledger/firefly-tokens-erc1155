@@ -30,25 +30,26 @@ export interface EthConnectReturn {
 
 export interface TokenCreateEvent extends Event {
   data: {
-    signer: string;
+    operator: string;
     type_id: string;
     data: string;
   };
 }
 
-// export interface ApprovalForAllEvent extends Event {
-//   data: {
-//     account: string;
-//     operator: string;
-//     approved: boolean;
-//   };
-// }
+export interface ApprovalForAllEvent extends Event {
+  data: {
+    account: string;
+    operator: string;
+    approved: boolean;
+    data: string;
+  };
+}
 
 export interface TransferSingleEvent extends Event {
   data: {
     from: string;
     to: string;
-    signer: string;
+    operator: string;
     id: string;
     value: string;
   };
@@ -58,7 +59,7 @@ export interface TransferBatchEvent extends Event {
   data: {
     from: string;
     to: string;
-    signer: string;
+    operator: string;
     ids: string[];
     values: string[];
   };
@@ -106,11 +107,11 @@ export class TokenPool {
 export class TokenApproval {
   @ApiProperty()
   @IsNotEmpty()
-  signer: string;
+  owner: string;
 
   @ApiProperty()
   @IsNotEmpty()
-  spender: string;
+  operator: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -119,6 +120,10 @@ export class TokenApproval {
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  data?: string;
 }
 
 export class BlockchainTransaction {

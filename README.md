@@ -39,10 +39,11 @@ not require any acknowledgment).
 Successful POST operations will also result in a detailed event corresponding to the type of
 transaction that was performed. The events and corresponding data items are:
 
-* `token-pool` - Token pool created (outputs: poolId, operator, type, data)
-* `token-mint` - Tokens minted (outputs: id, poolId, tokenIndex, uri, operator, to, amount, data)
-* `token-burn` - Tokens burned (outputs: id, poolId, tokenIndex, uri, operator, from, amount, data)
-* `token-transfer` - Tokens transferred (outputs: id, poolId, tokenIndex, uri, operator, from, to, amount, data)
+* `token-pool` - Token pool created (outputs: poolId, signer, type, data)
+* `token-mint` - Tokens minted (outputs: id, poolId, tokenIndex, uri, signer, to, amount, data)
+* `token-burn` - Tokens burned (outputs: id, poolId, tokenIndex, uri, signer, from, amount, data)
+* `token-transfer` - Tokens transferred (outputs: id, poolId, tokenIndex, uri, signer, from, to, amount, data)
+* `token-approval` - Tokens approved (outputs: id, poolId, signer, operator, approved, data)
 
 If multiple websocket clients are connected, only one will receive these events.
 Each one of these _must_ be acknowledged by replying on the websocket with `{event: "ack", data: {id}}`.

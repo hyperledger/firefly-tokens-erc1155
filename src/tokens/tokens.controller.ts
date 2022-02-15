@@ -78,18 +78,18 @@ export class TokensController {
     return this.service.mint(dto);
   }
 
-  // @Post('approve')
-  // @HttpCode(202)
-  // @ApiOperation({
-  //   summary: "Approves a spender to perform token transfers on the caller's behalf",
-  //   description:
-  //     'TODO',
-  // })
-  // @ApiBody({ type: TokenApproval })
-  // @ApiResponse({ status: 202, type: AsyncResponse })
-  // approve(@Body() dto: TokenApproval) {
-  //   return this.service.approve(dto);
-  // }
+  @Post('approval')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: "Approves a spender to perform token transfers on the caller's behalf",
+    description:
+      'Will be followed by a websocket notification with event=token-approval',
+  })
+  @ApiBody({ type: TokenApproval })
+  @ApiResponse({ status: 202, type: AsyncResponse })
+  approve(@Body() dto: TokenApproval) {
+    return this.service.approval(dto);
+  }
 
   @Post('burn')
   @HttpCode(202)

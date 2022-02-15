@@ -97,4 +97,11 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
         _burn(from, id, amount);
     }
+
+    function setApprovalForAllWithData(address operator, bool approved, bytes calldata data)
+        external
+        virtual
+    {
+        setApprovalForAll(operator, approved);
+    }
 }
