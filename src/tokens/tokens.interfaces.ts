@@ -107,6 +107,10 @@ export class TokenPool {
 export class TokenApproval {
   @ApiProperty()
   @IsNotEmpty()
+  poolId: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   owner: string;
 
   @ApiProperty()

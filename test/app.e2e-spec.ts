@@ -31,8 +31,10 @@ import { EventStreamService } from '../src/event-stream/event-stream.service';
 import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
 import { ReceiptEvent } from '../src/eventstream-proxy/eventstream-proxy.interfaces';
 import {
+  ApprovalForAllEvent,
   EthConnectAsyncResponse,
   EthConnectReturn,
+  TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -67,6 +69,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
+const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
 const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
 
 class FakeObservable<T> {
@@ -335,6 +338,34 @@ describe('AppController (e2e)', () => {
         from: '1',
         to: '2',
         amount: '2',
+        data: '0x00',
+      },
+      OPTIONS,
+    );
+  });
+
+  it('Token approval', async () => {
+    const request: TokenApproval = {
+      poolId: 'F1',
+      owner: IDENTITY,
+      operator: '2',
+      approved: true,
+    };
+    const response: EthConnectAsyncResponse = {
+      id: '1',
+      sent: true,
+    };
+
+    http.post = jest.fn(() => new FakeObservable(response));
+
+    await server.post('/approval').send(request).expect(202).expect({ id: '1' });
+
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(http.post).toHaveBeenCalledWith(
+      `${BASE_URL}${INSTANCE_PATH}/setApprovalForAllWithData`,
+      {
+        operator: '2',
+        approved: true,
         data: '0x00',
       },
       OPTIONS,
@@ -730,6 +761,72 @@ describe('AppController (e2e)', () => {
 
     expect(http.get).toHaveBeenCalledTimes(1);
     expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
+  });
+
+  it('Websocket: token approval event', async () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: TOPIC + ':N1',
+    });
+
+    http.get = jest.fn(
+      () =>
+        new FakeObservable(<EthConnectReturn>{
+          output: 'firefly://token/{id}',
+        }),
+    );
+
+    await server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          <ApprovalForAllEvent>{
+            signature: approvalForAllEventSignature,
+            address: '',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            logIndex: '1',
+            timestamp: '2020-01-01 00:00:00Z',
+            data: {
+              account: 'A',
+              approved: true,
+              operator: 'B',
+              data: '1',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-approval',
+          data: {
+            id: 'A:B',
+            signer: 'A',
+            operator: 'B',
+            poolId: 'N1',
+            approved: true,
+            data: '',
+            timestamp: '2020-01-01 00:00:00Z',
+            rawOutput: {
+              account: 'A',
+              approved: true,
+              operator: 'B',
+              data: '1',
+            },
+            transaction: {
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              signature: approvalForAllEventSignature,
+            },
+          },
+        });
+        return true;
+      });
   });
 
   it('Websocket: token transfer event from wrong pool', () => {
