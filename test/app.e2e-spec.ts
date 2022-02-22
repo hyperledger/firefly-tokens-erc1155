@@ -347,7 +347,7 @@ describe('AppController (e2e)', () => {
   it('Token approval', async () => {
     const request: TokenApproval = {
       poolId: 'F1',
-      owner: IDENTITY,
+      signer: IDENTITY,
       operator: '2',
       approved: true,
     };
@@ -767,13 +767,6 @@ describe('AppController (e2e)', () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: TOPIC + ':N1',
     });
-
-    http.get = jest.fn(
-      () =>
-        new FakeObservable(<EthConnectReturn>{
-          output: 'firefly://token/{id}',
-        }),
-    );
 
     await server
       .ws('/api/ws')

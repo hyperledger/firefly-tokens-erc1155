@@ -81,6 +81,8 @@ const requestIdDescription =
   'If none is provided, one will be assigned and returned in the 202 response.';
 const poolConfigDescription =
   'Optional configuration info for the token pool. Reserved for future use.';
+const approvalConfigDescription =
+  'Optional configuration info for the token approval. Reserved for future use.';
 
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
@@ -111,7 +113,7 @@ export class TokenApproval {
 
   @ApiProperty()
   @IsNotEmpty()
-  owner: string;
+  signer: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -128,6 +130,10 @@ export class TokenApproval {
   @ApiProperty()
   @IsOptional()
   data?: string;
+
+  @ApiProperty({ description: approvalConfigDescription })
+  @IsOptional()
+  config?: any;
 }
 
 export class BlockchainTransaction {
