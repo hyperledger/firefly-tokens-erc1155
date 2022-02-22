@@ -240,6 +240,8 @@ export class TokensService {
         this.stream.id,
         approvalForAllEvent,
         packSubscriptionName(this.topic, dto.poolId, approvalForAllEvent),
+        // Block number is 0 because it is important to receive all approval events,
+        // so existing approvals will be reflected in the newly created pool
         '0',
       ),
     ]);
@@ -295,7 +297,7 @@ export class TokensService {
           approved: dto.approved,
           data: encodeHex(dto.data ?? ''),
         },
-        this.postOptions(dto.owner, dto.requestId),
+        this.postOptions(dto.signer, dto.requestId),
       ),
     );
     return { id: response.data.id };
@@ -376,9 +378,6 @@ class TokenListener implements EventListener {
         for (const msg of await this.transformTransferBatchEvent(subName, event)) {
           process(msg);
         }
-        break;
-      case approvalForAllEventSignature:
-        process(this.transformTokenCreateEvent(subName, event));
         break;
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
