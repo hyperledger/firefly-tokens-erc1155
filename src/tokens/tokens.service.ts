@@ -70,7 +70,12 @@ const transferBatchEventSignature = 'TransferBatch(address,address,address,uint2
 const approvalForAllEvent = 'ApprovalForAll';
 const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
 
-const ALL_SUBSCRIBED_EVENTS = [tokenCreateEvent, transferSingleEvent, transferBatchEvent, approvalForAllEvent];
+const ALL_SUBSCRIBED_EVENTS = [
+  tokenCreateEvent,
+  transferSingleEvent,
+  transferBatchEvent,
+  approvalForAllEvent,
+];
 
 @Injectable()
 export class TokensService {
@@ -387,7 +392,7 @@ class TokenListener implements EventListener {
 
   private transformApprovalForAllEvent(
     subName: string,
-    event: ApprovalForAllEvent
+    event: ApprovalForAllEvent,
   ): WebSocketMessage | undefined {
     const { data } = event;
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
@@ -403,16 +408,19 @@ class TokenListener implements EventListener {
         rawOutput: data,
         data: decodedData,
         timestamp: event.timestamp,
+        location: 'address=' + event.address,
+        signature: event.signature,
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
           transactionHash: event.transactionHash,
           logIndex: event.logIndex,
+          address: event.address,
           signature: event.signature,
         },
-      }
+      },
     };
-  };
+  }
 
   private transformTokenCreateEvent(
     subName: string,
@@ -437,11 +445,14 @@ class TokenListener implements EventListener {
         data: decodedData,
         timestamp: event.timestamp,
         rawOutput: data,
+        location: 'address=' + event.address,
+        signature: event.signature,
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,
           transactionHash: event.transactionHash,
           logIndex: event.logIndex,
+          address: event.address,
           signature: event.signature,
         },
       },
@@ -490,11 +501,14 @@ class TokenListener implements EventListener {
       data: decodedData,
       timestamp: event.timestamp,
       rawOutput: data,
+      location: 'address=' + event.address,
+      signature: event.signature,
       transaction: {
         blockNumber: event.blockNumber,
         transactionIndex: event.transactionIndex,
         transactionHash: event.transactionHash,
         logIndex: event.logIndex,
+        address: event.address,
         signature: event.signature,
       },
     };
