@@ -433,6 +433,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
+            location: 'address=bob',
+            signature: tokenCreateEventSignature,
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
@@ -445,6 +447,7 @@ describe('AppController (e2e)', () => {
               data: '0x00',
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -488,6 +491,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
+            location: 'address=bob',
+            signature: tokenCreateEventSignature,
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
@@ -500,6 +505,7 @@ describe('AppController (e2e)', () => {
               data: '0x00',
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -531,7 +537,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb-123',
             signature: transferSingleEventSignature,
-            address: '',
+            address: 'bob',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -563,6 +569,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
+            location: 'address=bob',
+            signature: transferSingleEventSignature,
             id: '000000000001/000000/000001',
             poolId: 'F1',
             to: 'A',
@@ -585,6 +593,7 @@ describe('AppController (e2e)', () => {
               },
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -620,7 +629,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb-123',
             signature: transferSingleEventSignature,
-            address: '',
+            address: 'bob',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -651,6 +660,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
+            location: 'address=bob',
+            signature: transferSingleEventSignature,
             id: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
@@ -673,6 +684,7 @@ describe('AppController (e2e)', () => {
               },
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -708,7 +720,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb123',
             signature: transferSingleEventSignature,
-            address: '',
+            address: 'bob',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -730,6 +742,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
+            location: 'address=bob',
+            signature: transferSingleEventSignature,
             id: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
@@ -748,6 +762,7 @@ describe('AppController (e2e)', () => {
               value: '1',
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -775,7 +790,7 @@ describe('AppController (e2e)', () => {
         eventHandler([
           <ApprovalForAllEvent>{
             signature: approvalForAllEventSignature,
-            address: '',
+            address: 'bob',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -796,6 +811,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: {
+            location: 'address=bob',
+            signature: approvalForAllEventSignature,
             id: 'A:B',
             signer: 'A',
             operator: 'B',
@@ -810,6 +827,7 @@ describe('AppController (e2e)', () => {
               data: '1',
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -893,7 +911,7 @@ describe('AppController (e2e)', () => {
           <TransferBatchEvent>{
             subId: 'sb123',
             signature: transferBatchEventSignature,
-            address: '',
+            address: 'bob',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -918,6 +936,8 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
+            location: 'address=bob',
+            signature: transferBatchEventSignature,
             id: '000000000001/000000/000001/000000',
             poolId: 'N1',
             tokenIndex: '1',
@@ -936,6 +956,7 @@ describe('AppController (e2e)', () => {
               value: '1',
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
@@ -953,6 +974,8 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000001',
+            location: 'address=bob',
+            signature: transferBatchEventSignature,
             poolId: 'N1',
             tokenIndex: '2',
             from: 'A',
@@ -970,6 +993,7 @@ describe('AppController (e2e)', () => {
               value: '1',
             },
             transaction: {
+              address: 'bob',
               blockNumber: '1',
               transactionIndex: '0x0',
               transactionHash: '0x123',
