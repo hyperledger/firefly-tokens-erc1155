@@ -68,20 +68,31 @@ export function unpackTokenId(id: string) {
   };
 }
 
-export function packSubscriptionName(prefix: string, poolId: string, event?: string) {
-  if (event === undefined) {
-    return [prefix, poolId].join(':');
-  }
-  return [prefix, poolId, event].join(':');
+export function packStreamName(prefix: string, instancePath: string) {
+  return [prefix, instancePath].join(':');
+}
+
+export function packSubscriptionName(
+  prefix: string,
+  instancePath: string,
+  poolId: string,
+  event: string,
+) {
+  return [prefix, instancePath, poolId, event].join(':');
 }
 
 export function unpackSubscriptionName(prefix: string, data: string) {
-  const parts = data.startsWith(prefix + ':')
-    ? data.slice(prefix.length + 1).split(':', 2)
-    : undefined;
+  if (!data.startsWith(prefix + ':')) {
+    return {};
+  }
+  const parts = data.slice(prefix.length + 1).split(':');
+  if (parts.length !== 3) {
+    return {};
+  }
   return {
     prefix,
-    poolId: parts?.[0],
-    event: parts?.[1],
+    instancePath: parts[0],
+    poolId: parts[1],
+    event: parts[2],
   };
 }

@@ -51,6 +51,7 @@ import {
   encodeHex,
   encodeHexIDForURI,
   isFungible,
+  packStreamName,
   packSubscriptionName,
   packTokenId,
   unpackSubscriptionName,
@@ -125,13 +126,14 @@ export class TokensService {
       this.instancePath,
       this.stream.id,
       tokenCreateEvent,
-      packSubscriptionName(this.topic, BASE_SUBSCRIPTION_NAME),
+      packSubscriptionName(this.topic, this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
     );
   }
 
   private async getStream() {
     if (this.stream === undefined) {
-      this.stream = await this.eventstream.createOrUpdateStream(this.topic);
+      const name = packStreamName(this.topic, this.instancePath);
+      this.stream = await this.eventstream.createOrUpdateStream(name, this.topic);
     }
     return this.stream;
   }
@@ -145,9 +147,17 @@ export class TokensService {
    * TODO: eventually this migration logic can be pruned
    */
   async migrate() {
+    const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
-    const existingStream = streams.find(s => s.name === this.topic);
+    const existingStream = streams.find(s => s.name === name);
     if (existingStream === undefined) {
+      // Look for the old stream name (topic alone)
+      const oldStream = streams.find(s => s.name === this.topic);
+      if (oldStream !== undefined) {
+        this.logger.warn('Old event stream found - deleting and recreating');
+        await this.eventstream.deleteStream(oldStream.id);
+        await this.init();
+      }
       return;
     }
     const subscriptions = await this.eventstream.getSubscriptions();
@@ -175,7 +185,7 @@ export class TokensService {
         this.logger.warn('Incorrect event stream subscriptions found - deleting and recreating');
         await this.eventstream.deleteStream(existingStream.id);
         await this.init();
-        break;
+        return;
       }
     }
   }
@@ -231,28 +241,28 @@ export class TokensService {
         this.instancePath,
         stream.id,
         tokenCreateEvent,
-        packSubscriptionName(this.topic, dto.poolId, tokenCreateEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolId, tokenCreateEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferSingleEvent,
-        packSubscriptionName(this.topic, dto.poolId, transferSingleEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolId, transferSingleEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferBatchEvent,
-        packSubscriptionName(this.topic, dto.poolId, transferBatchEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolId, transferBatchEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         approvalForAllEvent,
-        packSubscriptionName(this.topic, dto.poolId, approvalForAllEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolId, approvalForAllEvent),
         // Block number is 0 because it is important to receive all approval events,
         // so existing approvals will be reflected in the newly created pool
         '0',

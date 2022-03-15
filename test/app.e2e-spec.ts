@@ -52,6 +52,7 @@ import {
 } from '../src/tokens/tokens.interfaces';
 import { TokensService } from '../src/tokens/tokens.service';
 import { WebSocketMessage } from '../src/websocket-events/websocket-events.base';
+import { packSubscriptionName } from '../src/tokens/tokens.util';
 import { AppModule } from './../src/app.module';
 
 const BASE_URL = 'http://eth';
@@ -403,7 +404,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token pool event', () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':F1',
+      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
     });
 
     return server
@@ -461,7 +462,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token pool event from base subscription', () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':base',
+      name: packSubscriptionName(TOPIC, '0x123', 'base', ''),
     });
 
     return server
@@ -519,7 +520,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token mint event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':F1',
+      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
     });
 
     http.get = jest.fn(
@@ -611,7 +612,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token burn event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':N1',
+      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
     });
 
     http.get = jest.fn(
@@ -702,7 +703,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token transfer event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':N1',
+      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
     });
 
     http.get = jest.fn(
@@ -780,7 +781,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token approval event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':N1',
+      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
     });
 
     await server
@@ -841,9 +842,8 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token transfer event from wrong pool', () => {
-    eventstream.getSubscription
-      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':N1' })
-      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':N1' });
+    const sub = <EventStreamSubscription>{ name: packSubscriptionName(TOPIC, '0x123', 'N1', '') };
+    eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 
     return server
       .ws('/api/ws')
@@ -893,7 +893,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token batch transfer', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':N1',
+      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
     });
 
     http.get = jest.fn(
@@ -1077,7 +1077,7 @@ describe('AppController (e2e)', () => {
     };
 
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':F1',
+      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
     });
 
     await server
@@ -1116,7 +1116,7 @@ describe('AppController (e2e)', () => {
     };
 
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: TOPIC + ':F1',
+      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
     });
 
     const ws1 = server.ws('/api/ws');
@@ -1173,9 +1173,8 @@ describe('AppController (e2e)', () => {
       },
     };
 
-    eventstream.getSubscription
-      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':F1' })
-      .mockReturnValueOnce(<EventStreamSubscription>{ name: TOPIC + ':F1' });
+    const sub = <EventStreamSubscription>{ name: packSubscriptionName(TOPIC, '0x123', 'F1', '') };
+    eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 
     const ws1 = server.ws('/api/ws');
     const ws2 = server.ws('/api/ws');
