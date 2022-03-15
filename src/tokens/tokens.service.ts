@@ -86,7 +86,7 @@ export class TokensService {
   instanceUrl: string;
   topic: string;
   shortPrefix: string;
-  stream: EventStream;
+  stream: EventStream | undefined;
   username: string;
   password: string;
 
@@ -120,13 +120,20 @@ export class TokensService {
    * One-time initialization of event stream and base subscription.
    */
   async init() {
-    this.stream = await this.eventstream.createOrUpdateStream(this.topic);
+    this.stream = await this.getStream();
     await this.eventstream.getOrCreateSubscription(
       this.instancePath,
       this.stream.id,
       tokenCreateEvent,
       packSubscriptionName(this.topic, BASE_SUBSCRIPTION_NAME),
     );
+  }
+
+  private async getStream() {
+    if (this.stream === undefined) {
+      this.stream = await this.eventstream.createOrUpdateStream(this.topic);
+    }
+    return this.stream;
   }
 
   /**
@@ -218,31 +225,32 @@ export class TokensService {
   }
 
   async activatePool(dto: TokenPoolActivate) {
+    const stream = await this.getStream();
     await Promise.all([
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
-        this.stream.id,
+        stream.id,
         tokenCreateEvent,
         packSubscriptionName(this.topic, dto.poolId, tokenCreateEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
-        this.stream.id,
+        stream.id,
         transferSingleEvent,
         packSubscriptionName(this.topic, dto.poolId, transferSingleEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
-        this.stream.id,
+        stream.id,
         transferBatchEvent,
         packSubscriptionName(this.topic, dto.poolId, transferBatchEvent),
         dto.transaction?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
-        this.stream.id,
+        stream.id,
         approvalForAllEvent,
         packSubscriptionName(this.topic, dto.poolId, approvalForAllEvent),
         // Block number is 0 because it is important to receive all approval events,
