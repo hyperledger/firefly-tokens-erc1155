@@ -18,6 +18,7 @@ import {
   decodeHex,
   encodeHex,
   encodeHexIDForURI,
+  packStreamName,
   packSubscriptionName,
   packTokenId,
   unpackSubscriptionName,
@@ -67,29 +68,30 @@ describe('Util', () => {
     });
   });
 
+  it('packStreamName', () => {
+    expect(packStreamName('token', '0x123')).toEqual('token:0x123');
+  });
+
   it('packSubscriptionName', () => {
-    expect(packSubscriptionName('token', 'F1')).toEqual('token:F1');
-    expect(packSubscriptionName('token', 'N1', 'create')).toEqual('token:N1:create');
-    expect(packSubscriptionName('tok:en', 'N1', 'create')).toEqual('tok:en:N1:create');
+    expect(packSubscriptionName('token', '0x123', 'F1', 'create')).toEqual('token:0x123:F1:create');
+    expect(packSubscriptionName('tok:en', '0x123', 'N1', 'create')).toEqual(
+      'tok:en:0x123:N1:create',
+    );
   });
 
   it('unpackSubscriptionName', () => {
-    expect(unpackSubscriptionName('token', 'token:F1')).toEqual({
+    expect(unpackSubscriptionName('token', 'token:0x123:F1:create')).toEqual({
       prefix: 'token',
+      instancePath: '0x123',
       poolId: 'F1',
-    });
-    expect(unpackSubscriptionName('token', 'token:N1:create')).toEqual({
-      prefix: 'token',
-      poolId: 'N1',
       event: 'create',
     });
-    expect(unpackSubscriptionName('tok:en', 'tok:en:N1:create')).toEqual({
+    expect(unpackSubscriptionName('tok:en', 'tok:en:0x123:N1:create')).toEqual({
       prefix: 'tok:en',
+      instancePath: '0x123',
       poolId: 'N1',
       event: 'create',
     });
-    expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({
-      prefix: 'token',
-    });
+    expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({});
   });
 });
