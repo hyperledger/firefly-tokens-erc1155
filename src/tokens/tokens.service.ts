@@ -30,6 +30,7 @@ import {
   EthConnectAsyncResponse,
   EthConnectReturn,
   TokenApproval,
+  TokenApprovalEvent,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -418,7 +419,7 @@ class TokenListener implements EventListener {
         process(await this.transformTransferSingleEvent(subName, event));
         break;
       case approvalForAllEventSignature:
-        process(await this.transformApprovalForAllEvent(subName, event));
+        process(this.transformApprovalForAllEvent(subName, event));
         break;
       case transferBatchEventSignature:
         for (const msg of await this.transformTransferBatchEvent(subName, event)) {
@@ -438,19 +439,25 @@ class TokenListener implements EventListener {
     const { data } = event;
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
+
+    if (unpackedSub.poolId === undefined) {
+      // should not happen
+      return undefined;
+    }
+
     return {
       event: 'token-approval',
-      data: {
+      data: <TokenApprovalEvent>{
         id: `${data.account}:${data.operator}`,
-        signer: data.account,
-        operator: data.operator,
-        poolId: unpackedSub.poolId,
-        approved: data.approved,
-        rawOutput: data,
-        data: decodedData,
-        timestamp: event.timestamp,
         location: 'address=' + event.address,
         signature: event.signature,
+        poolId: unpackedSub.poolId,
+        operator: data.operator,
+        approved: data.approved,
+        signer: data.account,
+        data: decodedData,
+        timestamp: event.timestamp,
+        rawOutput: data,
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,

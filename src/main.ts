@@ -26,6 +26,7 @@ import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
 import {
+  TokenApprovalEvent,
   TokenBurnEvent,
   TokenMintEvent,
   TokenPoolEvent,
@@ -61,6 +62,7 @@ async function bootstrap() {
       TokenMintEvent,
       TokenBurnEvent,
       TokenTransferEvent,
+      TokenApprovalEvent,
     ],
   });
   const config = app.get(ConfigService);
