@@ -148,46 +148,67 @@ export class TokensService {
   async migrationCheck() {
     const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
-    const existingStream = streams.find(s => s.name === name);
+    let existingStream = streams.find(s => s.name === name);
     if (existingStream === undefined) {
       // Look for the old stream name (topic alone)
-      const oldStream = streams.find(s => s.name === this.topic);
-      if (oldStream !== undefined) {
-        this.logger.warn('Old event stream found - please delete and recreate!');
-        return true;
+      existingStream = streams.find(s => s.name === this.topic);
+      if (existingStream === undefined) {
+        return false;
       }
-      return false;
+      this.logger.warn(
+        `Old event stream found with name ${existingStream.name}. ` +
+          `The connector will continue to use this stream, but it is recommended ` +
+          `to create a new stream with the name ${name}.`,
+      );
     }
-    const allSubscriptions = await this.eventstream.getSubscriptions();
-    const subscriptions = allSubscriptions.filter(s => s.stream === existingStream.id);
-    if (subscriptions.length === 0) {
-      return false;
-    }
+    this.stream = existingStream;
 
+    const allSubscriptions = await this.eventstream.getSubscriptions();
     const baseSubscription = packSubscriptionName(
       this.topic,
       this.instancePath,
       BASE_SUBSCRIPTION_NAME,
       tokenCreateEvent,
     );
-    if (subscriptions.length === 1 && subscriptions[0].name === baseSubscription) {
-      // Special case - only the base subscription exists (with the correct name),
-      // but no pools have been activated. This is ok.
+    const streamId = existingStream.id;
+    const subscriptions = allSubscriptions.filter(
+      s => s.stream === streamId && s.name !== baseSubscription,
+    );
+    if (subscriptions.length === 0) {
       return false;
     }
 
-    const foundEvents = new Set<string>();
+    const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
       const parts = unpackSubscriptionName(this.topic, sub.name);
-      if (parts.event !== undefined && parts.event !== '') {
-        foundEvents.add(parts.event);
+      if (parts.poolId === undefined || parts.event === undefined) {
+        this.logger.warn(
+          `Non-parseable subscription names found in event stream ${existingStream.name}.` +
+            `It is recommended to delete all subscriptions and activate all pools again.`,
+        );
+        return true;
+      }
+      const existing = foundEvents.get(parts.poolId);
+      if (existing !== undefined) {
+        existing.push(parts.event);
+      } else {
+        foundEvents.set(parts.poolId, [parts.event]);
       }
     }
 
     // Expect to have found subscriptions for each of the events.
-    if (!ALL_SUBSCRIBED_EVENTS.every(event => foundEvents.has(event))) {
-      this.logger.warn('Incorrect event stream subscriptions found - please delete and recreate!');
-      return true;
+    for (const [poolId, events] of foundEvents) {
+      if (
+        ALL_SUBSCRIBED_EVENTS.length !== events.length ||
+        !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
+      ) {
+        this.logger.warn(
+          `Event stream subscriptions for pool ${poolId} do not include all expected events ` +
+            `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
+            `It is recommended to delete its subscriptions and activate the pool again.`,
+        );
+        return true;
+      }
     }
     return false;
   }

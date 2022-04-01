@@ -77,12 +77,25 @@ describe('TokensService', () => {
       expect(await service.migrationCheck()).toBe(false);
     });
 
-    it('should migrate if event subscriptions are missing', async () => {
+    it('should migrate if any event subscriptions are missing', async () => {
       service.topic = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:p1:TokenCreate' }]);
       expect(await service.migrationCheck()).toBe(true);
+    });
+
+    it('should not migrate if all event subscriptions exist', async () => {
+      service.topic = 'tokens';
+      service.instancePath = '0x123';
+      eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
+      eventStream.getSubscriptions.mockReturnValueOnce([
+        { name: 'tokens:0x123:p1:TokenCreate' },
+        { name: 'tokens:0x123:p1:TransferSingle' },
+        { name: 'tokens:0x123:p1:TransferBatch' },
+        { name: 'tokens:0x123:p1:ApprovalForAll' },
+      ]);
+      expect(await service.migrationCheck()).toBe(false);
     });
   });
 });
