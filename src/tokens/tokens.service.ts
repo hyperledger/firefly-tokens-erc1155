@@ -30,6 +30,7 @@ import {
   EthConnectAsyncResponse,
   EthConnectReturn,
   TokenApproval,
+  TokenApprovalEvent,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -139,55 +140,78 @@ export class TokensService {
   }
 
   /**
-   * If there is an existing event stream whose subscriptions don't match the current
-   * events and naming format, delete the stream so we'll start over.
-   * This will cause redelivery of all token events, which will poke FireFly to
-   * (re)activate pools and (re)process all transfers.
+   * Check for existing event streams and subscriptions that don't match the current
+   * expected format (ie incorrect names, missing event subscriptions).
    *
-   * TODO: eventually this migration logic can be pruned
+   * Log a warning if any potential issues are flagged. User may need to delete
+   * subscriptions manually and reactivate the pool directly.
    */
-  async migrate() {
+  async migrationCheck() {
     const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
-    const existingStream = streams.find(s => s.name === name);
+    let existingStream = streams.find(s => s.name === name);
     if (existingStream === undefined) {
       // Look for the old stream name (topic alone)
-      const oldStream = streams.find(s => s.name === this.topic);
-      if (oldStream !== undefined) {
-        this.logger.warn('Old event stream found - deleting and recreating');
-        await this.eventstream.deleteStream(oldStream.id);
-        await this.init();
+      existingStream = streams.find(s => s.name === this.topic);
+      if (existingStream === undefined) {
+        return false;
       }
-      return;
+      this.logger.warn(
+        `Old event stream found with name ${existingStream.name}. ` +
+          `The connector will continue to use this stream, but it is recommended ` +
+          `to create a new stream with the name ${name}.`,
+      );
     }
-    const subscriptions = await this.eventstream.getSubscriptions();
+    this.stream = existingStream;
+
+    const allSubscriptions = await this.eventstream.getSubscriptions();
+    const baseSubscription = packSubscriptionName(
+      this.topic,
+      this.instancePath,
+      BASE_SUBSCRIPTION_NAME,
+      tokenCreateEvent,
+    );
+    const streamId = existingStream.id;
+    const subscriptions = allSubscriptions.filter(
+      s => s.stream === streamId && s.name !== baseSubscription,
+    );
     if (subscriptions.length === 0) {
-      return;
+      return false;
     }
 
-    const foundEvents = new Set<string>();
-    for (const sub of subscriptions.filter(s => s.stream === existingStream.id)) {
+    const foundEvents = new Map<string, string[]>();
+    for (const sub of subscriptions) {
       const parts = unpackSubscriptionName(this.topic, sub.name);
-      if (parts.event !== undefined && parts.event !== '') {
-        foundEvents.add(parts.event);
+      if (parts.poolId === undefined || parts.event === undefined) {
+        this.logger.warn(
+          `Non-parseable subscription names found in event stream ${existingStream.name}.` +
+            `It is recommended to delete all subscriptions and activate all pools again.`,
+        );
+        return true;
+      }
+      const existing = foundEvents.get(parts.poolId);
+      if (existing !== undefined) {
+        existing.push(parts.event);
+      } else {
+        foundEvents.set(parts.poolId, [parts.event]);
       }
     }
 
-    if (foundEvents.size === 1 && foundEvents.has(BASE_SUBSCRIPTION_NAME)) {
-      // Special case - only the base subscription exists (with the correct name),
-      // but no pools have been activated. This is ok.
-      return;
-    }
-
-    // Otherwise, expect to have found subscriptions for each of the events.
-    for (const event of ALL_SUBSCRIBED_EVENTS) {
-      if (!foundEvents.has(event)) {
-        this.logger.warn('Incorrect event stream subscriptions found - deleting and recreating');
-        await this.eventstream.deleteStream(existingStream.id);
-        await this.init();
-        return;
+    // Expect to have found subscriptions for each of the events.
+    for (const [poolId, events] of foundEvents) {
+      if (
+        ALL_SUBSCRIBED_EVENTS.length !== events.length ||
+        !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
+      ) {
+        this.logger.warn(
+          `Event stream subscriptions for pool ${poolId} do not include all expected events ` +
+            `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
+            `It is recommended to delete its subscriptions and activate the pool again.`,
+        );
+        return true;
       }
     }
+    return false;
   }
 
   private postOptions(signer: string, requestId?: string) {
@@ -395,7 +419,7 @@ class TokenListener implements EventListener {
         process(await this.transformTransferSingleEvent(subName, event));
         break;
       case approvalForAllEventSignature:
-        process(await this.transformApprovalForAllEvent(subName, event));
+        process(this.transformApprovalForAllEvent(subName, event));
         break;
       case transferBatchEventSignature:
         for (const msg of await this.transformTransferBatchEvent(subName, event)) {
@@ -415,19 +439,25 @@ class TokenListener implements EventListener {
     const { data } = event;
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
+
+    if (unpackedSub.poolId === undefined) {
+      // should not happen
+      return undefined;
+    }
+
     return {
       event: 'token-approval',
-      data: {
+      data: <TokenApprovalEvent>{
         id: `${data.account}:${data.operator}`,
-        signer: data.account,
-        operator: data.operator,
-        poolId: unpackedSub.poolId,
-        approved: data.approved,
-        rawOutput: data,
-        data: decodedData,
-        timestamp: event.timestamp,
         location: 'address=' + event.address,
         signature: event.signature,
+        poolId: unpackedSub.poolId,
+        operator: data.operator,
+        approved: data.approved,
+        signer: data.account,
+        data: decodedData,
+        timestamp: event.timestamp,
+        rawOutput: data,
         transaction: {
           blockNumber: event.blockNumber,
           transactionIndex: event.transactionIndex,

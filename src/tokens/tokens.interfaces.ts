@@ -239,9 +239,6 @@ class tokenEventBase {
   poolId: string;
 
   @ApiProperty()
-  type: TokenType;
-
-  @ApiProperty()
   signer: string;
 
   @ApiProperty()
@@ -264,6 +261,9 @@ class tokenEventBase {
 }
 
 export class TokenPoolEvent extends tokenEventBase {
+  @ApiProperty()
+  type: TokenType;
+
   @ApiProperty()
   standard: string;
 }
@@ -290,3 +290,11 @@ export class TokenTransferEvent extends tokenEventBase {
 
 export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
 export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) {}
+
+export class TokenApprovalEvent extends tokenEventBase {
+  @ApiProperty()
+  operator: string;
+
+  @ApiProperty()
+  approved: boolean;
+}

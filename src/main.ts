@@ -26,6 +26,7 @@ import { TokensService } from './tokens/tokens.service';
 import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
 import {
+  TokenApprovalEvent,
   TokenBurnEvent,
   TokenMintEvent,
   TokenPoolEvent,
@@ -61,6 +62,7 @@ async function bootstrap() {
       TokenMintEvent,
       TokenBurnEvent,
       TokenTransferEvent,
+      TokenApprovalEvent,
     ],
   });
   const config = app.get(ConfigService);
@@ -84,7 +86,7 @@ async function bootstrap() {
     .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password);
 
   try {
-    await app.get(TokensService).migrate();
+    await app.get(TokensService).migrationCheck();
   } catch (err) {
     // do nothing
   }
