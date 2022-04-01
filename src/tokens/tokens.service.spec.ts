@@ -22,8 +22,19 @@ import { TokensService } from './tokens.service';
 
 describe('TokensService', () => {
   let service: TokensService;
+  let eventStream: {
+    addListener: ReturnType<typeof jest.fn>;
+    getStreams: ReturnType<typeof jest.fn>;
+    getSubscriptions: ReturnType<typeof jest.fn>;
+  };
 
   beforeEach(async () => {
+    eventStream = {
+      addListener: jest.fn(),
+      getStreams: jest.fn(),
+      getSubscriptions: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TokensService,
@@ -33,7 +44,7 @@ describe('TokensService', () => {
         },
         {
           provide: EventStreamService,
-          useValue: { addListener: jest.fn() },
+          useValue: eventStream,
         },
         {
           provide: EventStreamProxyGateway,
@@ -47,5 +58,16 @@ describe('TokensService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('Subscription migration', () => {
+    it('should not migrate if correct base subscription exists', async () => {
+      service.topic = 'tokens';
+      service.instancePath = '0x123';
+      eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
+      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:base:TokenCreate' }]);
+
+      await service.migrate();
+    });
   });
 });

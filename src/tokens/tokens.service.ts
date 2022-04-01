@@ -160,26 +160,33 @@ export class TokensService {
       }
       return;
     }
-    const subscriptions = await this.eventstream.getSubscriptions();
+    const allSubscriptions = await this.eventstream.getSubscriptions();
+    const subscriptions = allSubscriptions.filter(s => s.stream === existingStream.id);
     if (subscriptions.length === 0) {
       return;
     }
 
+    const baseSubscription = packSubscriptionName(
+      this.topic,
+      this.instancePath,
+      BASE_SUBSCRIPTION_NAME,
+      tokenCreateEvent,
+    );
+    if (subscriptions.length === 1 && subscriptions[0].name === baseSubscription) {
+      // Special case - only the base subscription exists (with the correct name),
+      // but no pools have been activated. This is ok.
+      return;
+    }
+
     const foundEvents = new Set<string>();
-    for (const sub of subscriptions.filter(s => s.stream === existingStream.id)) {
+    for (const sub of subscriptions) {
       const parts = unpackSubscriptionName(this.topic, sub.name);
       if (parts.event !== undefined && parts.event !== '') {
         foundEvents.add(parts.event);
       }
     }
 
-    if (foundEvents.size === 1 && foundEvents.has(BASE_SUBSCRIPTION_NAME)) {
-      // Special case - only the base subscription exists (with the correct name),
-      // but no pools have been activated. This is ok.
-      return;
-    }
-
-    // Otherwise, expect to have found subscriptions for each of the events.
+    // Expect to have found subscriptions for each of the events.
     for (const event of ALL_SUBSCRIBED_EVENTS) {
       if (!foundEvents.has(event)) {
         this.logger.warn('Incorrect event stream subscriptions found - deleting and recreating');
