@@ -84,7 +84,7 @@ async function bootstrap() {
     .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password);
 
   try {
-    await app.get(TokensService).migrate();
+    await app.get(TokensService).migrationCheck();
   } catch (err) {
     // do nothing
   }

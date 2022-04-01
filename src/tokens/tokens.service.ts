@@ -139,14 +139,13 @@ export class TokensService {
   }
 
   /**
-   * If there is an existing event stream whose subscriptions don't match the current
-   * events and naming format, delete the stream so we'll start over.
-   * This will cause redelivery of all token events, which will poke FireFly to
-   * (re)activate pools and (re)process all transfers.
+   * Check for existing event streams and subscriptions that don't match the current
+   * expected format (ie incorrect names, missing event subscriptions).
    *
-   * TODO: eventually this migration logic can be pruned
+   * Log a warning if any potential issues are flagged. User may need to delete
+   * subscriptions manually and reactivate the pool directly.
    */
-  async migrate() {
+  async migrationCheck() {
     const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
     const existingStream = streams.find(s => s.name === name);
@@ -154,16 +153,15 @@ export class TokensService {
       // Look for the old stream name (topic alone)
       const oldStream = streams.find(s => s.name === this.topic);
       if (oldStream !== undefined) {
-        this.logger.warn('Old event stream found - deleting and recreating');
-        await this.eventstream.deleteStream(oldStream.id);
-        await this.init();
+        this.logger.warn('Old event stream found - please delete and recreate!');
+        return true;
       }
-      return;
+      return false;
     }
     const allSubscriptions = await this.eventstream.getSubscriptions();
     const subscriptions = allSubscriptions.filter(s => s.stream === existingStream.id);
     if (subscriptions.length === 0) {
-      return;
+      return false;
     }
 
     const baseSubscription = packSubscriptionName(
@@ -175,7 +173,7 @@ export class TokensService {
     if (subscriptions.length === 1 && subscriptions[0].name === baseSubscription) {
       // Special case - only the base subscription exists (with the correct name),
       // but no pools have been activated. This is ok.
-      return;
+      return false;
     }
 
     const foundEvents = new Set<string>();
@@ -187,14 +185,11 @@ export class TokensService {
     }
 
     // Expect to have found subscriptions for each of the events.
-    for (const event of ALL_SUBSCRIBED_EVENTS) {
-      if (!foundEvents.has(event)) {
-        this.logger.warn('Incorrect event stream subscriptions found - deleting and recreating');
-        await this.eventstream.deleteStream(existingStream.id);
-        await this.init();
-        return;
-      }
+    if (!ALL_SUBSCRIBED_EVENTS.every(event => foundEvents.has(event))) {
+      this.logger.warn('Incorrect event stream subscriptions found - please delete and recreate!');
+      return true;
     }
+    return false;
   }
 
   private postOptions(signer: string, requestId?: string) {
