@@ -164,6 +164,9 @@ export class BlockchainEvent {
   id: string;
 
   @ApiProperty()
+  name: string;
+
+  @ApiProperty()
   output: any;
 
   @ApiProperty()

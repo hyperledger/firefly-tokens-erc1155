@@ -446,6 +446,7 @@ describe('AppController (e2e)', () => {
             },
             blockchain: {
               id: '000000000001/000000/000000',
+              name: 'TokenCreate',
               location: 'address=0x00001',
               signature: tokenCreateEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -511,6 +512,7 @@ describe('AppController (e2e)', () => {
             },
             blockchain: {
               id: '000000000001/000000/000000',
+              name: 'TokenCreate',
               location: 'address=0x00001',
               signature: tokenCreateEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -594,6 +596,7 @@ describe('AppController (e2e)', () => {
             data: 'test',
             blockchain: {
               id: '000000000001/000000/000001',
+              name: 'TransferSingle',
               location: 'address=0x00001',
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -689,6 +692,7 @@ describe('AppController (e2e)', () => {
             data: 'test',
             blockchain: {
               id: '000000000001/000000/000001',
+              name: 'TransferSingle',
               location: 'address=0x00001',
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -775,6 +779,7 @@ describe('AppController (e2e)', () => {
             data: '',
             blockchain: {
               id: '000000000001/000000/000001',
+              name: 'TransferSingle',
               location: 'address=0x00001',
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -844,6 +849,7 @@ describe('AppController (e2e)', () => {
             data: '',
             blockchain: {
               id: '000000000001/000000/000001',
+              name: 'ApprovalForAll',
               location: 'address=0x00001',
               signature: approvalForAllEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -973,7 +979,8 @@ describe('AppController (e2e)', () => {
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
             blockchain: {
-              id: '000000000001/000000/000001/000000',
+              id: '000000000001/000000/000001',
+              name: 'TransferBatch',
               location: 'address=0x00001',
               signature: transferBatchEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -1013,7 +1020,8 @@ describe('AppController (e2e)', () => {
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000002',
             data: '',
             blockchain: {
-              id: '000000000001/000000/000001/000001',
+              id: '000000000001/000000/000001',
+              name: 'TransferBatch',
               location: 'address=0x00001',
               signature: transferBatchEventSignature,
               timestamp: '2020-01-01 00:00:00Z',

@@ -432,20 +432,20 @@ class TokenListener implements EventListener {
     }
   }
 
-  private formatBlockchainEventId(event: Event, eventIndex?: number) {
+  private formatBlockchainEventId(event: Event) {
     // This intentionally matches the formatting of protocol IDs for blockchain events in FireFly core
     const blockNumber = event.blockNumber ?? '0';
     const txIndex = BigInt(event.transactionIndex).toString(10);
     const logIndex = event.logIndex ?? '0';
-    let transferId = [
+    return [
       blockNumber.padStart(12, '0'),
       txIndex.padStart(6, '0'),
       logIndex.padStart(6, '0'),
     ].join('/');
-    if (eventIndex !== undefined) {
-      transferId += '/' + eventIndex.toString(10).padStart(6, '0');
-    }
-    return transferId;
+  }
+
+  private stripParamsFromSignature(signature: string) {
+    return signature.substring(0, signature.indexOf('('));
   }
 
   private transformTokenCreateEvent(
@@ -475,6 +475,7 @@ class TokenListener implements EventListener {
         },
         blockchain: {
           id: this.formatBlockchainEventId(event),
+          name: this.stripParamsFromSignature(event.signature),
           location: 'address=' + event.address,
           signature: event.signature,
           timestamp: event.timestamp,
@@ -511,7 +512,12 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
-    const transferId = this.formatBlockchainEventId(event, eventIndex);
+    const blockchainId = this.formatBlockchainEventId(event);
+    const transferId =
+      eventIndex === undefined
+        ? blockchainId
+        : blockchainId + '/' + eventIndex.toString(10).padStart(6, '0');
+
     const commonData = <TokenTransferEvent>{
       id: transferId,
       poolId: unpackedId.poolId,
@@ -521,7 +527,8 @@ class TokenListener implements EventListener {
       signer: output.operator,
       data: decodedData,
       blockchain: {
-        id: transferId,
+        id: blockchainId,
+        name: this.stripParamsFromSignature(event.signature),
         location: 'address=' + event.address,
         signature: event.signature,
         timestamp: event.timestamp,
@@ -606,6 +613,7 @@ class TokenListener implements EventListener {
         data: decodedData,
         blockchain: {
           id: this.formatBlockchainEventId(event),
+          name: this.stripParamsFromSignature(event.signature),
           location: 'address=' + event.address,
           signature: event.signature,
           timestamp: event.timestamp,
