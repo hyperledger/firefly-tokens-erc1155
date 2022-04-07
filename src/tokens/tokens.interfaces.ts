@@ -136,30 +136,47 @@ export class TokenApproval {
   config?: any;
 }
 
-export class BlockchainTransaction {
+export class BlockLocator {
   @ApiProperty()
   @IsNotEmpty()
   blockNumber: string;
+}
 
+export class BlockchainInfo extends BlockLocator {
   @ApiProperty()
-  @IsNotEmpty()
   transactionIndex: string;
 
   @ApiProperty()
-  @IsNotEmpty()
   transactionHash: string;
 
   @ApiProperty()
-  @IsOptional() // only optional to support activating very old pools - TODO: remove eventually
   logIndex: string;
 
   @ApiProperty()
-  @IsOptional()
   signature: string;
 
   @ApiProperty()
-  @IsOptional()
   address: string;
+}
+
+export class BlockchainEvent {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  output: any;
+
+  @ApiProperty()
+  info: BlockchainInfo;
+
+  @ApiProperty()
+  location: string;
+
+  @ApiProperty()
+  signature: string;
+
+  @ApiProperty()
+  timestamp: string;
 }
 
 export class TokenPoolActivate {
@@ -169,7 +186,7 @@ export class TokenPoolActivate {
 
   @ApiProperty()
   @IsOptional()
-  transaction?: BlockchainTransaction;
+  transaction?: BlockLocator;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
@@ -245,19 +262,11 @@ class tokenEventBase {
   data?: string;
 
   @ApiProperty()
-  transaction: BlockchainTransaction;
+  blockchain: BlockchainEvent;
+}
 
-  @ApiProperty()
-  timestamp: string;
-
-  @ApiProperty()
-  rawOutput: any;
-
-  @ApiProperty()
-  location?: string;
-
-  @ApiProperty()
-  signature?: string;
+export class TokenPoolEventInfo {
+  // currently no supplementary info for ERC1155
 }
 
 export class TokenPoolEvent extends tokenEventBase {
@@ -266,6 +275,12 @@ export class TokenPoolEvent extends tokenEventBase {
 
   @ApiProperty()
   standard: string;
+
+  @ApiProperty()
+  symbol?: string;
+
+  @ApiProperty()
+  info: TokenPoolEventInfo;
 }
 
 export class TokenTransferEvent extends tokenEventBase {
