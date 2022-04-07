@@ -266,21 +266,21 @@ export class TokensService {
         stream.id,
         tokenCreateEvent,
         packSubscriptionName(this.topic, this.instancePath, dto.poolId, tokenCreateEvent),
-        dto.transaction?.blockNumber ?? '0',
+        dto.locator?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferSingleEvent,
         packSubscriptionName(this.topic, this.instancePath, dto.poolId, transferSingleEvent),
-        dto.transaction?.blockNumber ?? '0',
+        dto.locator?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferBatchEvent,
         packSubscriptionName(this.topic, this.instancePath, dto.poolId, transferBatchEvent),
-        dto.transaction?.blockNumber ?? '0',
+        dto.locator?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
@@ -432,52 +432,30 @@ class TokenListener implements EventListener {
     }
   }
 
-  private transformApprovalForAllEvent(
-    subName: string,
-    event: ApprovalForAllEvent,
-  ): WebSocketMessage | undefined {
-    const { data } = event;
-    const unpackedSub = unpackSubscriptionName(this.topic, subName);
-    const decodedData = decodeHex(event.inputArgs?.data ?? '');
+  private formatBlockchainEventId(event: Event) {
+    // This intentionally matches the formatting of protocol IDs for blockchain events in FireFly core
+    const blockNumber = event.blockNumber ?? '0';
+    const txIndex = BigInt(event.transactionIndex).toString(10);
+    const logIndex = event.logIndex ?? '0';
+    return [
+      blockNumber.padStart(12, '0'),
+      txIndex.padStart(6, '0'),
+      logIndex.padStart(6, '0'),
+    ].join('/');
+  }
 
-    if (unpackedSub.poolId === undefined) {
-      // should not happen
-      return undefined;
-    }
-
-    return {
-      event: 'token-approval',
-      data: <TokenApprovalEvent>{
-        id: `${data.account}:${data.operator}`,
-        location: 'address=' + event.address,
-        signature: event.signature,
-        poolId: unpackedSub.poolId,
-        operator: data.operator,
-        approved: data.approved,
-        signer: data.account,
-        data: decodedData,
-        timestamp: event.timestamp,
-        rawOutput: data,
-        transaction: {
-          blockNumber: event.blockNumber,
-          transactionIndex: event.transactionIndex,
-          transactionHash: event.transactionHash,
-          logIndex: event.logIndex,
-          address: event.address,
-          signature: event.signature,
-        },
-      },
-    };
+  private stripParamsFromSignature(signature: string) {
+    return signature.substring(0, signature.indexOf('('));
   }
 
   private transformTokenCreateEvent(
     subName: string,
     event: TokenCreateEvent,
   ): WebSocketMessage | undefined {
-    const { data } = event;
-    const unpackedId = unpackTokenId(data.type_id);
+    const { data: output } = event;
+    const unpackedId = unpackTokenId(output.type_id);
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
-    const decodedData = decodeHex(data.data ?? '');
+    const decodedData = decodeHex(output.data ?? '');
 
     if (unpackedSub.poolId !== BASE_SUBSCRIPTION_NAME && unpackedSub.poolId !== unpackedId.poolId) {
       return undefined;
@@ -489,19 +467,27 @@ class TokenListener implements EventListener {
         standard: TOKEN_STANDARD,
         poolId: unpackedId.poolId,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
-        signer: data.operator,
+        signer: output.operator,
         data: decodedData,
-        timestamp: event.timestamp,
-        rawOutput: data,
-        location: 'address=' + event.address,
-        signature: event.signature,
-        transaction: {
-          blockNumber: event.blockNumber,
-          transactionIndex: event.transactionIndex,
-          transactionHash: event.transactionHash,
-          logIndex: event.logIndex,
+        info: {
           address: event.address,
+          typeId: '0x' + encodeHexIDForURI(output.type_id),
+        },
+        blockchain: {
+          id: this.formatBlockchainEventId(event),
+          name: this.stripParamsFromSignature(event.signature),
+          location: 'address=' + event.address,
           signature: event.signature,
+          timestamp: event.timestamp,
+          output,
+          info: {
+            blockNumber: event.blockNumber,
+            transactionIndex: event.transactionIndex,
+            transactionHash: event.transactionHash,
+            logIndex: event.logIndex,
+            address: event.address,
+            signature: event.signature,
+          },
         },
       },
     };
@@ -512,8 +498,8 @@ class TokenListener implements EventListener {
     event: TransferSingleEvent,
     eventIndex?: number,
   ): Promise<WebSocketMessage | undefined> {
-    const { data } = event;
-    const unpackedId = unpackTokenId(data.id);
+    const { data: output } = event;
+    const unpackedId = unpackTokenId(output.id);
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
@@ -521,60 +507,57 @@ class TokenListener implements EventListener {
       // this transfer is not from the subscribed pool
       return undefined;
     }
-    if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
+    if (output.from === ZERO_ADDRESS && output.to === ZERO_ADDRESS) {
       // should not happen
       return undefined;
     }
 
-    // This intentionally matches the formatting of protocol IDs for blockchain events in FireFly core
-    const blockNumber = event.blockNumber ?? '0';
-    const txIndex = BigInt(event.transactionIndex).toString(10);
-    const logIndex = event.logIndex ?? '0';
-    let transferId = [
-      blockNumber.padStart(12, '0'),
-      txIndex.padStart(6, '0'),
-      logIndex.padStart(6, '0'),
-    ].join('/');
-    if (eventIndex !== undefined) {
-      transferId += '/' + eventIndex.toString(10).padStart(6, '0');
-    }
+    const blockchainId = this.formatBlockchainEventId(event);
+    const transferId =
+      eventIndex === undefined
+        ? blockchainId
+        : blockchainId + '/' + eventIndex.toString(10).padStart(6, '0');
 
     const commonData = <TokenTransferEvent>{
       id: transferId,
       poolId: unpackedId.poolId,
       tokenIndex: unpackedId.tokenIndex,
-      uri: await this.getTokenUri(data.id),
-      amount: data.value,
-      signer: data.operator,
+      uri: await this.getTokenUri(output.id),
+      amount: output.value,
+      signer: output.operator,
       data: decodedData,
-      timestamp: event.timestamp,
-      rawOutput: data,
-      location: 'address=' + event.address,
-      signature: event.signature,
-      transaction: {
-        blockNumber: event.blockNumber,
-        transactionIndex: event.transactionIndex,
-        transactionHash: event.transactionHash,
-        logIndex: event.logIndex,
-        address: event.address,
+      blockchain: {
+        id: blockchainId,
+        name: this.stripParamsFromSignature(event.signature),
+        location: 'address=' + event.address,
         signature: event.signature,
+        timestamp: event.timestamp,
+        output,
+        info: {
+          blockNumber: event.blockNumber,
+          transactionIndex: event.transactionIndex,
+          transactionHash: event.transactionHash,
+          logIndex: event.logIndex,
+          address: event.address,
+          signature: event.signature,
+        },
       },
     };
 
-    if (data.from === ZERO_ADDRESS) {
+    if (output.from === ZERO_ADDRESS) {
       return {
         event: 'token-mint',
-        data: <TokenMintEvent>{ ...commonData, to: data.to },
+        data: <TokenMintEvent>{ ...commonData, to: output.to },
       };
-    } else if (data.to === ZERO_ADDRESS) {
+    } else if (output.to === ZERO_ADDRESS) {
       return {
         event: 'token-burn',
-        data: <TokenBurnEvent>{ ...commonData, from: data.from },
+        data: <TokenBurnEvent>{ ...commonData, from: output.from },
       };
     } else {
       return {
         event: 'token-transfer',
-        data: <TokenTransferEvent>{ ...commonData, from: data.from, to: data.to },
+        data: <TokenTransferEvent>{ ...commonData, from: output.from, to: output.to },
       };
     }
   }
@@ -604,6 +587,48 @@ class TokenListener implements EventListener {
       }
     }
     return messages;
+  }
+
+  private transformApprovalForAllEvent(
+    subName: string,
+    event: ApprovalForAllEvent,
+  ): WebSocketMessage | undefined {
+    const { data: output } = event;
+    const unpackedSub = unpackSubscriptionName(this.topic, subName);
+    const decodedData = decodeHex(event.inputArgs?.data ?? '');
+
+    if (unpackedSub.poolId === undefined) {
+      // should not happen
+      return undefined;
+    }
+
+    return {
+      event: 'token-approval',
+      data: <TokenApprovalEvent>{
+        id: `${output.account}:${output.operator}`,
+        poolId: unpackedSub.poolId,
+        operator: output.operator,
+        approved: output.approved,
+        signer: output.account,
+        data: decodedData,
+        blockchain: {
+          id: this.formatBlockchainEventId(event),
+          name: this.stripParamsFromSignature(event.signature),
+          location: 'address=' + event.address,
+          signature: event.signature,
+          timestamp: event.timestamp,
+          output,
+          info: {
+            blockNumber: event.blockNumber,
+            transactionIndex: event.transactionIndex,
+            transactionHash: event.transactionHash,
+            logIndex: event.logIndex,
+            address: event.address,
+            signature: event.signature,
+          },
+        },
+      },
+    };
   }
 
   private async getTokenUri(id: string) {

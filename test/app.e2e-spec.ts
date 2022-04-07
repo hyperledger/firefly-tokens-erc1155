@@ -35,6 +35,7 @@ import {
   EthConnectAsyncResponse,
   EthConnectReturn,
   TokenApproval,
+  TokenApprovalEvent,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
@@ -415,7 +416,7 @@ describe('AppController (e2e)', () => {
           <TokenCreateEvent>{
             subId: 'sb123',
             signature: tokenCreateEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -434,25 +435,33 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            location: 'address=bob',
-            signature: tokenCreateEventSignature,
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
             signer: 'bob',
             data: '',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              operator: 'bob',
-              type_id: '340282366920938463463374607431768211456',
-              data: '0x00',
+            info: {
+              address: '0x00001',
+              typeId: '0x0000000000000000000000000000000100000000000000000000000000000000',
             },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
+            blockchain: {
+              id: '000000000001/000000/000000',
+              name: 'TokenCreate',
+              location: 'address=0x00001',
               signature: tokenCreateEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                operator: 'bob',
+                type_id: '340282366920938463463374607431768211456',
+                data: '0x00',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                signature: tokenCreateEventSignature,
+              },
             },
           },
         });
@@ -473,7 +482,7 @@ describe('AppController (e2e)', () => {
           <TokenCreateEvent>{
             subId: 'sb123',
             signature: tokenCreateEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -492,25 +501,33 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            location: 'address=bob',
-            signature: tokenCreateEventSignature,
             standard: 'ERC1155',
             poolId: 'F1',
             type: 'fungible',
             signer: 'bob',
             data: '',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              operator: 'bob',
-              type_id: '340282366920938463463374607431768211456',
-              data: '0x00',
+            info: {
+              address: '0x00001',
+              typeId: '0x0000000000000000000000000000000100000000000000000000000000000000',
             },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
+            blockchain: {
+              id: '000000000001/000000/000000',
+              name: 'TokenCreate',
+              location: 'address=0x00001',
               signature: tokenCreateEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                operator: 'bob',
+                type_id: '340282366920938463463374607431768211456',
+                data: '0x00',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                signature: tokenCreateEventSignature,
+              },
             },
           },
         });
@@ -538,7 +555,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb-123',
             signature: transferSingleEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -570,8 +587,6 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
-            location: 'address=bob',
-            signature: transferSingleEventSignature,
             id: '000000000001/000000/000001',
             poolId: 'F1',
             to: 'A',
@@ -579,27 +594,33 @@ describe('AppController (e2e)', () => {
             signer: 'A',
             uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
             data: 'test',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              id: '340282366920938463463374607431768211456',
-              from: ZERO_ADDRESS,
-              to: 'A',
-              operator: 'A',
-              value: '5',
-              transaction: {
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'TransferSingle',
+              location: 'address=0x00001',
+              signature: transferSingleEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                id: '340282366920938463463374607431768211456',
+                from: ZERO_ADDRESS,
+                to: 'A',
+                operator: 'A',
+                value: '5',
+                transaction: {
+                  blockNumber: '1',
+                  transactionIndex: '0x0',
+                  transactionHash: '0x123',
+                  logIndex: '1',
+                },
+              },
+              info: {
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
                 logIndex: '1',
+                signature: transferSingleEventSignature,
               },
-            },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
-              logIndex: '1',
-              signature: transferSingleEventSignature,
             },
           },
         });
@@ -630,7 +651,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb-123',
             signature: transferSingleEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -661,8 +682,6 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
-            location: 'address=bob',
-            signature: transferSingleEventSignature,
             id: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
@@ -671,26 +690,32 @@ describe('AppController (e2e)', () => {
             signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: 'test',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              from: 'A',
-              to: ZERO_ADDRESS,
-              operator: 'A',
-              value: '1',
-              transaction: {
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'TransferSingle',
+              location: 'address=0x00001',
+              signature: transferSingleEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                from: 'A',
+                to: ZERO_ADDRESS,
+                operator: 'A',
+                value: '1',
+                transaction: {
+                  blockNumber: '1',
+                  transactionIndex: '0x0',
+                  transactionHash: '0x123',
+                },
+              },
+              info: {
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
+                logIndex: '1',
+                signature: transferSingleEventSignature,
               },
-            },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
-              logIndex: '1',
-              signature: transferSingleEventSignature,
             },
           },
         });
@@ -721,7 +746,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb123',
             signature: transferSingleEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -743,8 +768,6 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            location: 'address=bob',
-            signature: transferSingleEventSignature,
             id: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
@@ -754,21 +777,27 @@ describe('AppController (e2e)', () => {
             signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              value: '1',
-            },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
-              logIndex: '1',
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'TransferSingle',
+              location: 'address=0x00001',
               signature: transferSingleEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                value: '1',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+                signature: transferSingleEventSignature,
+              },
             },
           },
         });
@@ -791,7 +820,7 @@ describe('AppController (e2e)', () => {
         eventHandler([
           <ApprovalForAllEvent>{
             signature: approvalForAllEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -811,29 +840,33 @@ describe('AppController (e2e)', () => {
         delete message.id;
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-approval',
-          data: {
-            location: 'address=bob',
-            signature: approvalForAllEventSignature,
+          data: <TokenApprovalEvent>{
             id: 'A:B',
             signer: 'A',
             operator: 'B',
             poolId: 'N1',
             approved: true,
             data: '',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              account: 'A',
-              approved: true,
-              operator: 'B',
-              data: '1',
-            },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
-              logIndex: '1',
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'ApprovalForAll',
+              location: 'address=0x00001',
               signature: approvalForAllEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                account: 'A',
+                approved: true,
+                operator: 'B',
+                data: '1',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+                signature: approvalForAllEventSignature,
+              },
             },
           },
         });
@@ -886,7 +919,7 @@ describe('AppController (e2e)', () => {
         // Only the second transfer should have been processed
         expect(message.event).toEqual('token-transfer');
         expect(message.data.poolId).toEqual('N1');
-        expect(message.data.transaction.blockNumber).toEqual('2');
+        expect(message.data.blockchain.info.blockNumber).toEqual('2');
         return true;
       });
   });
@@ -911,7 +944,7 @@ describe('AppController (e2e)', () => {
           <TransferBatchEvent>{
             subId: 'sb123',
             signature: transferBatchEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -936,8 +969,6 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            location: 'address=bob',
-            signature: transferBatchEventSignature,
             id: '000000000001/000000/000001/000000',
             poolId: 'N1',
             tokenIndex: '1',
@@ -947,21 +978,27 @@ describe('AppController (e2e)', () => {
             signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: '',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              value: '1',
-            },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
-              logIndex: '1',
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'TransferBatch',
+              location: 'address=0x00001',
               signature: transferBatchEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                value: '1',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+                signature: transferBatchEventSignature,
+              },
             },
           },
         });
@@ -974,8 +1011,6 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000001',
-            location: 'address=bob',
-            signature: transferBatchEventSignature,
             poolId: 'N1',
             tokenIndex: '2',
             from: 'A',
@@ -984,21 +1019,27 @@ describe('AppController (e2e)', () => {
             signer: 'A',
             uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000002',
             data: '',
-            timestamp: '2020-01-01 00:00:00Z',
-            rawOutput: {
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031426',
-              value: '1',
-            },
-            transaction: {
-              address: 'bob',
-              blockNumber: '1',
-              transactionIndex: '0x0',
-              transactionHash: '0x123',
-              logIndex: '1',
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'TransferBatch',
+              location: 'address=0x00001',
               signature: transferBatchEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031426',
+                value: '1',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+                signature: transferBatchEventSignature,
+              },
             },
           },
         });
@@ -1063,7 +1104,7 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
-      address: 'bob',
+      address: '0x00001',
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
@@ -1102,7 +1143,7 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
-      address: 'bob',
+      address: '0x00001',
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
@@ -1143,7 +1184,7 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
-      address: 'bob',
+      address: '0x00001',
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
