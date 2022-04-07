@@ -189,7 +189,11 @@ export class TokenPoolActivate {
 
   @ApiProperty()
   @IsOptional()
-  transaction?: BlockLocator;
+  config?: any;
+
+  @ApiProperty()
+  @IsOptional()
+  locator?: BlockLocator;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
