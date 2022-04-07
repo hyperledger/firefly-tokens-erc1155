@@ -416,7 +416,7 @@ describe('AppController (e2e)', () => {
           <TokenCreateEvent>{
             subId: 'sb123',
             signature: tokenCreateEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -440,9 +440,13 @@ describe('AppController (e2e)', () => {
             type: 'fungible',
             signer: 'bob',
             data: '',
+            info: {
+              address: '0x00001',
+              typeId: '0x0000000000000000000000000000000100000000000000000000000000000000',
+            },
             blockchain: {
               id: '000000000001/000000/000000',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: tokenCreateEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -451,7 +455,7 @@ describe('AppController (e2e)', () => {
                 data: '0x00',
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -477,7 +481,7 @@ describe('AppController (e2e)', () => {
           <TokenCreateEvent>{
             subId: 'sb123',
             signature: tokenCreateEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -501,9 +505,13 @@ describe('AppController (e2e)', () => {
             type: 'fungible',
             signer: 'bob',
             data: '',
+            info: {
+              address: '0x00001',
+              typeId: '0x0000000000000000000000000000000100000000000000000000000000000000',
+            },
             blockchain: {
               id: '000000000001/000000/000000',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: tokenCreateEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -512,7 +520,7 @@ describe('AppController (e2e)', () => {
                 data: '0x00',
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -545,7 +553,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb-123',
             signature: transferSingleEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -586,7 +594,7 @@ describe('AppController (e2e)', () => {
             data: 'test',
             blockchain: {
               id: '000000000001/000000/000001',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -603,7 +611,7 @@ describe('AppController (e2e)', () => {
                 },
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -640,7 +648,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb-123',
             signature: transferSingleEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -681,7 +689,7 @@ describe('AppController (e2e)', () => {
             data: 'test',
             blockchain: {
               id: '000000000001/000000/000001',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -697,7 +705,7 @@ describe('AppController (e2e)', () => {
                 },
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -734,7 +742,7 @@ describe('AppController (e2e)', () => {
           <TransferSingleEvent>{
             subId: 'sb123',
             signature: transferSingleEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -767,7 +775,7 @@ describe('AppController (e2e)', () => {
             data: '',
             blockchain: {
               id: '000000000001/000000/000001',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -778,7 +786,7 @@ describe('AppController (e2e)', () => {
                 value: '1',
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -807,7 +815,7 @@ describe('AppController (e2e)', () => {
         eventHandler([
           <ApprovalForAllEvent>{
             signature: approvalForAllEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -836,7 +844,7 @@ describe('AppController (e2e)', () => {
             data: '',
             blockchain: {
               id: '000000000001/000000/000001',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: approvalForAllEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -846,7 +854,7 @@ describe('AppController (e2e)', () => {
                 data: '1',
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -930,7 +938,7 @@ describe('AppController (e2e)', () => {
           <TransferBatchEvent>{
             subId: 'sb123',
             signature: transferBatchEventSignature,
-            address: 'bob',
+            address: '0x00001',
             blockNumber: '1',
             transactionIndex: '0x0',
             transactionHash: '0x123',
@@ -966,7 +974,7 @@ describe('AppController (e2e)', () => {
             data: '',
             blockchain: {
               id: '000000000001/000000/000001/000000',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: transferBatchEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -977,7 +985,7 @@ describe('AppController (e2e)', () => {
                 value: '1',
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -1006,7 +1014,7 @@ describe('AppController (e2e)', () => {
             data: '',
             blockchain: {
               id: '000000000001/000000/000001/000001',
-              location: 'address=bob',
+              location: 'address=0x00001',
               signature: transferBatchEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
@@ -1017,7 +1025,7 @@ describe('AppController (e2e)', () => {
                 value: '1',
               },
               info: {
-                address: 'bob',
+                address: '0x00001',
                 blockNumber: '1',
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
@@ -1088,7 +1096,7 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
-      address: 'bob',
+      address: '0x00001',
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
@@ -1127,7 +1135,7 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
-      address: 'bob',
+      address: '0x00001',
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',
@@ -1168,7 +1176,7 @@ describe('AppController (e2e)', () => {
     const tokenPoolMessage: TokenCreateEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
-      address: 'bob',
+      address: '0x00001',
       blockNumber: '1',
       transactionIndex: '0x0',
       transactionHash: '0x123',

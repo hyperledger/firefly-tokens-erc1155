@@ -469,6 +469,10 @@ class TokenListener implements EventListener {
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,
+        info: {
+          address: event.address,
+          typeId: '0x' + encodeHexIDForURI(output.type_id),
+        },
         blockchain: {
           id: this.formatBlockchainEventId(event),
           location: 'address=' + event.address,

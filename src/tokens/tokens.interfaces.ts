@@ -266,7 +266,11 @@ class tokenEventBase {
 }
 
 export class TokenPoolEventInfo {
-  // currently no supplementary info for ERC1155
+  @ApiProperty()
+  address: string;
+
+  @ApiProperty()
+  typeId: string;
 }
 
 export class TokenPoolEvent extends tokenEventBase {
