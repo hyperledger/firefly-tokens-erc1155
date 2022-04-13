@@ -18,7 +18,15 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { IsDefined, IsNotEmpty, IsOptional } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
+// Internal types
+
+export interface PoolLocator {
+  poolId: string;
+  blockNumber?: string;
+}
+
 // Ethconnect interfaces
+
 export interface EthConnectAsyncResponse {
   sent: boolean;
   id: string;
@@ -136,13 +144,11 @@ export class TokenApproval {
   config?: any;
 }
 
-export class BlockLocator {
+export class BlockchainInfo {
   @ApiProperty()
   @IsNotEmpty()
   blockNumber: string;
-}
 
-export class BlockchainInfo extends BlockLocator {
   @ApiProperty()
   transactionIndex: string;
 
@@ -190,10 +196,6 @@ export class TokenPoolActivate {
   @ApiProperty()
   @IsOptional()
   config?: any;
-
-  @ApiProperty()
-  @IsOptional()
-  locator?: BlockLocator;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()

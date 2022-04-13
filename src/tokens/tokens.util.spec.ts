@@ -18,9 +18,11 @@ import {
   decodeHex,
   encodeHex,
   encodeHexIDForURI,
+  packPoolLocator,
   packStreamName,
   packSubscriptionName,
   packTokenId,
+  unpackPoolLocator,
   unpackSubscriptionName,
   unpackTokenId,
 } from './tokens.util';
@@ -55,7 +57,7 @@ describe('Util', () => {
   it('unpackTokenId', () => {
     expect(unpackTokenId('340282366920938463463374607431768211456')).toEqual({
       isFungible: true,
-      poolLocator: 'F1',
+      poolId: 'F1',
     });
     expect(
       unpackTokenId(
@@ -63,8 +65,22 @@ describe('Util', () => {
       ),
     ).toEqual({
       isFungible: false,
-      poolLocator: 'N1',
+      poolId: 'N1',
       tokenIndex: '1',
+    });
+  });
+
+  it('packPoolLocator', () => {
+    expect(packPoolLocator('N1', '5')).toEqual('id=N1&block=5');
+  });
+
+  it('unpackPoolLocator', () => {
+    expect(unpackPoolLocator('id=N1&block=5')).toEqual({
+      poolId: 'N1',
+      blockNumber: '5',
+    });
+    expect(unpackPoolLocator('N1')).toEqual({
+      poolId: 'N1',
     });
   });
 

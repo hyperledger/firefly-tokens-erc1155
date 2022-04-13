@@ -14,6 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { PoolLocator } from './tokens.interfaces';
+
 /**
  * Encode a UTF-8 string into hex bytes with a leading 0x
  */
@@ -46,14 +48,14 @@ export function encodeHexIDForURI(id: string) {
   return encoded;
 }
 
-export function isFungible(poolLocator: string) {
-  return poolLocator[0] === 'F';
+export function isFungible(poolId: string) {
+  return poolId[0] === 'F';
 }
 
-export function packTokenId(poolLocator: string, tokenIndex = '0') {
+export function packTokenId(poolId: string, tokenIndex = '0') {
   return (
-    (BigInt(isFungible(poolLocator) ? 0 : 1) << BigInt(255)) |
-    (BigInt(poolLocator.substring(1)) << BigInt(128)) |
+    (BigInt(isFungible(poolId) ? 0 : 1) << BigInt(255)) |
+    (BigInt(poolId.substring(1)) << BigInt(128)) |
     BigInt(tokenIndex)
   ).toString();
 }
@@ -63,9 +65,27 @@ export function unpackTokenId(id: string) {
   const isFungible = val >> BigInt(255) === BigInt(0);
   return {
     isFungible: isFungible,
-    poolLocator: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
+    poolId: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
     tokenIndex: isFungible ? undefined : BigInt.asUintN(128, val).toString(),
   };
+}
+
+export function packPoolLocator(poolId: string, blockNumber?: string) {
+  const encoded = new URLSearchParams();
+  encoded.set('id', poolId);
+  if (blockNumber !== undefined) {
+    encoded.set('block', blockNumber);
+  }
+  return encoded.toString();
+}
+
+export function unpackPoolLocator(data: string): PoolLocator {
+  const encoded = new URLSearchParams(data);
+  const tokenId = encoded.get('id');
+  if (tokenId !== null) {
+    return { poolId: tokenId, blockNumber: encoded.get('block') ?? undefined };
+  }
+  return { poolId: data };
 }
 
 export function packStreamName(prefix: string, instancePath: string) {
