@@ -109,7 +109,7 @@ export class TokenPool {
 export class TokenApproval {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -185,7 +185,7 @@ export class BlockchainEvent {
 export class TokenPoolActivate {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsOptional()
@@ -203,7 +203,7 @@ export class TokenPoolActivate {
 export class TokenBalanceQuery {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -222,7 +222,7 @@ export class TokenBalance {
 export class TokenTransfer {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsOptional()
@@ -260,7 +260,7 @@ export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 class tokenEventBase {
   @ApiProperty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   signer: string;

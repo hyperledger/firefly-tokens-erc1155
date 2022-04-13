@@ -46,14 +46,14 @@ export function encodeHexIDForURI(id: string) {
   return encoded;
 }
 
-export function isFungible(poolId: string) {
-  return poolId[0] === 'F';
+export function isFungible(poolLocator: string) {
+  return poolLocator[0] === 'F';
 }
 
-export function packTokenId(poolId: string, tokenIndex = '0') {
+export function packTokenId(poolLocator: string, tokenIndex = '0') {
   return (
-    (BigInt(isFungible(poolId) ? 0 : 1) << BigInt(255)) |
-    (BigInt(poolId.substr(1)) << BigInt(128)) |
+    (BigInt(isFungible(poolLocator) ? 0 : 1) << BigInt(255)) |
+    (BigInt(poolLocator.substring(1)) << BigInt(128)) |
     BigInt(tokenIndex)
   ).toString();
 }
@@ -63,7 +63,7 @@ export function unpackTokenId(id: string) {
   const isFungible = val >> BigInt(255) === BigInt(0);
   return {
     isFungible: isFungible,
-    poolId: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
+    poolLocator: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
     tokenIndex: isFungible ? undefined : BigInt.asUintN(128, val).toString(),
   };
 }
@@ -75,10 +75,10 @@ export function packStreamName(prefix: string, instancePath: string) {
 export function packSubscriptionName(
   prefix: string,
   instancePath: string,
-  poolId: string,
+  poolLocator: string,
   event: string,
 ) {
-  return [prefix, instancePath, poolId, event].join(':');
+  return [prefix, instancePath, poolLocator, event].join(':');
 }
 
 export function unpackSubscriptionName(prefix: string, data: string) {
@@ -92,7 +92,7 @@ export function unpackSubscriptionName(prefix: string, data: string) {
   return {
     prefix,
     instancePath: parts[0],
-    poolId: parts[1],
+    poolLocator: parts[1],
     event: parts[2],
   };
 }

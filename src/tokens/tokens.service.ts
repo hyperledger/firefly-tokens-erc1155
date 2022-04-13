@@ -182,29 +182,29 @@ export class TokensService {
     const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
       const parts = unpackSubscriptionName(this.topic, sub.name);
-      if (parts.poolId === undefined || parts.event === undefined) {
+      if (parts.poolLocator === undefined || parts.event === undefined) {
         this.logger.warn(
           `Non-parseable subscription names found in event stream ${existingStream.name}.` +
             `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
       }
-      const existing = foundEvents.get(parts.poolId);
+      const existing = foundEvents.get(parts.poolLocator);
       if (existing !== undefined) {
         existing.push(parts.event);
       } else {
-        foundEvents.set(parts.poolId, [parts.event]);
+        foundEvents.set(parts.poolLocator, [parts.event]);
       }
     }
 
     // Expect to have found subscriptions for each of the events.
-    for (const [poolId, events] of foundEvents) {
+    for (const [poolLocator, events] of foundEvents) {
       if (
         ALL_SUBSCRIBED_EVENTS.length !== events.length ||
         !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
       ) {
         this.logger.warn(
-          `Event stream subscriptions for pool ${poolId} do not include all expected events ` +
+          `Event stream subscriptions for pool ${poolLocator} do not include all expected events ` +
             `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
             `It is recommended to delete its subscriptions and activate the pool again.`,
         );
@@ -265,28 +265,28 @@ export class TokensService {
         this.instancePath,
         stream.id,
         tokenCreateEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolId, tokenCreateEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, tokenCreateEvent),
         dto.locator?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferSingleEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolId, transferSingleEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, transferSingleEvent),
         dto.locator?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferBatchEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolId, transferBatchEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, transferBatchEvent),
         dto.locator?.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         approvalForAllEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolId, approvalForAllEvent),
+        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, approvalForAllEvent),
         // Block number is 0 because it is important to receive all approval events,
         // so existing approvals will be reflected in the newly created pool
         '0',
@@ -295,8 +295,8 @@ export class TokensService {
   }
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
-    const typeId = packTokenId(dto.poolId);
-    if (isFungible(dto.poolId)) {
+    const typeId = packTokenId(dto.poolLocator);
+    if (isFungible(dto.poolLocator)) {
       const response = await lastValueFrom(
         this.http.post<EthConnectAsyncResponse>(
           `${this.instanceUrl}/mintFungible`,
@@ -357,7 +357,7 @@ export class TokensService {
         {
           from: dto.from,
           to: dto.to,
-          id: packTokenId(dto.poolId, dto.tokenIndex),
+          id: packTokenId(dto.poolLocator, dto.tokenIndex),
           amount: dto.amount,
           data: encodeHex(dto.data ?? ''),
         },
@@ -373,7 +373,7 @@ export class TokensService {
         `${this.instanceUrl}/burn`,
         {
           from: dto.from,
-          id: packTokenId(dto.poolId, dto.tokenIndex),
+          id: packTokenId(dto.poolLocator, dto.tokenIndex),
           amount: dto.amount,
           data: encodeHex(dto.data ?? ''),
         },
@@ -388,7 +388,7 @@ export class TokensService {
       this.http.get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
         params: {
           account: dto.account,
-          id: packTokenId(dto.poolId, dto.tokenIndex),
+          id: packTokenId(dto.poolLocator, dto.tokenIndex),
         },
         ...basicAuth(this.username, this.password),
       }),
@@ -457,7 +457,10 @@ class TokenListener implements EventListener {
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(output.data ?? '');
 
-    if (unpackedSub.poolId !== BASE_SUBSCRIPTION_NAME && unpackedSub.poolId !== unpackedId.poolId) {
+    if (
+      unpackedSub.poolLocator !== BASE_SUBSCRIPTION_NAME &&
+      unpackedSub.poolLocator !== unpackedId.poolLocator
+    ) {
       return undefined;
     }
 
@@ -465,7 +468,7 @@ class TokenListener implements EventListener {
       event: 'token-pool',
       data: <TokenPoolEvent>{
         standard: TOKEN_STANDARD,
-        poolId: unpackedId.poolId,
+        poolLocator: unpackedId.poolLocator,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,
@@ -503,7 +506,7 @@ class TokenListener implements EventListener {
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
-    if (unpackedSub.poolId !== unpackedId.poolId) {
+    if (unpackedSub.poolLocator !== unpackedId.poolLocator) {
       // this transfer is not from the subscribed pool
       return undefined;
     }
@@ -520,7 +523,7 @@ class TokenListener implements EventListener {
 
     const commonData = <TokenTransferEvent>{
       subject: transferId,
-      poolId: unpackedId.poolId,
+      poolLocator: unpackedId.poolLocator,
       tokenIndex: unpackedId.tokenIndex,
       uri: await this.getTokenUri(output.id),
       amount: output.value,
@@ -597,7 +600,7 @@ class TokenListener implements EventListener {
     const unpackedSub = unpackSubscriptionName(this.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
-    if (unpackedSub.poolId === undefined) {
+    if (unpackedSub.poolLocator === undefined) {
       // should not happen
       return undefined;
     }
@@ -606,7 +609,7 @@ class TokenListener implements EventListener {
       event: 'token-approval',
       data: <TokenApprovalEvent>{
         subject: `${output.account}:${output.operator}`,
-        poolId: unpackedSub.poolId,
+        poolLocator: unpackedSub.poolLocator,
         operator: output.operator,
         approved: output.approved,
         signer: output.account,

@@ -228,7 +228,7 @@ describe('AppController (e2e)', () => {
 
   it('Mint fungible token', async () => {
     const request: TokenMint = {
-      poolId: 'F1',
+      poolLocator: 'F1',
       to: '1',
       amount: '2',
       data: 'test',
@@ -258,7 +258,7 @@ describe('AppController (e2e)', () => {
 
   it('Mint non-fungible token', async () => {
     const request: TokenMint = {
-      poolId: 'N1',
+      poolLocator: 'N1',
       to: '1',
       amount: '2',
       signer: IDENTITY,
@@ -286,7 +286,7 @@ describe('AppController (e2e)', () => {
 
   it('Burn token', async () => {
     const request: TokenBurn = {
-      poolId: 'N1',
+      poolLocator: 'N1',
       tokenIndex: '1',
       from: 'A',
       amount: '1',
@@ -317,7 +317,7 @@ describe('AppController (e2e)', () => {
 
   it('Transfer token', async () => {
     const request: TokenTransfer = {
-      poolId: 'F1',
+      poolLocator: 'F1',
       from: '1',
       to: '2',
       amount: '2',
@@ -348,7 +348,7 @@ describe('AppController (e2e)', () => {
 
   it('Token approval', async () => {
     const request: TokenApproval = {
-      poolId: 'F1',
+      poolLocator: 'F1',
       signer: IDENTITY,
       operator: '2',
       approved: true,
@@ -377,7 +377,7 @@ describe('AppController (e2e)', () => {
   it('Query balance', async () => {
     const request: TokenBalanceQuery = {
       account: '1',
-      poolId: 'F1',
+      poolLocator: 'F1',
       tokenIndex: '0',
     };
     const response: EthConnectReturn = {
@@ -436,7 +436,7 @@ describe('AppController (e2e)', () => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolId: 'F1',
+            poolLocator: 'F1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -502,7 +502,7 @@ describe('AppController (e2e)', () => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolId: 'F1',
+            poolLocator: 'F1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -588,7 +588,7 @@ describe('AppController (e2e)', () => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             subject: '000000000001/000000/000001',
-            poolId: 'F1',
+            poolLocator: 'F1',
             to: 'A',
             amount: '5',
             signer: 'A',
@@ -683,7 +683,7 @@ describe('AppController (e2e)', () => {
           event: 'token-burn',
           data: <TokenBurnEvent>{
             subject: '000000000001/000000/000001',
-            poolId: 'N1',
+            poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
             amount: '1',
@@ -769,7 +769,7 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             subject: '000000000001/000000/000001',
-            poolId: 'N1',
+            poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
             to: 'B',
@@ -844,7 +844,7 @@ describe('AppController (e2e)', () => {
             subject: 'A:B',
             signer: 'A',
             operator: 'B',
-            poolId: 'N1',
+            poolLocator: 'N1',
             approved: true,
             data: '',
             blockchain: {
@@ -918,7 +918,7 @@ describe('AppController (e2e)', () => {
       .expectJson(message => {
         // Only the second transfer should have been processed
         expect(message.event).toEqual('token-transfer');
-        expect(message.data.poolId).toEqual('N1');
+        expect(message.data.poolLocator).toEqual('N1');
         expect(message.data.blockchain.info.blockNumber).toEqual('2');
         return true;
       });
@@ -970,7 +970,7 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             subject: '000000000001/000000/000001/000000',
-            poolId: 'N1',
+            poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
             to: 'B',
@@ -1011,7 +1011,7 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             subject: '000000000001/000000/000001/000001',
-            poolId: 'N1',
+            poolLocator: 'N1',
             tokenIndex: '2',
             from: 'A',
             to: 'B',

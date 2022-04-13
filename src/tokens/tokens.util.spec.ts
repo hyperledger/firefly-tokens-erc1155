@@ -55,7 +55,7 @@ describe('Util', () => {
   it('unpackTokenId', () => {
     expect(unpackTokenId('340282366920938463463374607431768211456')).toEqual({
       isFungible: true,
-      poolId: 'F1',
+      poolLocator: 'F1',
     });
     expect(
       unpackTokenId(
@@ -63,7 +63,7 @@ describe('Util', () => {
       ),
     ).toEqual({
       isFungible: false,
-      poolId: 'N1',
+      poolLocator: 'N1',
       tokenIndex: '1',
     });
   });
@@ -83,13 +83,13 @@ describe('Util', () => {
     expect(unpackSubscriptionName('token', 'token:0x123:F1:create')).toEqual({
       prefix: 'token',
       instancePath: '0x123',
-      poolId: 'F1',
+      poolLocator: 'F1',
       event: 'create',
     });
     expect(unpackSubscriptionName('tok:en', 'tok:en:0x123:N1:create')).toEqual({
       prefix: 'tok:en',
       instancePath: '0x123',
-      poolId: 'N1',
+      poolLocator: 'N1',
       event: 'create',
     });
     expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({});
