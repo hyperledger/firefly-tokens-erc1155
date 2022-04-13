@@ -296,7 +296,7 @@ export class TokenPoolEvent extends tokenEventBase {
 
 export class TokenTransferEvent extends tokenEventBase {
   @ApiProperty()
-  id: string;
+  subject: string;
 
   @ApiProperty()
   tokenIndex?: string;
@@ -318,6 +318,9 @@ export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
 export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) {}
 
 export class TokenApprovalEvent extends tokenEventBase {
+  @ApiProperty()
+  subject: string;
+
   @ApiProperty()
   operator: string;
 

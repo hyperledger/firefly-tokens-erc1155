@@ -519,7 +519,7 @@ class TokenListener implements EventListener {
         : blockchainId + '/' + eventIndex.toString(10).padStart(6, '0');
 
     const commonData = <TokenTransferEvent>{
-      id: transferId,
+      subject: transferId,
       poolId: unpackedId.poolId,
       tokenIndex: unpackedId.tokenIndex,
       uri: await this.getTokenUri(output.id),
@@ -605,7 +605,7 @@ class TokenListener implements EventListener {
     return {
       event: 'token-approval',
       data: <TokenApprovalEvent>{
-        id: `${output.account}:${output.operator}`,
+        subject: `${output.account}:${output.operator}`,
         poolId: unpackedSub.poolId,
         operator: output.operator,
         approved: output.approved,

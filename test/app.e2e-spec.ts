@@ -587,7 +587,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
-            id: '000000000001/000000/000001',
+            subject: '000000000001/000000/000001',
             poolId: 'F1',
             to: 'A',
             amount: '5',
@@ -682,7 +682,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
-            id: '000000000001/000000/000001',
+            subject: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -768,7 +768,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            id: '000000000001/000000/000001',
+            subject: '000000000001/000000/000001',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -841,7 +841,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: <TokenApprovalEvent>{
-            id: 'A:B',
+            subject: 'A:B',
             signer: 'A',
             operator: 'B',
             poolId: 'N1',
@@ -969,7 +969,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            id: '000000000001/000000/000001/000000',
+            subject: '000000000001/000000/000001/000000',
             poolId: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -1010,7 +1010,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            id: '000000000001/000000/000001/000001',
+            subject: '000000000001/000000/000001/000001',
             poolId: 'N1',
             tokenIndex: '2',
             from: 'A',
