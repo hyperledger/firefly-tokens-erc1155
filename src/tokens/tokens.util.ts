@@ -52,6 +52,10 @@ export function isFungible(poolId: string) {
   return poolId[0] === 'F';
 }
 
+/**
+ * Given a pool ID (in format 'F1') and optional token index, compute the
+ * token ID according to the split-byte implementation of the underlying contract.
+ */
 export function packTokenId(poolId: string, tokenIndex = '0') {
   return (
     (BigInt(isFungible(poolId) ? 0 : 1) << BigInt(255)) |
@@ -60,6 +64,9 @@ export function packTokenId(poolId: string, tokenIndex = '0') {
   ).toString();
 }
 
+/**
+ * Given a token ID from the underlying contract, split it into its meaningful parts.
+ */
 export function unpackTokenId(id: string) {
   const val = BigInt(id);
   const isFungible = val >> BigInt(255) === BigInt(0);
@@ -70,6 +77,14 @@ export function unpackTokenId(id: string) {
   };
 }
 
+/**
+ * Given a pool ID (in format 'F1') and optional block number, create a packed
+ * string to be used as a pool locator.
+ *
+ * This should only be called once when the pool is first created! You should
+ * never re-pack a locator during event or request processing (always send
+ * back the one provided as input or unpacked from the subscription).
+ */
 export function packPoolLocator(poolId: string, blockNumber?: string) {
   const encoded = new URLSearchParams();
   encoded.set('id', poolId);
@@ -79,6 +94,9 @@ export function packPoolLocator(poolId: string, blockNumber?: string) {
   return encoded.toString();
 }
 
+/**
+ * Unpack a pool locator string into its meaningful parts.
+ */
 export function unpackPoolLocator(data: string): PoolLocator {
   const encoded = new URLSearchParams(data);
   const tokenId = encoded.get('id');
