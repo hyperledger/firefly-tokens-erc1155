@@ -439,8 +439,11 @@ class TokenListener implements EventListener {
     }
   }
 
+  /**
+   * Generate an event ID in the recognized FireFly format for Ethereum
+   * (zero-padded block number, transaction index, and log index)
+   */
   private formatBlockchainEventId(event: Event) {
-    // This intentionally matches the formatting of protocol IDs for blockchain events in FireFly core
     const blockNumber = event.blockNumber ?? '0';
     const txIndex = BigInt(event.transactionIndex).toString(10);
     const logIndex = event.logIndex ?? '0';
@@ -531,14 +534,12 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
-    const blockchainId = this.formatBlockchainEventId(event);
+    const eventId = this.formatBlockchainEventId(event);
     const transferId =
-      eventIndex === undefined
-        ? blockchainId
-        : blockchainId + '/' + eventIndex.toString(10).padStart(6, '0');
+      eventIndex === undefined ? eventId : eventId + '/' + eventIndex.toString(10).padStart(6, '0');
 
     const commonData = <TokenTransferEvent>{
-      subject: transferId,
+      id: transferId,
       poolLocator: unpackedSub.poolLocator,
       tokenIndex: unpackedId.tokenIndex,
       uri: await this.getTokenUri(output.id),
@@ -546,7 +547,7 @@ class TokenListener implements EventListener {
       signer: output.operator,
       data: decodedData,
       blockchain: {
-        id: blockchainId,
+        id: eventId,
         name: this.stripParamsFromSignature(event.signature),
         location: 'address=' + event.address,
         signature: event.signature,
@@ -621,9 +622,11 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
+    const eventId = this.formatBlockchainEventId(event);
     return {
       event: 'token-approval',
       data: <TokenApprovalEvent>{
+        id: eventId,
         subject: `${output.account}:${output.operator}`,
         poolLocator: unpackedSub.poolLocator,
         operator: output.operator,
@@ -631,7 +634,7 @@ class TokenListener implements EventListener {
         signer: output.account,
         data: decodedData,
         blockchain: {
-          id: this.formatBlockchainEventId(event),
+          id: eventId,
           name: this.stripParamsFromSignature(event.signature),
           location: 'address=' + event.address,
           signature: event.signature,

@@ -587,7 +587,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
-            subject: '000000000001/000000/000001',
+            id: '000000000001/000000/000001',
             poolLocator: 'id=F1&block=1',
             to: 'A',
             amount: '5',
@@ -683,7 +683,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
-            subject: '000000000001/000000/000001',
+            id: '000000000001/000000/000001',
             poolLocator: 'F1',
             to: 'A',
             amount: '5',
@@ -778,7 +778,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
-            subject: '000000000001/000000/000001',
+            id: '000000000001/000000/000001',
             poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
@@ -864,7 +864,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            subject: '000000000001/000000/000001',
+            id: '000000000001/000000/000001',
             poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
@@ -937,6 +937,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: <TokenApprovalEvent>{
+            id: '000000000001/000000/000001',
             subject: 'A:B',
             signer: 'A',
             operator: 'B',
@@ -1067,7 +1068,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            subject: '000000000001/000000/000001/000000',
+            id: '000000000001/000000/000001/000000',
             poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -1108,7 +1109,7 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
-            subject: '000000000001/000000/000001/000001',
+            id: '000000000001/000000/000001/000001',
             poolLocator: 'N1',
             tokenIndex: '2',
             from: 'A',
