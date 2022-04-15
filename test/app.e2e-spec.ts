@@ -228,7 +228,7 @@ describe('AppController (e2e)', () => {
 
   it('Mint fungible token', async () => {
     const request: TokenMint = {
-      poolId: 'F1',
+      poolLocator: 'F1',
       to: '1',
       amount: '2',
       data: 'test',
@@ -258,7 +258,7 @@ describe('AppController (e2e)', () => {
 
   it('Mint non-fungible token', async () => {
     const request: TokenMint = {
-      poolId: 'N1',
+      poolLocator: 'N1',
       to: '1',
       amount: '2',
       signer: IDENTITY,
@@ -286,7 +286,7 @@ describe('AppController (e2e)', () => {
 
   it('Burn token', async () => {
     const request: TokenBurn = {
-      poolId: 'N1',
+      poolLocator: 'N1',
       tokenIndex: '1',
       from: 'A',
       amount: '1',
@@ -317,7 +317,7 @@ describe('AppController (e2e)', () => {
 
   it('Transfer token', async () => {
     const request: TokenTransfer = {
-      poolId: 'F1',
+      poolLocator: 'F1',
       from: '1',
       to: '2',
       amount: '2',
@@ -348,7 +348,7 @@ describe('AppController (e2e)', () => {
 
   it('Token approval', async () => {
     const request: TokenApproval = {
-      poolId: 'F1',
+      poolLocator: 'F1',
       signer: IDENTITY,
       operator: '2',
       approved: true,
@@ -377,7 +377,7 @@ describe('AppController (e2e)', () => {
   it('Query balance', async () => {
     const request: TokenBalanceQuery = {
       account: '1',
-      poolId: 'F1',
+      poolLocator: 'F1',
       tokenIndex: '0',
     };
     const response: EthConnectReturn = {
@@ -436,7 +436,7 @@ describe('AppController (e2e)', () => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolId: 'F1',
+            poolLocator: 'id=F1&block=1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -502,7 +502,7 @@ describe('AppController (e2e)', () => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolId: 'F1',
+            poolLocator: 'id=F1&block=1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -536,6 +536,102 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token mint event', async () => {
+    eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
+    });
+
+    http.get = jest.fn(
+      () =>
+        new FakeObservable(<EthConnectReturn>{
+          output: 'firefly://token/{id}',
+        }),
+    );
+
+    await server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(eventHandler).toBeDefined();
+        eventHandler([
+          <TransferSingleEvent>{
+            subId: 'sb-123',
+            signature: transferSingleEventSignature,
+            address: '0x00001',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            logIndex: '1',
+            timestamp: '2020-01-01 00:00:00Z',
+            data: {
+              id: '340282366920938463463374607431768211456',
+              from: ZERO_ADDRESS,
+              to: 'A',
+              operator: 'A',
+              value: '5',
+              transaction: {
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+              },
+            },
+            inputMethod: 'mintFungible',
+            inputArgs: {
+              data: '0x74657374',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-mint',
+          data: <TokenMintEvent>{
+            id: '000000000001/000000/000001',
+            poolLocator: 'id=F1&block=1',
+            to: 'A',
+            amount: '5',
+            signer: 'A',
+            uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
+            data: 'test',
+            blockchain: {
+              id: '000000000001/000000/000001',
+              name: 'TransferSingle',
+              location: 'address=0x00001',
+              signature: transferSingleEventSignature,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                id: '340282366920938463463374607431768211456',
+                from: ZERO_ADDRESS,
+                to: 'A',
+                operator: 'A',
+                value: '5',
+                transaction: {
+                  blockNumber: '1',
+                  transactionIndex: '0x0',
+                  transactionHash: '0x123',
+                  logIndex: '1',
+                },
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                logIndex: '1',
+                signature: transferSingleEventSignature,
+              },
+            },
+          },
+        });
+        return true;
+      });
+
+    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
+  });
+
+  it('Websocket: token mint event with old pool ID', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
       name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
     });
@@ -588,7 +684,7 @@ describe('AppController (e2e)', () => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
-            poolId: 'F1',
+            poolLocator: 'F1',
             to: 'A',
             amount: '5',
             signer: 'A',
@@ -633,7 +729,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token burn event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
+      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
     });
 
     http.get = jest.fn(
@@ -683,7 +779,7 @@ describe('AppController (e2e)', () => {
           event: 'token-burn',
           data: <TokenBurnEvent>{
             id: '000000000001/000000/000001',
-            poolId: 'N1',
+            poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
             amount: '1',
@@ -728,7 +824,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token transfer event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
+      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
     });
 
     http.get = jest.fn(
@@ -769,7 +865,7 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001',
-            poolId: 'N1',
+            poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
             to: 'B',
@@ -810,7 +906,7 @@ describe('AppController (e2e)', () => {
 
   it('Websocket: token approval event', async () => {
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
+      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
     });
 
     await server
@@ -841,10 +937,11 @@ describe('AppController (e2e)', () => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: <TokenApprovalEvent>{
-            id: 'A:B',
+            id: '000000000001/000000/000001',
+            subject: 'A:B',
             signer: 'A',
             operator: 'B',
-            poolId: 'N1',
+            poolLocator: 'id=N1&block=1',
             approved: true,
             data: '',
             blockchain: {
@@ -875,7 +972,9 @@ describe('AppController (e2e)', () => {
   });
 
   it('Websocket: token transfer event from wrong pool', () => {
-    const sub = <EventStreamSubscription>{ name: packSubscriptionName(TOPIC, '0x123', 'N1', '') };
+    const sub = <EventStreamSubscription>{
+      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
+    };
     eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 
     return server
@@ -918,7 +1017,7 @@ describe('AppController (e2e)', () => {
       .expectJson(message => {
         // Only the second transfer should have been processed
         expect(message.event).toEqual('token-transfer');
-        expect(message.data.poolId).toEqual('N1');
+        expect(message.data.poolLocator).toEqual('id=N1&block=1');
         expect(message.data.blockchain.info.blockNumber).toEqual('2');
         return true;
       });
@@ -970,7 +1069,7 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000000',
-            poolId: 'N1',
+            poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
             to: 'B',
@@ -1011,7 +1110,7 @@ describe('AppController (e2e)', () => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000001',
-            poolId: 'N1',
+            poolLocator: 'N1',
             tokenIndex: '2',
             from: 'A',
             to: 'B',
@@ -1118,7 +1217,7 @@ describe('AppController (e2e)', () => {
     };
 
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
+      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
     });
 
     await server
@@ -1157,7 +1256,7 @@ describe('AppController (e2e)', () => {
     };
 
     eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
+      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
     });
 
     const ws1 = server.ws('/api/ws');
@@ -1214,7 +1313,9 @@ describe('AppController (e2e)', () => {
       },
     };
 
-    const sub = <EventStreamSubscription>{ name: packSubscriptionName(TOPIC, '0x123', 'F1', '') };
+    const sub = <EventStreamSubscription>{
+      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
+    };
     eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 
     const ws1 = server.ws('/api/ws');

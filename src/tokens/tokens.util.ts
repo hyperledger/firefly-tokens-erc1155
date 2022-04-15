@@ -14,6 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { PoolLocator } from './tokens.interfaces';
+
 /**
  * Encode a UTF-8 string into hex bytes with a leading 0x
  */
@@ -50,14 +52,21 @@ export function isFungible(poolId: string) {
   return poolId[0] === 'F';
 }
 
+/**
+ * Given a pool ID (in format 'F1') and optional token index, compute the
+ * token ID according to the split-byte implementation of the underlying contract.
+ */
 export function packTokenId(poolId: string, tokenIndex = '0') {
   return (
     (BigInt(isFungible(poolId) ? 0 : 1) << BigInt(255)) |
-    (BigInt(poolId.substr(1)) << BigInt(128)) |
+    (BigInt(poolId.substring(1)) << BigInt(128)) |
     BigInt(tokenIndex)
   ).toString();
 }
 
+/**
+ * Given a token ID from the underlying contract, split it into its meaningful parts.
+ */
 export function unpackTokenId(id: string) {
   const val = BigInt(id);
   const isFungible = val >> BigInt(255) === BigInt(0);
@@ -68,6 +77,35 @@ export function unpackTokenId(id: string) {
   };
 }
 
+/**
+ * Given a pool ID (in format 'F1') and optional block number, create a packed
+ * string to be used as a pool locator.
+ *
+ * This should only be called once when the pool is first created! You should
+ * never re-pack a locator during event or request processing (always send
+ * back the one provided as input or unpacked from the subscription).
+ */
+export function packPoolLocator(poolId: string, blockNumber?: string) {
+  const encoded = new URLSearchParams();
+  encoded.set('id', poolId);
+  if (blockNumber !== undefined) {
+    encoded.set('block', blockNumber);
+  }
+  return encoded.toString();
+}
+
+/**
+ * Unpack a pool locator string into its meaningful parts.
+ */
+export function unpackPoolLocator(data: string): PoolLocator {
+  const encoded = new URLSearchParams(data);
+  const tokenId = encoded.get('id');
+  if (tokenId !== null) {
+    return { poolId: tokenId, blockNumber: encoded.get('block') ?? undefined };
+  }
+  return { poolId: data };
+}
+
 export function packStreamName(prefix: string, instancePath: string) {
   return [prefix, instancePath].join(':');
 }
@@ -75,10 +113,10 @@ export function packStreamName(prefix: string, instancePath: string) {
 export function packSubscriptionName(
   prefix: string,
   instancePath: string,
-  poolId: string,
+  poolLocator: string,
   event: string,
 ) {
-  return [prefix, instancePath, poolId, event].join(':');
+  return [prefix, instancePath, poolLocator, event].join(':');
 }
 
 export function unpackSubscriptionName(prefix: string, data: string) {
@@ -92,7 +130,7 @@ export function unpackSubscriptionName(prefix: string, data: string) {
   return {
     prefix,
     instancePath: parts[0],
-    poolId: parts[1],
+    poolLocator: parts[1],
     event: parts[2],
   };
 }

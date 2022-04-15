@@ -18,7 +18,15 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { IsDefined, IsNotEmpty, IsOptional } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
+// Internal types
+
+export interface PoolLocator {
+  poolId: string;
+  blockNumber?: string;
+}
+
 // Ethconnect interfaces
+
 export interface EthConnectAsyncResponse {
   sent: boolean;
   id: string;
@@ -109,7 +117,7 @@ export class TokenPool {
 export class TokenApproval {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -136,13 +144,11 @@ export class TokenApproval {
   config?: any;
 }
 
-export class BlockLocator {
+export class BlockchainInfo {
   @ApiProperty()
   @IsNotEmpty()
   blockNumber: string;
-}
 
-export class BlockchainInfo extends BlockLocator {
   @ApiProperty()
   transactionIndex: string;
 
@@ -185,15 +191,11 @@ export class BlockchainEvent {
 export class TokenPoolActivate {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsOptional()
   config?: any;
-
-  @ApiProperty()
-  @IsOptional()
-  locator?: BlockLocator;
 
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
@@ -203,7 +205,7 @@ export class TokenPoolActivate {
 export class TokenBalanceQuery {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -222,7 +224,7 @@ export class TokenBalance {
 export class TokenTransfer {
   @ApiProperty()
   @IsNotEmpty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   @IsOptional()
@@ -260,7 +262,7 @@ export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 class tokenEventBase {
   @ApiProperty()
-  poolId: string;
+  poolLocator: string;
 
   @ApiProperty()
   signer: string;
@@ -318,6 +320,12 @@ export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
 export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) {}
 
 export class TokenApprovalEvent extends tokenEventBase {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  subject: string;
+
   @ApiProperty()
   operator: string;
 

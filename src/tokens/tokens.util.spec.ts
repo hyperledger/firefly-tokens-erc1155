@@ -18,9 +18,11 @@ import {
   decodeHex,
   encodeHex,
   encodeHexIDForURI,
+  packPoolLocator,
   packStreamName,
   packSubscriptionName,
   packTokenId,
+  unpackPoolLocator,
   unpackSubscriptionName,
   unpackTokenId,
 } from './tokens.util';
@@ -68,6 +70,20 @@ describe('Util', () => {
     });
   });
 
+  it('packPoolLocator', () => {
+    expect(packPoolLocator('N1', '5')).toEqual('id=N1&block=5');
+  });
+
+  it('unpackPoolLocator', () => {
+    expect(unpackPoolLocator('id=N1&block=5')).toEqual({
+      poolId: 'N1',
+      blockNumber: '5',
+    });
+    expect(unpackPoolLocator('N1')).toEqual({
+      poolId: 'N1',
+    });
+  });
+
   it('packStreamName', () => {
     expect(packStreamName('token', '0x123')).toEqual('token:0x123');
   });
@@ -83,13 +99,13 @@ describe('Util', () => {
     expect(unpackSubscriptionName('token', 'token:0x123:F1:create')).toEqual({
       prefix: 'token',
       instancePath: '0x123',
-      poolId: 'F1',
+      poolLocator: 'F1',
       event: 'create',
     });
     expect(unpackSubscriptionName('tok:en', 'tok:en:0x123:N1:create')).toEqual({
       prefix: 'tok:en',
       instancePath: '0x123',
-      poolId: 'N1',
+      poolLocator: 'N1',
       event: 'create',
     });
     expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({});
