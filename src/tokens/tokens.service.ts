@@ -15,8 +15,13 @@
 // limitations under the License.
 
 import { HttpService } from '@nestjs/axios';
-import { AxiosRequestConfig } from 'axios';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { Event, EventStream, EventStreamReply } from '../event-stream/event-stream.interfaces';
@@ -231,33 +236,49 @@ export class TokensService {
     return requestOptions;
   }
 
+  private async wrapError<T>(response: Promise<AxiosResponse<T>>) {
+    return response.catch(err => {
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.error;
+        throw new InternalServerErrorException(errorMessage ?? err.message);
+      }
+      throw err;
+    });
+  }
+
   async query(path: string, params?: any) {
-    const response = await lastValueFrom(
-      this.http.get<EthConnectReturn>(`${this.instanceUrl}${path}`, {
-        params,
-        ...basicAuth(this.username, this.password),
-      }),
+    const response = await this.wrapError(
+      lastValueFrom(
+        this.http.get<EthConnectReturn>(`${this.instanceUrl}${path}`, {
+          params,
+          ...basicAuth(this.username, this.password),
+        }),
+      ),
     );
     return response.data;
   }
 
   async invoke(path: string, from: string, id?: string, body?: any) {
-    const response = await lastValueFrom(
-      this.http.post<EthConnectAsyncResponse>(
-        `${this.instanceUrl}${path}`,
-        body,
-        this.postOptions(from, id),
+    const response = await this.wrapError(
+      lastValueFrom(
+        this.http.post<EthConnectAsyncResponse>(
+          `${this.instanceUrl}${path}`,
+          body,
+          this.postOptions(from, id),
+        ),
       ),
     );
     return response.data;
   }
 
   async getReceipt(id: string): Promise<EventStreamReply> {
-    const response = await lastValueFrom(
-      this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
-        validateStatus: status => status < 300 || status === 404,
-        ...basicAuth(this.username, this.password),
-      }),
+    const response = await this.wrapError(
+      lastValueFrom(
+        this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
+          validateStatus: status => status < 300 || status === 404,
+          ...basicAuth(this.username, this.password),
+        }),
+      ),
     );
     if (response.status === 404) {
       throw new NotFoundException();
