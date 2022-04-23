@@ -14,9 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ClientRequest } from 'http';
 import { HttpService } from '@nestjs/axios';
-import { AxiosRequestConfig } from 'axios';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { Event, EventStream, EventStreamReply } from '../event-stream/event-stream.interfaces';
@@ -115,9 +121,7 @@ export class TokensService {
     this.shortPrefix = shortPrefix;
     this.username = username;
     this.password = password;
-    this.proxy.addListener(
-      new TokenListener(this.http, this.instanceUrl, this.topic, this.username, this.password),
-    );
+    this.proxy.addListener(new TokenListener(this));
   }
 
   /**
@@ -233,12 +237,54 @@ export class TokensService {
     return requestOptions;
   }
 
+  private async wrapError<T>(response: Promise<AxiosResponse<T>>) {
+    return response.catch(err => {
+      if (axios.isAxiosError(err)) {
+        const request: ClientRequest | undefined = err.request;
+        const response: AxiosResponse | undefined = err.response;
+        const errorMessage = response?.data?.error ?? err.message;
+        this.logger.warn(
+          `${request?.path} <-- HTTP ${response?.status} ${response?.statusText}: ${errorMessage}`,
+        );
+        throw new InternalServerErrorException(errorMessage);
+      }
+      throw err;
+    });
+  }
+
+  async query(path: string, params?: any) {
+    const response = await this.wrapError(
+      lastValueFrom(
+        this.http.get<EthConnectReturn>(`${this.instanceUrl}${path}`, {
+          params,
+          ...basicAuth(this.username, this.password),
+        }),
+      ),
+    );
+    return response.data;
+  }
+
+  async invoke(path: string, from: string, id?: string, body?: any) {
+    const response = await this.wrapError(
+      lastValueFrom(
+        this.http.post<EthConnectAsyncResponse>(
+          `${this.instanceUrl}${path}`,
+          body,
+          this.postOptions(from, id),
+        ),
+      ),
+    );
+    return response.data;
+  }
+
   async getReceipt(id: string): Promise<EventStreamReply> {
-    const response = await lastValueFrom(
-      this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
-        validateStatus: status => status < 300 || status === 404,
-        ...basicAuth(this.username, this.password),
-      }),
+    const response = await this.wrapError(
+      lastValueFrom(
+        this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
+          validateStatus: status => status < 300 || status === 404,
+          ...basicAuth(this.username, this.password),
+        }),
+      ),
     );
     if (response.status === 404) {
       throw new NotFoundException();
@@ -247,17 +293,11 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
-    const response = await lastValueFrom(
-      this.http.post<EthConnectAsyncResponse>(
-        `${this.instanceUrl}/create`,
-        {
-          is_fungible: dto.type === TokenType.FUNGIBLE,
-          data: encodeHex(dto.data ?? ''),
-        },
-        this.postOptions(dto.signer, dto.requestId),
-      ),
-    );
-    return { id: response.data.id };
+    const response = await this.invoke('/create', dto.signer, dto.requestId, {
+      is_fungible: dto.type === TokenType.FUNGIBLE,
+      data: encodeHex(dto.data ?? ''),
+    });
+    return { id: response.id };
   }
 
   async activatePool(dto: TokenPoolActivate) {
@@ -301,19 +341,13 @@ export class TokensService {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const typeId = packTokenId(poolLocator.poolId);
     if (isFungible(poolLocator.poolId)) {
-      const response = await lastValueFrom(
-        this.http.post<EthConnectAsyncResponse>(
-          `${this.instanceUrl}/mintFungible`,
-          {
-            type_id: typeId,
-            to: [dto.to],
-            amounts: [dto.amount],
-            data: encodeHex(dto.data ?? ''),
-          },
-          this.postOptions(dto.signer, dto.requestId),
-        ),
-      );
-      return { id: response.data.id };
+      const response = await this.invoke('/mintFungible', dto.signer, dto.requestId, {
+        type_id: typeId,
+        to: [dto.to],
+        amounts: [dto.amount],
+        data: encodeHex(dto.data ?? ''),
+      });
+      return { id: response.id };
     } else {
       // In the case of a non-fungible token:
       // - We parse the value as a whole integer count of NFTs to mint
@@ -324,83 +358,54 @@ export class TokensService {
         to.push(dto.to);
       }
 
-      const response = await lastValueFrom(
-        this.http.post<EthConnectAsyncResponse>(
-          `${this.instanceUrl}/mintNonFungible`,
-          {
-            type_id: typeId,
-            to,
-            data: encodeHex(dto.data ?? ''),
-          },
-          this.postOptions(dto.signer, dto.requestId),
-        ),
-      );
-      return { id: response.data.id };
+      const response = await this.invoke('/mintNonFungible', dto.signer, dto.requestId, {
+        type_id: typeId,
+        to,
+        data: encodeHex(dto.data ?? ''),
+      });
+      return { id: response.id };
     }
   }
 
   async approval(dto: TokenApproval): Promise<AsyncResponse> {
-    const response = await lastValueFrom(
-      this.http.post<EthConnectAsyncResponse>(
-        `${this.instanceUrl}/setApprovalForAllWithData`,
-        {
-          operator: dto.operator,
-          approved: dto.approved,
-          data: encodeHex(dto.data ?? ''),
-        },
-        this.postOptions(dto.signer, dto.requestId),
-      ),
-    );
-    return { id: response.data.id };
+    const response = await this.invoke('/setApprovalForAllWithData', dto.signer, dto.requestId, {
+      operator: dto.operator,
+      approved: dto.approved,
+      data: encodeHex(dto.data ?? ''),
+    });
+    return { id: response.id };
   }
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const response = await lastValueFrom(
-      this.http.post<EthConnectAsyncResponse>(
-        `${this.instanceUrl}/safeTransferFrom`,
-        {
-          from: dto.from,
-          to: dto.to,
-          id: packTokenId(poolLocator.poolId, dto.tokenIndex),
-          amount: dto.amount,
-          data: encodeHex(dto.data ?? ''),
-        },
-        this.postOptions(dto.signer, dto.requestId),
-      ),
-    );
-    return { id: response.data.id };
+    const response = await this.invoke('/safeTransferFrom', dto.signer, dto.requestId, {
+      from: dto.from,
+      to: dto.to,
+      id: packTokenId(poolLocator.poolId, dto.tokenIndex),
+      amount: dto.amount,
+      data: encodeHex(dto.data ?? ''),
+    });
+    return { id: response.id };
   }
 
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const response = await lastValueFrom(
-      this.http.post<EthConnectAsyncResponse>(
-        `${this.instanceUrl}/burn`,
-        {
-          from: dto.from,
-          id: packTokenId(poolLocator.poolId, dto.tokenIndex),
-          amount: dto.amount,
-          data: encodeHex(dto.data ?? ''),
-        },
-        this.postOptions(dto.signer, dto.requestId),
-      ),
-    );
-    return { id: response.data.id };
+    const response = await this.invoke('/burn', dto.signer, dto.requestId, {
+      from: dto.from,
+      id: packTokenId(poolLocator.poolId, dto.tokenIndex),
+      amount: dto.amount,
+      data: encodeHex(dto.data ?? ''),
+    });
+    return { id: response.id };
   }
 
   async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const response = await lastValueFrom(
-      this.http.get<EthConnectReturn>(`${this.instanceUrl}/balanceOf`, {
-        params: {
-          account: dto.account,
-          id: packTokenId(poolLocator.poolId, dto.tokenIndex),
-        },
-        ...basicAuth(this.username, this.password),
-      }),
-    );
-    return { balance: response.data.output };
+    const response = await this.query('/balanceOf', {
+      account: dto.account,
+      id: packTokenId(poolLocator.poolId, dto.tokenIndex),
+    });
+    return { balance: response.output };
   }
 }
 
@@ -409,13 +414,7 @@ class TokenListener implements EventListener {
 
   private uriPattern: string | undefined;
 
-  constructor(
-    private http: HttpService,
-    private instanceUrl: string,
-    private topic: string,
-    private username: string,
-    private password: string,
-  ) {}
+  constructor(private readonly service: TokensService) {}
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
@@ -464,7 +463,7 @@ class TokenListener implements EventListener {
   ): WebSocketMessage | undefined {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.type_id);
-    const unpackedSub = unpackSubscriptionName(this.topic, subName);
+    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
     const decodedData = decodeHex(output.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -516,7 +515,7 @@ class TokenListener implements EventListener {
   ): Promise<WebSocketMessage | undefined> {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.id);
-    const unpackedSub = unpackSubscriptionName(this.topic, subName);
+    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -614,7 +613,7 @@ class TokenListener implements EventListener {
     event: ApprovalForAllEvent,
   ): WebSocketMessage | undefined {
     const { data: output } = event;
-    const unpackedSub = unpackSubscriptionName(this.topic, subName);
+    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -657,12 +656,8 @@ class TokenListener implements EventListener {
     if (this.uriPattern === undefined) {
       // Fetch and cache the URI pattern (assume it is the same for all tokens)
       try {
-        const response = await lastValueFrom(
-          this.http.get<EthConnectReturn>(`${this.instanceUrl}/uri?input=0`, {
-            ...basicAuth(this.username, this.password),
-          }),
-        );
-        this.uriPattern = response.data.output;
+        const response = await this.service.query('/uri?input=0');
+        this.uriPattern = response.output;
       } catch (err) {
         return '';
       }
