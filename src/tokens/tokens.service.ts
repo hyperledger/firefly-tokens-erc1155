@@ -41,7 +41,7 @@ import {
   TokenBalanceQuery,
   TokenBurn,
   TokenBurnEvent,
-  TokenCreateEvent,
+  TokenPoolCreationEvent,
   TokenMint,
   TokenMintEvent,
   TokenPool,
@@ -71,8 +71,9 @@ const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const BASE_SUBSCRIPTION_NAME = 'base';
 
-const tokenCreateEvent = 'TokenCreate';
-const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
+const tokenCreateEvent = 'TokenPoolCreation';
+const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
+const tokenCreateEventSignature = 'TokenPoolCreation(address,uint256,bytes)';
 const transferSingleEvent = 'TransferSingle';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 const transferBatchEvent = 'TransferBatch';
@@ -418,8 +419,9 @@ class TokenListener implements EventListener {
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
+      case tokenCreateEventSignatureOld:
       case tokenCreateEventSignature:
-        process(this.transformTokenCreateEvent(subName, event));
+        process(this.transformTokenPoolCreationEvent(subName, event));
         break;
       case transferSingleEventSignature:
         process(await this.transformTransferSingleEvent(subName, event));
@@ -457,9 +459,9 @@ class TokenListener implements EventListener {
     return signature.substring(0, signature.indexOf('('));
   }
 
-  private transformTokenCreateEvent(
+  private transformTokenPoolCreationEvent(
     subName: string,
-    event: TokenCreateEvent,
+    event: TokenPoolCreationEvent,
   ): WebSocketMessage | undefined {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.type_id);
