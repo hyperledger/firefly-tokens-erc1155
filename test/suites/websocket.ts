@@ -247,13 +247,6 @@ export default (context: TestContext) => {
       name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
     });
 
-    context.http.get = jest.fn(
-      () =>
-        new FakeObservable(<EthConnectReturn>{
-          output: 'firefly://token/{id}',
-        }),
-    );
-
     await context.server
       .ws('/api/ws')
       .exec(() => {
@@ -299,7 +292,6 @@ export default (context: TestContext) => {
             to: 'A',
             amount: '5',
             signer: 'A',
-            uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
             data: 'test',
             blockchain: {
               id: '000000000001/000000/000001',
@@ -333,14 +325,11 @@ export default (context: TestContext) => {
         });
         return true;
       });
-
-    expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
   });
 
   it('Token mint event with old pool ID', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
+      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
     });
 
     context.http.get = jest.fn(
@@ -365,7 +354,7 @@ export default (context: TestContext) => {
             logIndex: '1',
             timestamp: '2020-01-01 00:00:00Z',
             data: {
-              id: '340282366920938463463374607431768211456',
+              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
               from: ZERO_ADDRESS,
               to: 'A',
               operator: 'A',
@@ -391,11 +380,12 @@ export default (context: TestContext) => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
-            poolLocator: 'F1',
+            poolLocator: 'N1',
+            tokenIndex: '1',
             to: 'A',
             amount: '5',
             signer: 'A',
-            uri: 'firefly://token/0000000000000000000000000000000100000000000000000000000000000000',
+            uri: 'firefly://token/8000000000000000000000000000000100000000000000000000000000000001',
             data: 'test',
             blockchain: {
               id: '000000000001/000000/000001',
@@ -404,7 +394,7 @@ export default (context: TestContext) => {
               signature: transferSingleEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
               output: {
-                id: '340282366920938463463374607431768211456',
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
                 from: ZERO_ADDRESS,
                 to: 'A',
                 operator: 'A',
