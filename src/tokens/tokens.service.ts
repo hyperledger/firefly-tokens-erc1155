@@ -535,6 +535,7 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
+    const uri = unpackedId.isFungible ? undefined : await this.getTokenUri(output.id);
     const eventId = this.formatBlockchainEventId(event);
     const transferId =
       eventIndex === undefined ? eventId : eventId + '/' + eventIndex.toString(10).padStart(6, '0');
@@ -543,7 +544,7 @@ class TokenListener implements EventListener {
       id: transferId,
       poolLocator: unpackedSub.poolLocator,
       tokenIndex: unpackedId.tokenIndex,
-      uri: await this.getTokenUri(output.id),
+      uri,
       amount: output.value,
       signer: output.operator,
       data: decodedData,
