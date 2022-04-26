@@ -21,5 +21,6 @@ ADD package*.json ./
 RUN npm install --production
 COPY --from=solidity-builder /root/build/contracts contracts
 COPY --from=builder /root/dist dist
+COPY --from=builder /root/.env /root/.env
 EXPOSE 3000
 CMD ["npm", "run", "start:prod"]
