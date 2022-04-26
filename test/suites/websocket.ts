@@ -24,7 +24,7 @@ import {
   EthConnectReturn,
   TokenApprovalEvent,
   TokenBurnEvent,
-  TokenCreateEvent,
+  TokenPoolCreationEvent,
   TokenMintEvent,
   TokenPoolEvent,
   TokenTransferEvent,
@@ -37,7 +37,8 @@ import { BASE_URL, FakeObservable, INSTANCE_PATH, TestContext, TOPIC } from '../
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const tokenCreateEventSignature = 'TokenCreate(address,uint256,bytes)';
+const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
+const tokenCreateEventSignature = 'TokenPoolCreation(address,uint256,bytes)';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
 const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
@@ -53,7 +54,7 @@ export default (context: TestContext) => {
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
         context.eventHandler([
-          <TokenCreateEvent>{
+          <TokenPoolCreationEvent>{
             subId: 'sb123',
             signature: tokenCreateEventSignature,
             address: '0x00001',
@@ -86,7 +87,7 @@ export default (context: TestContext) => {
             },
             blockchain: {
               id: '000000000001/000000/000000',
-              name: 'TokenCreate',
+              name: 'TokenPoolCreation',
               location: 'address=0x00001',
               signature: tokenCreateEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -119,7 +120,7 @@ export default (context: TestContext) => {
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
         context.eventHandler([
-          <TokenCreateEvent>{
+          <TokenPoolCreationEvent>{
             subId: 'sb123',
             signature: tokenCreateEventSignature,
             address: '0x00001',
@@ -152,7 +153,7 @@ export default (context: TestContext) => {
             },
             blockchain: {
               id: '000000000001/000000/000000',
-              name: 'TokenCreate',
+              name: 'TokenPoolCreation',
               location: 'address=0x00001',
               signature: tokenCreateEventSignature,
               timestamp: '2020-01-01 00:00:00Z',
@@ -167,6 +168,72 @@ export default (context: TestContext) => {
                 transactionIndex: '0x0',
                 transactionHash: '0x123',
                 signature: tokenCreateEventSignature,
+              },
+            },
+          },
+        });
+        return true;
+      });
+  });
+
+  it('Token pool event with old signature', () => {
+    context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
+      name: packSubscriptionName(TOPIC, '0x123', 'base', ''),
+    });
+
+    return context.server
+      .ws('/api/ws')
+      .exec(() => {
+        expect(context.eventHandler).toBeDefined();
+        context.eventHandler([
+          <TokenPoolCreationEvent>{
+            subId: 'sb123',
+            signature: tokenCreateEventSignatureOld,
+            address: '0x00001',
+            blockNumber: '1',
+            transactionIndex: '0x0',
+            transactionHash: '0x123',
+            timestamp: '2020-01-01 00:00:00Z',
+            data: {
+              operator: 'bob',
+              type_id: '340282366920938463463374607431768211456',
+              data: '0x00',
+            },
+          },
+        ]);
+      })
+      .expectJson(message => {
+        expect(message.id).toBeDefined();
+        delete message.id;
+        expect(message).toEqual(<WebSocketMessage>{
+          event: 'token-pool',
+          data: <TokenPoolEvent>{
+            standard: 'ERC1155',
+            poolLocator: 'id=F1&block=1',
+            type: 'fungible',
+            signer: 'bob',
+            data: '',
+            info: {
+              address: '0x00001',
+              typeId: '0x0000000000000000000000000000000100000000000000000000000000000000',
+            },
+            blockchain: {
+              id: '000000000001/000000/000000',
+              name: 'TokenCreate',
+              location: 'address=0x00001',
+              signature: tokenCreateEventSignatureOld,
+              timestamp: '2020-01-01 00:00:00Z',
+              output: {
+                operator: 'bob',
+                type_id: '340282366920938463463374607431768211456',
+                data: '0x00',
+              },
+              info: {
+                address: '0x00001',
+                blockNumber: '1',
+                transactionIndex: '0x0',
+                transactionHash: '0x123',
+                signature: tokenCreateEventSignatureOld,
               },
             },
           },
@@ -840,7 +907,7 @@ export default (context: TestContext) => {
   });
 
   it('Disconnect and reconnect', async () => {
-    const tokenPoolMessage: TokenCreateEvent = {
+    const tokenPoolMessage: TokenPoolCreationEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
       address: '0x00001',
@@ -879,7 +946,7 @@ export default (context: TestContext) => {
   });
 
   it('Client switchover', async () => {
-    const tokenPoolMessage: TokenCreateEvent = {
+    const tokenPoolMessage: TokenPoolCreationEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
       address: '0x00001',
@@ -920,7 +987,7 @@ export default (context: TestContext) => {
   });
 
   it('Batch + ack + client switchover', async () => {
-    const tokenPoolMessage: TokenCreateEvent = {
+    const tokenPoolMessage: TokenPoolCreationEvent = {
       subId: 'sb-123',
       signature: tokenCreateEventSignature,
       address: '0x00001',

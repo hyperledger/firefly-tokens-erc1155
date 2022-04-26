@@ -73,7 +73,7 @@ describe('TokensService', () => {
       service.topic = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:base:TokenCreate' }]);
+      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:base:TokenPoolCreation' }]);
       expect(await service.migrationCheck()).toBe(false);
     });
 
@@ -81,7 +81,7 @@ describe('TokensService', () => {
       service.topic = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:p1:TokenCreate' }]);
+      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:p1:TokenPoolCreation' }]);
       expect(await service.migrationCheck()).toBe(true);
     });
 
@@ -90,7 +90,7 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'tokens:0x123:p1:TokenCreate' },
+        { name: 'tokens:0x123:p1:TokenPoolCreation' },
         { name: 'tokens:0x123:p1:TransferSingle' },
         { name: 'tokens:0x123:p1:TransferBatch' },
         { name: 'tokens:0x123:p1:ApprovalForAll' },

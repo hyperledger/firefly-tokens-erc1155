@@ -6,10 +6,27 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 /**
-    @dev Mintable+burnable form of ERC1155 with mixed fungible/non-fungible item support.
-    Based on reference implementation:
-    https://github.com/enjin/erc-1155/blob/master/contracts/ERC1155MixedFungibleMintable.sol
-*/
+ * Example ERC1155 with mixed fungible/non-fungible token support.
+ *
+ * Based on original sample here:
+ * https://github.com/enjin/erc-1155/blob/master/contracts/ERC1155MixedFungibleMintable.sol
+ *
+ * Notes on functionality:
+ *   - the token space is divided in to "pools", where each pool is fungible or non-fungible
+ *   - any party can create a new pool
+ *   - the pool creator is the only party allowed to mint within that pool
+ *   - any party can approve another party to manage (ie transfer) all of their tokens (across all pools)
+ *   - any party can burn their own tokens
+ *
+ * The inclusion of a "data" argument on each external method allows FireFly to write
+ * extra data to the chain alongside each token transaction, in order to correlate it with
+ * other on- and off-chain events.
+ *
+ * This is a sample only and NOT a reference implementation.
+ *
+ * Remember to always consult best practices from other communities and examples (such as OpenZeppelin)
+ * when crafting your token logic, rather than relying on the FireFly community alone. Happy minting!
+ */
 contract ERC1155MixedFungible is Context, ERC1155 {
     // Use a split bit implementation:
     //   - Bit 255: type flag (0 = fungible, 1 = non-fungible)
@@ -23,7 +40,7 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     mapping (uint256 => address) public creators;
     mapping (uint256 => uint256) public maxIndex;
 
-    event TokenCreate(address indexed operator, uint256 indexed type_id, bytes data);
+    event TokenPoolCreation(address indexed operator, uint256 indexed type_id, bytes data);
 
     function isFungible(uint256 id) internal pure returns(bool) {
         return id & TYPE_NF_BIT == 0;
@@ -52,7 +69,7 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
         creators[type_id] = _msgSender();
 
-        emit TokenCreate(_msgSender(), type_id, data);
+        emit TokenPoolCreation(_msgSender(), type_id, data);
     }
 
     function mintNonFungible(uint256 type_id, address[] calldata to, bytes calldata data)

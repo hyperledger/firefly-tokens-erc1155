@@ -36,7 +36,7 @@ export interface EthConnectReturn {
   output: string;
 }
 
-export interface TokenCreateEvent extends Event {
+export interface TokenPoolCreationEvent extends Event {
   data: {
     operator: string;
     type_id: string;
