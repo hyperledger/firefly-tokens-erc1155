@@ -634,7 +634,7 @@ export default (context: TestContext) => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: <TokenApprovalEvent>{
-            id: '000000000001/000000/000001',
+            id: '000000000001/000000/000001/N1',
             subject: 'A:B',
             signer: 'A',
             operator: 'B',

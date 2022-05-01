@@ -623,12 +623,17 @@ class TokenListener implements EventListener {
       // should not happen
       return undefined;
     }
+    const poolLocator = unpackPoolLocator(unpackedSub.poolLocator);
 
+    // One event may apply across multiple pools
+    // Include the poolId to generate a unique approvalId per pool
     const eventId = this.formatBlockchainEventId(event);
+    const approvalId = eventId + '/' + poolLocator.poolId;
+
     return {
       event: 'token-approval',
       data: <TokenApprovalEvent>{
-        id: eventId,
+        id: approvalId,
         subject: `${output.account}:${output.operator}`,
         poolLocator: unpackedSub.poolLocator,
         operator: output.operator,
