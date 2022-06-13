@@ -46,7 +46,7 @@ const transferBatchEventSignature = 'TransferBatch(address,address,address,uint2
 export default (context: TestContext) => {
   it('Token pool event', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'F1', ''),
+      name: packSubscriptionName('default', '0x123', 'F1', ''),
     });
 
     return context.server
@@ -76,6 +76,7 @@ export default (context: TestContext) => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
+            namespace: 'default',
             standard: 'ERC1155',
             poolLocator: 'id=F1&block=1',
             type: 'fungible',
@@ -112,7 +113,7 @@ export default (context: TestContext) => {
 
   it('Token pool event from base subscription', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'base', ''),
+      name: packSubscriptionName('default', '0x123', 'base', ''),
     });
 
     return context.server
@@ -142,6 +143,7 @@ export default (context: TestContext) => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
+            namespace: 'default',
             standard: 'ERC1155',
             poolLocator: 'id=F1&block=1',
             type: 'fungible',
@@ -178,7 +180,7 @@ export default (context: TestContext) => {
 
   it('Token pool event with old signature', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'base', ''),
+      name: packSubscriptionName('default', '0x123', 'base', ''),
     });
 
     return context.server
@@ -208,6 +210,7 @@ export default (context: TestContext) => {
         expect(message).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
+            namespace: 'default',
             standard: 'ERC1155',
             poolLocator: 'id=F1&block=1',
             type: 'fungible',
@@ -244,7 +247,7 @@ export default (context: TestContext) => {
 
   it('Token mint event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
     });
 
     await context.server
@@ -288,6 +291,7 @@ export default (context: TestContext) => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
+            namespace: 'default',
             poolLocator: 'id=F1&block=1',
             to: 'A',
             amount: '5',
@@ -329,7 +333,7 @@ export default (context: TestContext) => {
 
   it('Token mint event with old pool ID', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
+      name: packSubscriptionName('default', '0x123', 'N1', ''),
     });
 
     context.http.get = jest.fn(
@@ -380,6 +384,7 @@ export default (context: TestContext) => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
+            namespace: 'default',
             poolLocator: 'N1',
             tokenIndex: '1',
             to: 'A',
@@ -426,7 +431,7 @@ export default (context: TestContext) => {
 
   it('Token burn event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
     });
 
     context.http.get = jest.fn(
@@ -476,6 +481,7 @@ export default (context: TestContext) => {
           event: 'token-burn',
           data: <TokenBurnEvent>{
             id: '000000000001/000000/000001',
+            namespace: 'default',
             poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
@@ -521,7 +527,7 @@ export default (context: TestContext) => {
 
   it('Token transfer event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
     });
 
     context.http.get = jest.fn(
@@ -562,6 +568,7 @@ export default (context: TestContext) => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001',
+            namespace: 'default',
             poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
@@ -603,7 +610,7 @@ export default (context: TestContext) => {
 
   it('Token approval event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
     });
 
     await context.server
@@ -635,6 +642,7 @@ export default (context: TestContext) => {
           event: 'token-approval',
           data: <TokenApprovalEvent>{
             id: '000000000001/000000/000001/N1',
+            namespace: 'default',
             subject: 'A:B',
             signer: 'A',
             operator: 'B',
@@ -670,7 +678,7 @@ export default (context: TestContext) => {
 
   it('Token transfer event from wrong pool', () => {
     const sub = <EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
     };
     context.eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 
@@ -722,7 +730,7 @@ export default (context: TestContext) => {
 
   it('Token batch transfer', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'N1', ''),
+      name: packSubscriptionName('default', '0x123', 'N1', ''),
     });
 
     context.http.get = jest.fn(
@@ -766,6 +774,7 @@ export default (context: TestContext) => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000000',
+            namespace: 'default',
             poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -807,6 +816,7 @@ export default (context: TestContext) => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000001',
+            namespace: 'default',
             poolLocator: 'N1',
             tokenIndex: '2',
             from: 'A',
@@ -914,7 +924,7 @@ export default (context: TestContext) => {
     };
 
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
     });
 
     await context.server
@@ -953,7 +963,7 @@ export default (context: TestContext) => {
     };
 
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
     });
 
     const ws1 = context.server.ws('/api/ws');
@@ -1011,7 +1021,7 @@ export default (context: TestContext) => {
     };
 
     const sub = <EventStreamSubscription>{
-      name: packSubscriptionName(TOPIC, '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
     };
     context.eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 

@@ -89,25 +89,21 @@ describe('Util', () => {
   });
 
   it('packSubscriptionName', () => {
-    expect(packSubscriptionName('token', '0x123', 'F1', 'create')).toEqual('token:0x123:F1:create');
-    expect(packSubscriptionName('tok:en', '0x123', 'N1', 'create')).toEqual(
-      'tok:en:0x123:N1:create',
-    );
+    expect(packSubscriptionName('ns1', '0x123', 'F1', 'create')).toEqual('fft:ns1:0x123:F1:create');
   });
 
   it('unpackSubscriptionName', () => {
-    expect(unpackSubscriptionName('token', 'token:0x123:F1:create')).toEqual({
-      prefix: 'token',
+    expect(unpackSubscriptionName('fft:ns1:0x123:F1:create')).toEqual({
+      namespace: 'ns1',
       instancePath: '0x123',
       poolLocator: 'F1',
       event: 'create',
     });
-    expect(unpackSubscriptionName('tok:en', 'tok:en:0x123:N1:create')).toEqual({
-      prefix: 'tok:en',
+    expect(unpackSubscriptionName('token:0x123:F1:create')).toEqual({
+      namespace: undefined,
       instancePath: '0x123',
-      poolLocator: 'N1',
+      poolLocator: 'F1',
       event: 'create',
     });
-    expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({});
   });
 });
