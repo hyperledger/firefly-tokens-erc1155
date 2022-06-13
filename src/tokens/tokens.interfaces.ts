@@ -92,6 +92,12 @@ const poolConfigDescription =
 const approvalConfigDescription =
   'Optional configuration info for the token approval. Reserved for future use.';
 
+export class InitRequest {
+  @ApiProperty()
+  @IsOptional()
+  namespace?: string;
+}
+
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
   @IsDefined()
@@ -200,6 +206,10 @@ export class TokenPoolActivate {
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  namespace?: string;
 }
 
 export class TokenBalanceQuery {

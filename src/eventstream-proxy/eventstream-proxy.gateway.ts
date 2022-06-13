@@ -16,12 +16,24 @@
 
 import { Logger } from '@nestjs/common';
 import { WebSocketGateway } from '@nestjs/websockets';
+import { topicName } from '../utils';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStreamProxyBase } from './eventstream-proxy.base';
 
 @WebSocketGateway({ path: '/api/ws' })
 export class EventStreamProxyGateway extends EventStreamProxyBase {
+  topicPrefix?: string;
+
   constructor(protected eventStream: EventStreamService) {
     super(new Logger(EventStreamProxyGateway.name), eventStream, false);
+  }
+
+  init(topicPrefix?: string) {
+    this.topicPrefix = topicPrefix;
+    super.init();
+  }
+
+  getTopic(params: URLSearchParams | undefined) {
+    return topicName(this.topicPrefix, params?.get('namespace') ?? undefined);
   }
 }

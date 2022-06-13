@@ -62,7 +62,7 @@ describe('TokensService', () => {
 
   describe('Subscription migration', () => {
     it('should not migrate if no subscriptions exists', async () => {
-      service.topic = 'tokens';
+      service.topicPrefix = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([]);
@@ -70,23 +70,27 @@ describe('TokensService', () => {
     });
 
     it('should not migrate if correct base subscription exists', async () => {
-      service.topic = 'tokens';
+      service.topicPrefix = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:base:TokenPoolCreation' }]);
+      eventStream.getSubscriptions.mockReturnValueOnce([
+        { name: 'tokens:0x123:base:TokenPoolCreation' },
+      ]);
       expect(await service.migrationCheck()).toBe(false);
     });
 
     it('should migrate if any event subscriptions are missing', async () => {
-      service.topic = 'tokens';
+      service.topicPrefix = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:p1:TokenPoolCreation' }]);
+      eventStream.getSubscriptions.mockReturnValueOnce([
+        { name: 'tokens:0x123:p1:TokenPoolCreation' },
+      ]);
       expect(await service.migrationCheck()).toBe(true);
     });
 
     it('should not migrate if all event subscriptions exist', async () => {
-      service.topic = 'tokens';
+      service.topicPrefix = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([

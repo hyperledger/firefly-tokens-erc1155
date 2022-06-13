@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { ApiProperty } from '@nestjs/swagger';
-import { WebSocketMessage } from '../websocket-events/websocket-events.base';
+import { WebSocketEx, WebSocketMessage } from '../websocket-events/websocket-events.base';
 import { Event } from '../event-stream/event-stream.interfaces';
 
 export interface EventProcessor {
@@ -43,4 +43,8 @@ export interface WebSocketMessageWithId extends WebSocketMessage {
 
 export interface AckMessageData {
   id?: string;
+}
+
+export interface ProxyWebSocket extends WebSocketEx {
+  topic?: string;
 }

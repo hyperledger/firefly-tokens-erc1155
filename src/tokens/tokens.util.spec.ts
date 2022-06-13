@@ -96,18 +96,11 @@ describe('Util', () => {
   });
 
   it('unpackSubscriptionName', () => {
-    expect(unpackSubscriptionName('token', 'token:0x123:F1:create')).toEqual({
+    expect(unpackSubscriptionName('token:0x123:F1:create')).toEqual({
       prefix: 'token',
       instancePath: '0x123',
       poolLocator: 'F1',
       event: 'create',
     });
-    expect(unpackSubscriptionName('tok:en', 'tok:en:0x123:N1:create')).toEqual({
-      prefix: 'tok:en',
-      instancePath: '0x123',
-      poolLocator: 'N1',
-      event: 'create',
-    });
-    expect(unpackSubscriptionName('token', 'bad:N1:create')).toEqual({});
   });
 });

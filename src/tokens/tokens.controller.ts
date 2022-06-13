@@ -19,6 +19,7 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import {
   AsyncResponse,
+  InitRequest,
   TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
@@ -36,9 +37,10 @@ export class TokensController {
 
   @Post('init')
   @HttpCode(204)
-  @ApiOperation({ summary: 'Perform one-time initialization (if not auto-initialized)' })
-  async init() {
-    await this.service.init();
+  @ApiOperation({ summary: 'Perform one-time initialization' })
+  @ApiBody({ type: InitRequest })
+  async init(@Body() dto: InitRequest) {
+    await this.service.init(dto);
   }
 
   @Post('createpool')

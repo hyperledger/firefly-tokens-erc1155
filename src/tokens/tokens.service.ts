@@ -29,7 +29,7 @@ import { Event, EventStream, EventStreamReply } from '../event-stream/event-stre
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
-import { basicAuth } from '../utils';
+import { basicAuth, topicName } from '../utils';
 import {
   ApprovalForAllEvent,
   AsyncResponse,
@@ -52,6 +52,7 @@ import {
   TokenType,
   TransferBatchEvent,
   TransferSingleEvent,
+  InitRequest,
 } from './tokens.interfaces';
 import {
   decodeHex,
@@ -95,9 +96,9 @@ export class TokensService {
   baseUrl: string;
   instancePath: string;
   instanceUrl: string;
-  topic: string;
-  shortPrefix: string;
-  stream: EventStream | undefined;
+  topicPrefix: string;
+  ethShortPrefix: string;
+  stream = new Map<string, EventStream>();
   username: string;
   password: string;
 
@@ -110,16 +111,16 @@ export class TokensService {
   configure(
     baseUrl: string,
     instancePath: string,
-    topic: string,
-    shortPrefix: string,
+    topicPrefix: string,
+    ethShortPrefix: string,
     username: string,
     password: string,
   ) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
     this.instanceUrl = baseUrl + instancePath;
-    this.topic = topic;
-    this.shortPrefix = shortPrefix;
+    this.topicPrefix = topicPrefix;
+    this.ethShortPrefix = ethShortPrefix;
     this.username = username;
     this.password = password;
     this.proxy.addListener(new TokenListener(this));
@@ -128,22 +129,30 @@ export class TokensService {
   /**
    * One-time initialization of event stream and base subscription.
    */
-  async init() {
-    this.stream = await this.getStream();
+  async init(dto: InitRequest) {
+    await this.migrationCheck(dto.namespace);
+    const topic = topicName(this.topicPrefix, dto.namespace);
+    const stream = await this.getStream(topic);
+    this.stream.set(topic, stream);
+    this.proxy.init(stream.websocket.topic);
     await this.eventstream.getOrCreateSubscription(
       this.instancePath,
-      this.stream.id,
+      stream.id,
       tokenCreateEvent,
-      packSubscriptionName(this.topic, this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
+      packSubscriptionName(topic, this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
     );
   }
 
-  private async getStream() {
-    if (this.stream === undefined) {
-      const name = packStreamName(this.topic, this.instancePath);
-      this.stream = await this.eventstream.createOrUpdateStream(name, this.topic);
+  private async getStream(topic: string) {
+    const stream = this.stream.get(topic);
+    if (stream !== undefined) {
+      return stream;
+    } else {
+      const name = packStreamName(topic, this.instancePath);
+      const stream = await this.eventstream.createOrUpdateStream(name, topic);
+      this.stream.set(topic, stream);
+      return stream;
     }
-    return this.stream;
   }
 
   /**
@@ -153,27 +162,39 @@ export class TokensService {
    * Log a warning if any potential issues are flagged. User may need to delete
    * subscriptions manually and reactivate the pool directly.
    */
-  async migrationCheck() {
-    const name = packStreamName(this.topic, this.instancePath);
+  async migrationCheck(namespace?: string) {
+    const topic = topicName(this.topicPrefix, namespace);
+    const name = packStreamName(topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
     let existingStream = streams.find(s => s.name === name);
     if (existingStream === undefined) {
-      // Look for the old stream name (topic alone)
-      existingStream = streams.find(s => s.name === this.topic);
-      if (existingStream === undefined) {
+      // Look for the old stream names (topic alone, or topic without namespace)
+      existingStream = streams.find(s => s.name === this.topicPrefix);
+      if (existingStream !== undefined) {
+        this.logger.warn(
+          `Old event stream found with name ${existingStream.name}. ` +
+            `The connector will continue to use this stream, but it is recommended ` +
+            `to create a new stream with the name ${name}.`,
+        );
+      }
+      const oldName = packStreamName(this.topicPrefix, this.instancePath);
+      existingStream = streams.find(s => s.name === oldName);
+      if (existingStream !== undefined) {
+        this.logger.warn(
+          `Old event stream found with name ${existingStream.name}. ` +
+            `The connector will continue to use this stream, but it is recommended ` +
+            `to create a new stream with the name ${name}.`,
+        );
+      } else {
+        // No existing streams matching any known pattern
         return false;
       }
-      this.logger.warn(
-        `Old event stream found with name ${existingStream.name}. ` +
-          `The connector will continue to use this stream, but it is recommended ` +
-          `to create a new stream with the name ${name}.`,
-      );
     }
-    this.stream = existingStream;
+    this.stream.set(topic, existingStream);
 
     const allSubscriptions = await this.eventstream.getSubscriptions();
     const baseSubscription = packSubscriptionName(
-      this.topic,
+      topic,
       this.instancePath,
       BASE_SUBSCRIPTION_NAME,
       tokenCreateEvent,
@@ -188,7 +209,7 @@ export class TokensService {
 
     const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
-      const parts = unpackSubscriptionName(this.topic, sub.name);
+      const parts = unpackSubscriptionName(sub.name);
       if (parts.poolLocator === undefined || parts.event === undefined) {
         this.logger.warn(
           `Non-parseable subscription names found in event stream ${existingStream.name}.` +
@@ -222,9 +243,9 @@ export class TokensService {
   }
 
   private postOptions(signer: string, requestId?: string) {
-    const from = `${this.shortPrefix}-from`;
-    const sync = `${this.shortPrefix}-sync`;
-    const id = `${this.shortPrefix}-id`;
+    const from = `${this.ethShortPrefix}-from`;
+    const sync = `${this.ethShortPrefix}-sync`;
+    const id = `${this.ethShortPrefix}-id`;
 
     const requestOptions: AxiosRequestConfig = {
       params: {
@@ -302,35 +323,36 @@ export class TokensService {
   }
 
   async activatePool(dto: TokenPoolActivate) {
-    const stream = await this.getStream();
+    const topic = topicName(this.topicPrefix, dto.namespace);
+    const stream = await this.getStream(topic);
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     await Promise.all([
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         tokenCreateEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, tokenCreateEvent),
+        packSubscriptionName(topic, this.instancePath, dto.poolLocator, tokenCreateEvent),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferSingleEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, transferSingleEvent),
+        packSubscriptionName(topic, this.instancePath, dto.poolLocator, transferSingleEvent),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferBatchEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, transferBatchEvent),
+        packSubscriptionName(topic, this.instancePath, dto.poolLocator, transferBatchEvent),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         approvalForAllEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, approvalForAllEvent),
+        packSubscriptionName(topic, this.instancePath, dto.poolLocator, approvalForAllEvent),
         // Block number is 0 because it is important to receive all approval events,
         // so existing approvals will be reflected in the newly created pool
         '0',
@@ -465,7 +487,7 @@ class TokenListener implements EventListener {
   ): WebSocketMessage | undefined {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.type_id);
-    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
+    const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(output.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -517,7 +539,7 @@ class TokenListener implements EventListener {
   ): Promise<WebSocketMessage | undefined> {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.id);
-    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
+    const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -616,7 +638,7 @@ class TokenListener implements EventListener {
     event: ApprovalForAllEvent,
   ): WebSocketMessage | undefined {
     const { data: output } = event;
-    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
+    const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {

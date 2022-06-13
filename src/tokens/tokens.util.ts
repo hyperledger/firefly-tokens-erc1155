@@ -119,18 +119,12 @@ export function packSubscriptionName(
   return [prefix, instancePath, poolLocator, event].join(':');
 }
 
-export function unpackSubscriptionName(prefix: string, data: string) {
-  if (!data.startsWith(prefix + ':')) {
-    return {};
-  }
-  const parts = data.slice(prefix.length + 1).split(':');
-  if (parts.length !== 3) {
-    return {};
-  }
+export function unpackSubscriptionName(data: string) {
+  const parts = data.split(':');
   return {
-    prefix,
-    instancePath: parts[0],
-    poolLocator: parts[1],
-    event: parts[2],
+    prefix: parts[0],
+    instancePath: parts[1],
+    poolLocator: parts[2],
+    event: parts[3],
   };
 }

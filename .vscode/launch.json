@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run E2E tests",
+            "runtimeExecutable": "npm",
+            "args": [
+                "run",
+                "test:e2e"
+            ],
+            "request": "launch",
+            "outputCapture": "std",
+            "type": "node"
+        },
+        {
+            "name": "Run unit tests",
+            "runtimeExecutable": "npm",
+            "args": [
+                "run",
+                "test:unit"
+            ],
+            "request": "launch",
+            "outputCapture": "std",
+            "type": "node"
+        }
+    ]
+}

@@ -19,6 +19,9 @@ import { ApiProperty } from '@nestjs/swagger';
 export interface EventStream {
   id: string;
   name: string;
+  websocket: {
+    topic: string;
+  };
 }
 
 export interface EventStreamSubscription {

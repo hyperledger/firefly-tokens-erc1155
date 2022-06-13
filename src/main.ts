@@ -71,29 +71,18 @@ async function bootstrap() {
 
   const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
-  const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
+  const topic = config.get<string>('ETHCONNECT_TOPIC', '');
   const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
-  const autoInit = config.get<string>('AUTO_INIT', 'true');
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
 
   const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
 
   app.get(EventStreamService).configure(ethConnectUrl, username, password);
-  app.get(EventStreamProxyGateway).configure(wsUrl, topic);
+  app.get(EventStreamProxyGateway).configure(wsUrl);
   app
     .get(TokensService)
     .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password);
-
-  try {
-    await app.get(TokensService).migrationCheck();
-  } catch (err) {
-    // do nothing
-  }
-
-  if (autoInit !== 'false') {
-    await app.get(TokensService).init();
-  }
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);

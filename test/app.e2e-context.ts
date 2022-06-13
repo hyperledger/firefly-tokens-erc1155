@@ -7,7 +7,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
-import { EventStreamReply , Event } from '../src/event-stream/event-stream.interfaces';
+import { EventStreamReply, Event } from '../src/event-stream/event-stream.interfaces';
 import { EventStreamService } from '../src/event-stream/event-stream.service';
 import { EventStreamProxyGateway } from '../src/eventstream-proxy/eventstream-proxy.gateway';
 import { TokensService } from '../src/tokens/tokens.service';
@@ -28,16 +28,12 @@ export class TestContext {
   receiptHandler: (receipt: EventStreamReply) => void;
 
   eventstream = {
-    connect: (
-      url: string,
-      topic: string,
-      handleEvents: (events: Event[]) => void,
-      handleReceipt: (receipt: EventStreamReply) => void,
-    ) => {
+    listenTopic: (url: string, topic: string, handleEvents: (events: Event[]) => void) => {
       this.eventHandler = handleEvents;
+    },
+    listenReceipts: (url: string, handleReceipt: (receipt: EventStreamReply) => void) => {
       this.receiptHandler = handleReceipt;
     },
-
     getSubscription: jest.fn(),
   };
 
@@ -62,7 +58,7 @@ export class TestContext {
     this.app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await this.app.init();
 
-    this.app.get(EventStreamProxyGateway).configure('url', TOPIC);
+    this.app.get(EventStreamProxyGateway).configure('url');
     this.app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '');
 
     (this.app.getHttpServer() as Server).listen();

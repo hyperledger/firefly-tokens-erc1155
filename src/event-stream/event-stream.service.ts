@@ -40,11 +40,11 @@ export class EventStreamSocket {
 
   constructor(
     private url: string,
-    private topic: string,
+    private topic: string | undefined,
     private username: string,
     private password: string,
-    private handleEvents: (events: Event[]) => void,
-    private handleReceipt: (receipt: EventStreamReply) => void,
+    private handleEvents: ((events: Event[]) => void) | undefined,
+    private handleReceipt: ((receipt: EventStreamReply) => void) | undefined,
   ) {
     this.init();
   }
@@ -64,8 +64,12 @@ export class EventStreamSocket {
         } else {
           this.logger.log('Event stream websocket connected');
         }
-        this.produce({ type: 'listen', topic: this.topic });
-        this.produce({ type: 'listenreplies' });
+        if (this.topic !== undefined && this.handleEvents !== undefined) {
+          this.produce({ type: 'listen', topic: this.topic });
+        }
+        if (this.handleReceipt !== undefined) {
+          this.produce({ type: 'listenreplies' });
+        }
         this.ping();
       })
       .on('close', () => {
@@ -119,14 +123,18 @@ export class EventStreamSocket {
       for (const event of message) {
         this.logger.log(`Ethconnect '${event.signature}' message: ${JSON.stringify(event.data)}`);
       }
-      this.handleEvents(message);
+      if (this.handleEvents !== undefined) {
+        this.handleEvents(message);
+      }
     } else {
       const replyType = message.headers.type;
       const errorMessage = message.errorMessage ?? '';
       this.logger.log(
         `Ethconnect '${replyType}' reply request=${message.headers.requestId} tx=${message.transactionHash} ${errorMessage}`,
       );
-      this.handleReceipt(message);
+      if (this.handleReceipt !== undefined) {
+        this.handleReceipt(message);
+      }
     }
   }
 }
@@ -271,18 +279,17 @@ export class EventStreamService {
     return this.createSubscription(instancePath, streamId, event, name, fromBlock);
   }
 
-  connect(
-    url: string,
-    topic: string,
-    handleEvents: (events: Event[]) => void,
-    handleReceipt: (receipt: EventStreamReply) => void,
-  ) {
+  listenTopic(url: string, topic: string, handleEvents: (events: Event[]) => void) {
+    return new EventStreamSocket(url, topic, this.username, this.password, handleEvents, undefined);
+  }
+
+  listenReceipts(url: string, handleReceipt: (receipt: EventStreamReply) => void) {
     return new EventStreamSocket(
       url,
-      topic,
+      undefined,
       this.username,
       this.password,
-      handleEvents,
+      undefined,
       handleReceipt,
     );
   }
