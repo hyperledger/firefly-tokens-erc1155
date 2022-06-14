@@ -33,7 +33,7 @@ import {
 } from '../../src/tokens/tokens.interfaces';
 import { WebSocketMessage } from '../../src/websocket-events/websocket-events.base';
 import { packSubscriptionName } from '../../src/tokens/tokens.util';
-import { BASE_URL, FakeObservable, INSTANCE_PATH, TestContext, TOPIC } from '../app.e2e-context';
+import { BASE_URL, FakeObservable, INSTANCE_PATH, TestContext } from '../app.e2e-context';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -72,8 +72,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
             namespace: 'default',
@@ -139,8 +140,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
             namespace: 'default',
@@ -206,8 +208,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
             namespace: 'default',
@@ -286,8 +289,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
@@ -379,8 +383,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
@@ -476,8 +481,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-burn',
           data: <TokenBurnEvent>{
             id: '000000000001/000000/000001',
@@ -563,8 +569,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001',
@@ -637,8 +644,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: <TokenApprovalEvent>{
             id: '000000000001/000000/000001/N1',
@@ -721,9 +729,11 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         // Only the second transfer should have been processed
-        expect(message.event).toEqual('token-transfer');
-        expect(message.data.poolLocator).toEqual('id=N1&block=1');
-        expect(message.data.blockchain.info.blockNumber).toEqual('2');
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0].event).toEqual('token-transfer');
+        expect(message.data.events[0].data.poolLocator).toEqual('id=N1&block=1');
+        expect(message.data.events[0].data.blockchain.info.blockNumber).toEqual('2');
         return true;
       });
   });
@@ -769,8 +779,9 @@ export default (context: TestContext) => {
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(2);
+        expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000000',
@@ -807,12 +818,7 @@ export default (context: TestContext) => {
             },
           },
         });
-        return true;
-      })
-      .expectJson(message => {
-        expect(message.id).toBeDefined();
-        delete message.id;
-        expect(message).toEqual(<WebSocketMessage>{
+        expect(message.data.events[1]).toEqual(<WebSocketMessage>{
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000001',
@@ -934,13 +940,17 @@ export default (context: TestContext) => {
         context.eventHandler([tokenPoolMessage]);
       })
       .expectJson(message => {
-        expect(message.event).toEqual('token-pool');
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0].event).toEqual('token-pool');
         return true;
       })
       .close();
 
     await context.server.ws('/api/ws').expectJson(message => {
-      expect(message.event).toEqual('token-pool');
+      expect(message.event).toEqual('batch');
+      expect(message.data.events).toHaveLength(1);
+      expect(message.data.events[0].event).toEqual('token-pool');
       return true;
     });
   });
@@ -975,86 +985,17 @@ export default (context: TestContext) => {
         context.eventHandler([tokenPoolMessage]);
       })
       .expectJson(message => {
-        expect(message.event).toEqual('token-pool');
+        expect(message.event).toEqual('batch');
+        expect(message.data.events).toHaveLength(1);
+        expect(message.data.events[0].event).toEqual('token-pool');
         return true;
       })
       .close();
 
     await ws2.expectJson(message => {
-      expect(message.event).toEqual('token-pool');
-      return true;
-    });
-  });
-
-  it('Batch + ack + client switchover', async () => {
-    const tokenPoolMessage: TokenPoolCreationEvent = {
-      subId: 'sb-123',
-      signature: tokenCreateEventSignature,
-      address: '0x00001',
-      blockNumber: '1',
-      transactionIndex: '0x0',
-      transactionHash: '0x123',
-      logIndex: '1',
-      timestamp: '2020-01-01 00:00:00Z',
-      data: {
-        operator: 'bob',
-        type_id: '340282366920938463463374607431768211456',
-        data: '0x6e73006e616d65006964',
-      },
-    };
-    const tokenMintMessage: TransferSingleEvent = {
-      subId: 'sb-123',
-      signature: transferSingleEventSignature,
-      address: '',
-      blockNumber: '1',
-      transactionIndex: '0x0',
-      transactionHash: '0x123',
-      logIndex: '1',
-      timestamp: '2020-01-01 00:00:00Z',
-      data: {
-        id: '340282366920938463463374607431768211456',
-        from: ZERO_ADDRESS,
-        to: 'A',
-        operator: 'A',
-        value: '5',
-      },
-    };
-
-    const sub = <EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
-    };
-    context.eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
-
-    const ws1 = context.server.ws('/api/ws');
-    const ws2 = context.server.ws('/api/ws');
-    let messageID1: string;
-
-    await ws1
-      .exec(() => {
-        expect(context.eventHandler).toBeDefined();
-        context.eventHandler([tokenPoolMessage, tokenMintMessage]);
-      })
-      .expectJson(message => {
-        expect(message.event).toEqual('token-pool');
-        messageID1 = message.id;
-        return true;
-      })
-      .expectJson(message => {
-        expect(message.event).toEqual('token-mint');
-        return true;
-      })
-      .exec(client => {
-        client.send(
-          JSON.stringify({
-            event: 'ack',
-            data: { id: messageID1 },
-          }),
-        );
-      })
-      .close();
-
-    await ws2.expectJson(message => {
-      expect(message.event).toEqual('token-mint');
+      expect(message.event).toEqual('batch');
+      expect(message.data.events).toHaveLength(1);
+      expect(message.data.events[0].event).toEqual('token-pool');
       return true;
     });
   });
