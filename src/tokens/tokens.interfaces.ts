@@ -92,6 +92,12 @@ const poolConfigDescription =
 const approvalConfigDescription =
   'Optional configuration info for the token approval. Reserved for future use.';
 
+export class InitRequest {
+  @ApiProperty()
+  @IsOptional()
+  namespace?: string;
+}
+
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
   @IsDefined()
@@ -200,6 +206,10 @@ export class TokenPoolActivate {
   @ApiProperty({ description: requestIdDescription })
   @IsOptional()
   requestId?: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
 }
 
 export class TokenBalanceQuery {
@@ -268,10 +278,15 @@ class tokenEventBase {
   signer: string;
 
   @ApiProperty()
+  @IsOptional()
   data?: string;
 
   @ApiProperty()
   blockchain: BlockchainEvent;
+
+  @ApiProperty()
+  @IsOptional()
+  namespace?: string;
 }
 
 export class TokenPoolEventInfo {
@@ -290,6 +305,7 @@ export class TokenPoolEvent extends tokenEventBase {
   standard: string;
 
   @ApiProperty()
+  @IsOptional()
   symbol?: string;
 
   @ApiProperty()
@@ -301,9 +317,11 @@ export class TokenTransferEvent extends tokenEventBase {
   id: string;
 
   @ApiProperty()
+  @IsOptional()
   tokenIndex?: string;
 
   @ApiProperty()
+  @IsOptional()
   uri?: string;
 
   @ApiProperty()

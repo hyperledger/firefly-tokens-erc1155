@@ -52,6 +52,7 @@ import {
   TokenType,
   TransferBatchEvent,
   TransferSingleEvent,
+  InitRequest,
 } from './tokens.interfaces';
 import {
   decodeHex,
@@ -126,15 +127,26 @@ export class TokensService {
   }
 
   /**
-   * One-time initialization of event stream and base subscription.
+   * Initialization of event stream and base subscription.
    */
-  async init() {
+  async init(dto: InitRequest) {
+    if (dto.namespace === undefined) {
+      // Quietly ignore this instead of failing, to avoid breaking older CLIs
+      this.logger.warn('Ignoring init request with no namespace provided');
+      return;
+    }
+    await this.migrationCheck(dto.namespace);
     this.stream = await this.getStream();
     await this.eventstream.getOrCreateSubscription(
       this.instancePath,
       this.stream.id,
       tokenCreateEvent,
-      packSubscriptionName(this.topic, this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
+      packSubscriptionName(
+        dto.namespace,
+        this.instancePath,
+        BASE_SUBSCRIPTION_NAME,
+        tokenCreateEvent,
+      ),
     );
   }
 
@@ -153,7 +165,7 @@ export class TokensService {
    * Log a warning if any potential issues are flagged. User may need to delete
    * subscriptions manually and reactivate the pool directly.
    */
-  async migrationCheck() {
+  async migrationCheck(namespace: string) {
     const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
     let existingStream = streams.find(s => s.name === name);
@@ -173,7 +185,7 @@ export class TokensService {
 
     const allSubscriptions = await this.eventstream.getSubscriptions();
     const baseSubscription = packSubscriptionName(
-      this.topic,
+      namespace,
       this.instancePath,
       BASE_SUBSCRIPTION_NAME,
       tokenCreateEvent,
@@ -188,13 +200,15 @@ export class TokensService {
 
     const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
-      const parts = unpackSubscriptionName(this.topic, sub.name);
-      if (parts.poolLocator === undefined || parts.event === undefined) {
+      const parts = unpackSubscriptionName(sub.name);
+      if (parts.namespace === undefined) {
         this.logger.warn(
           `Non-parseable subscription names found in event stream ${existingStream.name}.` +
             `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
+      } else if (parts.namespace !== namespace) {
+        continue;
       }
       const existing = foundEvents.get(parts.poolLocator);
       if (existing !== undefined) {
@@ -309,28 +323,38 @@ export class TokensService {
         this.instancePath,
         stream.id,
         tokenCreateEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, tokenCreateEvent),
+        packSubscriptionName(dto.namespace, this.instancePath, dto.poolLocator, tokenCreateEvent),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferSingleEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, transferSingleEvent),
+        packSubscriptionName(
+          dto.namespace,
+          this.instancePath,
+          dto.poolLocator,
+          transferSingleEvent,
+        ),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferBatchEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, transferBatchEvent),
+        packSubscriptionName(dto.namespace, this.instancePath, dto.poolLocator, transferBatchEvent),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         approvalForAllEvent,
-        packSubscriptionName(this.topic, this.instancePath, dto.poolLocator, approvalForAllEvent),
+        packSubscriptionName(
+          dto.namespace,
+          this.instancePath,
+          dto.poolLocator,
+          approvalForAllEvent,
+        ),
         // Block number is 0 because it is important to receive all approval events,
         // so existing approvals will be reflected in the newly created pool
         '0',
@@ -465,7 +489,7 @@ class TokenListener implements EventListener {
   ): WebSocketMessage | undefined {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.type_id);
-    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
+    const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(output.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -481,6 +505,7 @@ class TokenListener implements EventListener {
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
+        namespace: unpackedSub.namespace,
         standard: TOKEN_STANDARD,
         poolLocator: packPoolLocator(unpackedId.poolId, event.blockNumber),
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
@@ -517,7 +542,7 @@ class TokenListener implements EventListener {
   ): Promise<WebSocketMessage | undefined> {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.id);
-    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
+    const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -542,6 +567,7 @@ class TokenListener implements EventListener {
 
     const commonData = <TokenTransferEvent>{
       id: transferId,
+      namespace: unpackedSub.namespace,
       poolLocator: unpackedSub.poolLocator,
       tokenIndex: unpackedId.tokenIndex,
       uri,
@@ -616,7 +642,7 @@ class TokenListener implements EventListener {
     event: ApprovalForAllEvent,
   ): WebSocketMessage | undefined {
     const { data: output } = event;
-    const unpackedSub = unpackSubscriptionName(this.service.topic, subName);
+    const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
     if (unpackedSub.poolLocator === undefined) {
@@ -634,6 +660,7 @@ class TokenListener implements EventListener {
       event: 'token-approval',
       data: <TokenApprovalEvent>{
         id: approvalId,
+        namespace: unpackedSub.namespace,
         subject: `${output.account}:${output.operator}`,
         poolLocator: unpackedSub.poolLocator,
         operator: output.operator,

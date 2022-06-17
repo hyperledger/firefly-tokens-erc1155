@@ -16,6 +16,8 @@
 
 import { PoolLocator } from './tokens.interfaces';
 
+const SUBSCRIPTION_PREFIX = 'fft';
+
 /**
  * Encode a UTF-8 string into hex bytes with a leading 0x
  */
@@ -111,26 +113,31 @@ export function packStreamName(prefix: string, instancePath: string) {
 }
 
 export function packSubscriptionName(
-  prefix: string,
+  namespace: string,
   instancePath: string,
   poolLocator: string,
   event: string,
 ) {
-  return [prefix, instancePath, poolLocator, event].join(':');
+  return [SUBSCRIPTION_PREFIX, namespace, instancePath, poolLocator, event].join(':');
 }
 
-export function unpackSubscriptionName(prefix: string, data: string) {
-  if (!data.startsWith(prefix + ':')) {
+export function unpackSubscriptionName(data: string) {
+  const parts = data.split(':');
+  if (parts.length === 5 && parts[0] === SUBSCRIPTION_PREFIX) {
+    return {
+      namespace: parts[1],
+      instancePath: parts[2],
+      poolLocator: parts[3],
+      event: parts[4],
+    };
+  } else if (parts.length === 4) {
+    return {
+      namespace: undefined,
+      instancePath: parts[1],
+      poolLocator: parts[2],
+      event: parts[3],
+    };
+  } else {
     return {};
   }
-  const parts = data.slice(prefix.length + 1).split(':');
-  if (parts.length !== 3) {
-    return {};
-  }
-  return {
-    prefix,
-    instancePath: parts[0],
-    poolLocator: parts[1],
-    event: parts[2],
-  };
 }

@@ -66,23 +66,27 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([]);
-      expect(await service.migrationCheck()).toBe(false);
+      expect(await service.migrationCheck('ns1')).toBe(false);
     });
 
     it('should not migrate if correct base subscription exists', async () => {
       service.topic = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:base:TokenPoolCreation' }]);
-      expect(await service.migrationCheck()).toBe(false);
+      eventStream.getSubscriptions.mockReturnValueOnce([
+        { name: 'fft:ns1:0x123:base:TokenPoolCreation' },
+      ]);
+      expect(await service.migrationCheck('ns1')).toBe(false);
     });
 
     it('should migrate if any event subscriptions are missing', async () => {
       service.topic = 'tokens';
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([{ name: 'tokens:0x123:p1:TokenPoolCreation' }]);
-      expect(await service.migrationCheck()).toBe(true);
+      eventStream.getSubscriptions.mockReturnValueOnce([
+        { name: 'fft:ns1:0x123:p1:TokenPoolCreation' },
+      ]);
+      expect(await service.migrationCheck('ns1')).toBe(true);
     });
 
     it('should not migrate if all event subscriptions exist', async () => {
@@ -90,12 +94,12 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'tokens:0x123:p1:TokenPoolCreation' },
-        { name: 'tokens:0x123:p1:TransferSingle' },
-        { name: 'tokens:0x123:p1:TransferBatch' },
-        { name: 'tokens:0x123:p1:ApprovalForAll' },
+        { name: 'fft:ns1:0x123:p1:TokenPoolCreation' },
+        { name: 'fft:ns1:0x123:p1:TransferSingle' },
+        { name: 'fft:ns1:0x123:p1:TransferBatch' },
+        { name: 'fft:ns1:0x123:p1:ApprovalForAll' },
       ]);
-      expect(await service.migrationCheck()).toBe(false);
+      expect(await service.migrationCheck('ns1')).toBe(false);
     });
   });
 });
