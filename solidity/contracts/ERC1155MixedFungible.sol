@@ -40,6 +40,14 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     mapping (uint256 => address) public creators;
     mapping (uint256 => uint256) public maxIndex;
 
+    // inherited ERC1155 `_uri` is private, so need our own within this contract
+    string private _baseTokenURI;
+
+    // mapping from type ID | index => custom token URIs for non-fungible tokens
+    // fallback behavior if missing is to use the default base URI
+    // other token types continue to use the default base URI
+    mapping (uint256 => string) private _nfTokenURIs;
+
     event TokenPoolCreation(address indexed operator, uint256 indexed type_id, bytes data);
 
     function isFungible(uint256 id) internal pure returns(bool) {
@@ -56,6 +64,7 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     }
 
     constructor(string memory uri) ERC1155(uri) public {
+        _baseTokenURI = uri;
     }
 
     function create(bool is_fungible, bytes calldata data)
@@ -72,6 +81,15 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         emit TokenPoolCreation(_msgSender(), type_id, data);
     }
 
+    function _setNonFungibleURI(uint256 type_id, uint256 id, string memory uri)
+        public
+        virtual
+        creatorOnly(type_id)
+    {
+        require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
+        _nfTokenURIs[id] = uri;
+    }
+
     function mintNonFungible(uint256 type_id, address[] calldata to, bytes calldata data)
         external
         virtual
@@ -85,6 +103,24 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
         for (uint256 i = 0; i < to.length; ++i) {
             _mint(to[i], type_id | index + i, 1, data);
+        }
+    }
+
+    function mintNonFungibleWithURI(uint256 type_id, address[] calldata to, bytes calldata data, string memory uri)
+        external
+        virtual
+        creatorOnly(type_id)
+    {
+        require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
+
+        // Indexes are 1-based.
+        uint256 index = maxIndex[type_id] + 1;
+        maxIndex[type_id] = to.length.add(maxIndex[type_id]);
+
+        for (uint256 i = 0; i < to.length; ++i) {
+            uint256 id  = type_id | index + 1;
+            _mint(to[i], id, 1, data);
+            _setNonFungibleURI(type_id, id, uri);
         }
     }
 
@@ -121,4 +157,16 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     {
         setApprovalForAll(operator, approved);
     }
+
+    function uri(uint256 id) public view virtual override returns (string memory) {
+        string memory tokenUri = _nfTokenURIs[id];
+        bytes memory tempURITest = bytes(tokenUri);
+
+        if (tempURITest.length == 0) {
+            return _baseTokenURI;
+        } else {
+            return tokenUri;
+        }
+    }
+
 }
