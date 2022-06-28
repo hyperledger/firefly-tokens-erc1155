@@ -1,6 +1,9 @@
 {
 	"name": "@hyperledger/firefly-tokens-erc1155-contracts",
 	"version": "0.0.2",
+	"scripts": {
+		"compile": "hardhat compile"
+	},
 	"dependencies": {
 		"@openzeppelin/contracts": "^4.5.0",
 		"truffle": "^5.1.61"
