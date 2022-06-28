@@ -2,7 +2,8 @@
 	"name": "@hyperledger/firefly-tokens-erc1155-contracts",
 	"version": "0.0.2",
 	"scripts": {
-		"compile": "hardhat compile"
+		"compile": "hardhat compile",
+		"test": "hardhat test --network hardhat"
 	},
 	"dependencies": {
 		"@openzeppelin/contracts": "^4.5.0",
