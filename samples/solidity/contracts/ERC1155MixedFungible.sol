@@ -45,7 +45,6 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
     // mapping from type ID | index => custom token URIs for non-fungible tokens
     // fallback behavior if missing is to use the default base URI
-    // other token types continue to use the default base URI
     mapping (uint256 => string) private _nfTokenURIs;
 
     event TokenPoolCreation(address indexed operator, uint256 indexed type_id, bytes data);
