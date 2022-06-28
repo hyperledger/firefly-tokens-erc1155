@@ -63,8 +63,8 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         _;
     }
 
-    constructor(string memory uri) ERC1155(uri) {
-        _baseTokenURI = uri;
+    constructor(string memory _uri) ERC1155(_uri) {
+        _baseTokenURI = _uri;
     }
 
     function create(bool is_fungible, bytes calldata data)
@@ -81,6 +81,15 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         emit TokenPoolCreation(_msgSender(), type_id, data);
     }
 
+    function _setNonFungibleURI(uint256 type_id, uint256 id, string memory _uri)
+        public
+        virtual
+        creatorOnly(type_id)
+    {
+        require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
+        _nfTokenURIs[id] = _uri;
+    }
+
     function mintNonFungible(uint256 type_id, address[] calldata to, bytes calldata data)
         external
         virtual
@@ -94,6 +103,24 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
         for (uint256 i = 0; i < to.length; ++i) {
             _mint(to[i], type_id | index + i, 1, data);
+        }
+    }
+
+    function mintNonFungibleWithURI(uint256 type_id, address[] calldata to, bytes calldata data, string memory _uri)
+        external
+        virtual
+        creatorOnly(type_id)
+    {
+        require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
+
+        // Indexes are 1-based.
+        uint256 index = maxIndex[type_id] + 1;
+        maxIndex[type_id] = SafeMath.add(to.length, maxIndex[type_id]);
+
+        for (uint256 i = 0; i < to.length; ++i) {
+            uint256 id  = type_id | index + 1;
+            _mint(to[i], id, 1, data);
+            _setNonFungibleURI(type_id, id, _uri);
         }
     }
 
@@ -130,4 +157,16 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     {
         setApprovalForAll(operator, approved);
     }
+
+    function uri(uint256 id) public view virtual override returns (string memory) {
+        string memory _tokenUri = _nfTokenURIs[id];
+        bytes memory tempURITest = bytes(_tokenUri);
+
+        if (tempURITest.length == 0) {
+            return _baseTokenURI;
+        } else {
+            return _tokenUri;
+        }
+    }
+
 }
