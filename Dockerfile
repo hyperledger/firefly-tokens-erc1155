@@ -19,6 +19,7 @@ RUN apk add curl
 WORKDIR /root
 ADD package*.json ./
 RUN npm install --production
+COPY --from=solidity-builder /home/node/contracts contracts/source
 COPY --from=solidity-builder /home/node/artifacts/contracts/ERC1155MixedFungible.sol contracts
 COPY --from=builder /root/dist dist
 COPY --from=builder /root/.env /root/.env
