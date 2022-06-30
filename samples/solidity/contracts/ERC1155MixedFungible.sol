@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
  * Example ERC1155 with mixed fungible/non-fungible token support.
@@ -30,15 +30,23 @@ import "@openzeppelin/contracts/utils/Context.sol";
 contract ERC1155MixedFungible is Context, ERC1155 {
     // Use a split bit implementation:
     //   - Bit 255: type flag (0 = fungible, 1 = non-fungible)
-    //   - Bits 254-128: type id
+    //   - Bits 255-128: type id
     //   - Bits 127-0: token index (non-fungible only)
-    uint256 constant TYPE_MASK = uint256(uint128(~0)) << 128;
-    uint256 constant NF_INDEX_MASK = uint128(~0);
+    uint256 constant TYPE_MASK = type(uint128).max << 128;
+    uint256 constant NF_INDEX_MASK = type(uint128).max;
     uint256 constant TYPE_NF_BIT = 1 << 255;
 
     uint256 nonce;
     mapping (uint256 => address) public creators;
     mapping (uint256 => uint256) public maxIndex;
+
+    // inherited ERC1155 `_uri` is private, so need our own within this contract
+    string private _baseTokenURI;
+
+    // mapping from type ID | index => custom token URIs for non-fungible tokens
+    // fallback behavior if missing is to use the default base URI
+    // other token types continue to use the default base URI
+    mapping (uint256 => string) private _nfTokenURIs;
 
     event TokenPoolCreation(address indexed operator, uint256 indexed type_id, bytes data);
 
@@ -55,7 +63,8 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         _;
     }
 
-    constructor(string memory uri) ERC1155(uri) public {
+    constructor(string memory uri) ERC1155(uri) {
+        _baseTokenURI = uri;
     }
 
     function create(bool is_fungible, bytes calldata data)
@@ -81,7 +90,7 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
         // Indexes are 1-based.
         uint256 index = maxIndex[type_id] + 1;
-        maxIndex[type_id] = to.length.add(maxIndex[type_id]);
+        maxIndex[type_id] = SafeMath.add(to.length, maxIndex[type_id]);
 
         for (uint256 i = 0; i < to.length; ++i) {
             _mint(to[i], type_id | index + i, 1, data);
