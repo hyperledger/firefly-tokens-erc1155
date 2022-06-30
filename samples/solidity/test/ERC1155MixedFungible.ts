@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { ERC1155MixedFungible } from '../typechain';
+import { ERC1155MixedFungible, InterfaceCheck } from '../typechain';
 
 describe ('ERC1155MixedFungible - Unit Tests', function () {
   const baseUri = 'https://firefly/{id}';
@@ -19,6 +19,12 @@ describe ('ERC1155MixedFungible - Unit Tests', function () {
     );
     await deployedERC1155.deployed();
   });
+
+  it('Verify interface ID', async function () {
+    const checkerFactory = await ethers.getContractFactory('InterfaceCheck');
+    const checker: InterfaceCheck = await checkerFactory.connect(deployerSignerA).deploy();
+    expect(await checker.erc1155WithUri()).to.equal('0xdbd97cf5');
+  })
 
   it('Deploy - should deploy a new ERC1155 instance with the default uri', async function () {
     expect(await deployedERC1155.uri(1)).to.equal(baseUri);   
