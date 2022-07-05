@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./IERC1155MixedFungible.sol";
 
 /**
  * Example ERC1155 with mixed fungible/non-fungible token support.
@@ -27,7 +28,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
  * Remember to always consult best practices from other communities and examples (such as OpenZeppelin)
  * when crafting your token logic, rather than relying on the FireFly community alone. Happy minting!
  */
-contract ERC1155MixedFungible is Context, ERC1155 {
+contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
     // Use a split bit implementation:
     //   - Bit 255: type flag (0 = fungible, 1 = non-fungible)
     //   - Bits 255-128: type id
@@ -45,7 +46,6 @@ contract ERC1155MixedFungible is Context, ERC1155 {
 
     // mapping from type ID | index => custom token URIs for non-fungible tokens
     // fallback behavior if missing is to use the default base URI
-    // other token types continue to use the default base URI
     mapping (uint256 => string) private _nfTokenURIs;
 
     event TokenPoolCreation(address indexed operator, uint256 indexed type_id, bytes data);
@@ -63,13 +63,22 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         _;
     }
 
-    constructor(string memory uri) ERC1155(uri) {
-        _baseTokenURI = uri;
+    constructor(string memory _uri) ERC1155(_uri) {
+        _baseTokenURI = _uri;
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC1155, IERC165) returns (bool) {
+        return
+            interfaceId == type(IERC1155MixedFungible).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     function create(bool is_fungible, bytes calldata data)
         external
         virtual
+        override
         returns(uint256 type_id)
     {
         type_id = (++nonce << 128);
@@ -81,9 +90,19 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         emit TokenPoolCreation(_msgSender(), type_id, data);
     }
 
+    function _setNonFungibleURI(uint256 type_id, uint256 id, string memory _uri)
+        public
+        virtual
+        creatorOnly(type_id)
+    {
+        require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
+        _nfTokenURIs[id] = _uri;
+    }
+
     function mintNonFungible(uint256 type_id, address[] calldata to, bytes calldata data)
         external
         virtual
+        override
         creatorOnly(type_id)
     {
         require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
@@ -97,9 +116,29 @@ contract ERC1155MixedFungible is Context, ERC1155 {
         }
     }
 
+    function mintNonFungibleWithURI(uint256 type_id, address[] calldata to, bytes calldata data, string memory _uri)
+        external
+        virtual
+        override
+        creatorOnly(type_id)
+    {
+        require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");
+
+        // Indexes are 1-based.
+        uint256 index = maxIndex[type_id] + 1;
+        maxIndex[type_id] = SafeMath.add(to.length, maxIndex[type_id]);
+
+        for (uint256 i = 0; i < to.length; ++i) {
+            uint256 id  = type_id | index + 1;
+            _mint(to[i], id, 1, data);
+            _setNonFungibleURI(type_id, id, _uri);
+        }
+    }
+
     function mintFungible(uint256 type_id, address[] calldata to, uint256[] calldata amounts, bytes calldata data)
         external
         virtual
+        override
         creatorOnly(type_id)
     {
         require(isFungible(type_id), "ERC1155MixedFungible: id does not represent a fungible type");
@@ -115,6 +154,7 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     function burn(address from, uint256 id, uint256 amount, bytes calldata data)
         external
         virtual
+        override
     {
         require(
             from == _msgSender() || isApprovedForAll(from, _msgSender()),
@@ -127,7 +167,20 @@ contract ERC1155MixedFungible is Context, ERC1155 {
     function setApprovalForAllWithData(address operator, bool approved, bytes calldata data)
         external
         virtual
+        override
     {
         setApprovalForAll(operator, approved);
     }
+
+    function uri(uint256 id) public view virtual override(IERC1155MixedFungible, ERC1155) returns (string memory) {
+        string memory _tokenUri = _nfTokenURIs[id];
+        bytes memory tempURITest = bytes(_tokenUri);
+
+        if (tempURITest.length == 0) {
+            return _baseTokenURI;
+        } else {
+            return _tokenUri;
+        }
+    }
+
 }
