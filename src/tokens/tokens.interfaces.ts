@@ -284,6 +284,10 @@ export class TokenPoolEventInfo {
 
   @ApiProperty()
   typeId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  baseUri?: string;
 }
 
 export class TokenPoolEvent extends tokenEventBase {

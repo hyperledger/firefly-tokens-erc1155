@@ -183,4 +183,7 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
         }
     }
 
+    function baseTokenUri() public view virtual override returns (string memory) {
+        return _baseTokenURI;
+    }
 }
