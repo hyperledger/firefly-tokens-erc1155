@@ -91,6 +91,8 @@ const poolConfigDescription =
   'Optional configuration info for the token pool. Reserved for future use.';
 const approvalConfigDescription =
   'Optional configuration info for the token approval. Reserved for future use.';
+const transferConfigDescription =
+  'Optional configuration info for the token transfer. Reserved for future use.';
 
 export class InitRequest {
   @ApiProperty()
@@ -263,6 +265,10 @@ export class TokenTransfer {
   @ApiProperty()
   @IsOptional()
   data?: string;
+
+  @ApiProperty({ description: transferConfigDescription })
+  @IsOptional()
+  config?: any;
 }
 
 export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
