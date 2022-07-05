@@ -63,8 +63,8 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
         _;
     }
 
-    constructor(string memory _uri) ERC1155(_uri) {
-        _baseTokenURI = _uri;
+    constructor(string memory uri) ERC1155(uri) {
+        _baseTokenURI = uri;
     }
 
     function supportsInterface(
@@ -129,7 +129,7 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
         maxIndex[type_id] = SafeMath.add(to.length, maxIndex[type_id]);
 
         for (uint256 i = 0; i < to.length; ++i) {
-            uint256 id  = type_id | index + 1;
+            uint256 id = type_id | index + i;
             _mint(to[i], id, 1, data);
             _setNonFungibleURI(type_id, id, _uri);
         }
