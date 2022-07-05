@@ -23,7 +23,7 @@ describe ('ERC1155MixedFungible - Unit Tests', function () {
   it('Verify interface ID', async function () {
     const checkerFactory = await ethers.getContractFactory('InterfaceCheck');
     const checker: InterfaceCheck = await checkerFactory.connect(deployerSignerA).deploy();
-    expect(await checker.erc1155WithUri()).to.equal('0xdbd97cf5');
+    expect(await checker.erc1155WithUri()).to.equal('0xa1d87d57');
   })
 
   it('Deploy - should deploy a new ERC1155 instance with the default uri', async function () {
@@ -69,7 +69,7 @@ describe ('ERC1155MixedFungible - Unit Tests', function () {
       deployedERC1155.connect(deployerSignerA).mintNonFungibleWithURI(typeId, [deployerSignerA.address], "0x00", "testURI")
     ).to.emit(deployedERC1155, "TransferSingle");
 
-    const tokenId = BigInt("57896044618658097711785492504343953926975274699741220483192166611388333031426");
+    const tokenId = BigInt("57896044618658097711785492504343953926975274699741220483192166611388333031425");
 
     expect(await deployedERC1155.uri(tokenId)).to.equal("testURI");   
   });

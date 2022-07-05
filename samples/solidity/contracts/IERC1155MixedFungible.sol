@@ -51,4 +51,5 @@ import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
     uint256 id
   ) external returns (string memory);
 
+  function baseTokenUri() external returns(string memory);
  }
