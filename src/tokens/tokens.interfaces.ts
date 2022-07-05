@@ -33,7 +33,7 @@ export interface EthConnectAsyncResponse {
 }
 
 export interface EthConnectReturn {
-  output: string;
+  output: any;
 }
 
 export interface TokenPoolCreationEvent extends Event {
@@ -255,7 +255,11 @@ export class TokenTransfer {
   data?: string;
 }
 
-export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {}
+export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
+  @ApiProperty()
+  @IsOptional()
+  uri?: string;
+}
 export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 // Websocket notifications

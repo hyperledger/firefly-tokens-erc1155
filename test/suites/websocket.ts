@@ -421,7 +421,11 @@ export default (context: TestContext) => {
       });
 
     expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
+    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
+      params: {
+        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+      },
+    });
   });
 
   it('Token burn event', async () => {
@@ -516,7 +520,11 @@ export default (context: TestContext) => {
       });
 
     expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
+    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
+      params: {
+        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+      },
+    });
   });
 
   it('Token transfer event', async () => {
@@ -598,7 +606,11 @@ export default (context: TestContext) => {
       });
 
     expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
+    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
+      params: {
+        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+      },
+    });
   });
 
   it('Token approval event', async () => {
@@ -842,8 +854,12 @@ export default (context: TestContext) => {
         return true;
       });
 
-    expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri?input=0`, {});
+    expect(context.http.get).toHaveBeenCalledTimes(2);
+    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
+      params: {
+        id: '57896044618658097711785492504343953926975274699741220483192166611388333031426',
+      },
+    });
   });
 
   it('Success receipt', () => {
