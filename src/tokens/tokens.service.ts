@@ -149,7 +149,7 @@ export class TokensService {
         interfaceId: CUSTOM_URI_IID,
       });
       this.logger.debug(
-        `Resullt for URI support on instance '${this.instancePath}': ${result.output}`,
+        `Result for URI support on instance '${this.instancePath}': ${result.output}`,
       );
       return result.output === true;
     } catch (err) {
