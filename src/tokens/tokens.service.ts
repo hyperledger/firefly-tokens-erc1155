@@ -53,6 +53,7 @@ import {
   TransferBatchEvent,
   TransferSingleEvent,
   InitRequest,
+  TokenPoolEventInfo,
 } from './tokens.interfaces';
 import {
   decodeHex,
@@ -71,6 +72,7 @@ import {
 const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const BASE_SUBSCRIPTION_NAME = 'base';
+const CUSTOM_URI_IID = '0xa1d87d57';
 
 const tokenCreateEvent = 'TokenPoolCreation';
 const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
@@ -101,6 +103,7 @@ export class TokensService {
   stream: EventStream | undefined;
   username: string;
   password: string;
+  supportsCustomUri: boolean;
 
   constructor(
     private http: HttpService,
@@ -148,6 +151,37 @@ export class TokensService {
         tokenCreateEvent,
       ),
     );
+
+    this.supportsCustomUri = await this.queryUriSupport();
+  }
+
+  async queryUriSupport() {
+    try {
+      const result = await this.query('/supportsInterface', {
+        interfaceId: CUSTOM_URI_IID,
+      });
+      this.logger.debug(
+        `Resullt for URI support on instance '${this.instancePath}': ${result.output}`,
+      );
+      return result.output === true;
+    } catch (err) {
+      this.logger.log(
+        `Failed to query URI support on instance '${this.instancePath}': assuming false`,
+      );
+      return false;
+    }
+  }
+
+  async queryBaseUri() {
+    try {
+      const result = await this.query('/baseTokenUri', {
+        interfaceId: CUSTOM_URI_IID,
+      });
+      return result.output as string;
+    } catch (err) {
+      this.logger.error(`Failed to query base URI`);
+      return '';
+    }
   }
 
   private async getStream() {
@@ -383,12 +417,22 @@ export class TokensService {
         to.push(dto.to);
       }
 
-      const response = await this.invoke('/mintNonFungible', dto.signer, dto.requestId, {
-        type_id: typeId,
-        to,
-        data: encodeHex(dto.data ?? ''),
-      });
-      return { id: response.id };
+      if (dto.uri !== undefined && this.supportsCustomUri === true) {
+        const response = await this.invoke('/mintNonFungibleWithURI', dto.signer, dto.requestId, {
+          type_id: typeId,
+          to,
+          data: encodeHex(dto.data ?? ''),
+          _uri: dto.uri,
+        });
+        return { id: response.id };
+      } else {
+        const response = await this.invoke('/mintNonFungible', dto.signer, dto.requestId, {
+          type_id: typeId,
+          to,
+          data: encodeHex(dto.data ?? ''),
+        });
+        return { id: response.id };
+      }
     }
   }
 
@@ -437,15 +481,13 @@ export class TokensService {
 class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  private uriPattern: string | undefined;
-
   constructor(private readonly service: TokensService) {}
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
       case tokenCreateEventSignatureOld:
       case tokenCreateEventSignature:
-        process(this.transformTokenPoolCreationEvent(subName, event));
+        process(await this.transformTokenPoolCreationEvent(subName, event));
         break;
       case transferSingleEventSignature:
         process(await this.transformTransferSingleEvent(subName, event));
@@ -483,10 +525,10 @@ class TokenListener implements EventListener {
     return signature.substring(0, signature.indexOf('('));
   }
 
-  private transformTokenPoolCreationEvent(
+  private async transformTokenPoolCreationEvent(
     subName: string,
     event: TokenPoolCreationEvent,
-  ): WebSocketMessage | undefined {
+  ): Promise<WebSocketMessage | undefined> {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.type_id);
     const unpackedSub = unpackSubscriptionName(subName);
@@ -502,6 +544,15 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
+    const eventInfo: TokenPoolEventInfo = {
+      address: event.address,
+      typeId: '0x' + encodeHexIDForURI(output.type_id),
+    };
+
+    if (this.service.supportsCustomUri === true) {
+      eventInfo.baseUri = await this.service.queryBaseUri();
+    }
+
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
@@ -511,10 +562,7 @@ class TokenListener implements EventListener {
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,
-        info: {
-          address: event.address,
-          typeId: '0x' + encodeHexIDForURI(output.type_id),
-        },
+        info: eventInfo,
         blockchain: {
           id: this.formatBlockchainEventId(event),
           name: this.stripParamsFromSignature(event.signature),
@@ -687,16 +735,18 @@ class TokenListener implements EventListener {
     };
   }
 
-  private async getTokenUri(id: string) {
-    if (this.uriPattern === undefined) {
-      // Fetch and cache the URI pattern (assume it is the same for all tokens)
-      try {
-        const response = await this.service.query('/uri?input=0');
-        this.uriPattern = response.output;
-      } catch (err) {
-        return '';
+  private async getTokenUri(id: string): Promise<string> {
+    try {
+      const response = await this.service.query('/uri', {
+        id: id,
+      });
+      const output = response.output as string;
+      if (output.includes('{id}') === true) {
+        return output.replace('{id}', encodeHexIDForURI(id));
       }
+      return output;
+    } catch (err) {
+      return '';
     }
-    return this.uriPattern.replace('{id}', encodeHexIDForURI(id));
   }
 }

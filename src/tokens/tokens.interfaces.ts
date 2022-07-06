@@ -33,7 +33,7 @@ export interface EthConnectAsyncResponse {
 }
 
 export interface EthConnectReturn {
-  output: string;
+  output: any;
 }
 
 export interface TokenPoolCreationEvent extends Event {
@@ -91,6 +91,8 @@ const poolConfigDescription =
   'Optional configuration info for the token pool. Reserved for future use.';
 const approvalConfigDescription =
   'Optional configuration info for the token approval. Reserved for future use.';
+const transferConfigDescription =
+  'Optional configuration info for the token transfer. Reserved for future use.';
 
 export class InitRequest {
   @ApiProperty()
@@ -263,9 +265,17 @@ export class TokenTransfer {
   @ApiProperty()
   @IsOptional()
   data?: string;
+
+  @ApiProperty({ description: transferConfigDescription })
+  @IsOptional()
+  config?: any;
 }
 
-export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {}
+export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
+  @ApiProperty()
+  @IsOptional()
+  uri?: string;
+}
 export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 // Websocket notifications
@@ -295,6 +305,10 @@ export class TokenPoolEventInfo {
 
   @ApiProperty()
   typeId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  baseUri?: string;
 }
 
 export class TokenPoolEvent extends tokenEventBase {
