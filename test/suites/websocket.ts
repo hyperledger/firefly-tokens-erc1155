@@ -77,7 +77,6 @@ export default (context: TestContext) => {
         expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            namespace: 'default',
             standard: 'ERC1155',
             poolLocator: 'id=F1&block=1',
             type: 'fungible',
@@ -145,7 +144,6 @@ export default (context: TestContext) => {
         expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            namespace: 'default',
             standard: 'ERC1155',
             poolLocator: 'id=F1&block=1',
             type: 'fungible',
@@ -213,7 +211,6 @@ export default (context: TestContext) => {
         expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-pool',
           data: <TokenPoolEvent>{
-            namespace: 'default',
             standard: 'ERC1155',
             poolLocator: 'id=F1&block=1',
             type: 'fungible',

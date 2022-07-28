@@ -113,12 +113,15 @@ export function packStreamName(prefix: string, instancePath: string) {
 }
 
 export function packSubscriptionName(
-  namespace: string,
+  namespace: string | undefined,
   instancePath: string,
   poolLocator: string,
   event: string,
 ) {
-  return [SUBSCRIPTION_PREFIX, namespace, instancePath, poolLocator, event].join(':');
+  if (namespace !== undefined) {
+    return [SUBSCRIPTION_PREFIX, namespace, instancePath, poolLocator, event].join(':');
+  }
+  return [SUBSCRIPTION_PREFIX, instancePath, poolLocator, event].join(':');
 }
 
 export function unpackSubscriptionName(data: string) {

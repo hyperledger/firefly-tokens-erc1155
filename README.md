@@ -17,7 +17,6 @@ with this connector.
 
 The following POST APIs are exposed under `/api/v1`:
 
-* `POST /init` - Begin listening for created pools (inputs: namespace)
 * `POST /createpool` - Create a new token pool (inputs: type, data)
 * `POST /activatepool` - Activate a token pool to begin receiving transfers (inputs: namespace, poolLocator)
 * `POST /mint` - Mint new tokens (inputs: poolLocator, to, amount, data)

@@ -66,7 +66,7 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([]);
-      expect(await service.migrationCheck('ns1')).toBe(false);
+      expect(await service.migrationCheck()).toBe(false);
     });
 
     it('should not migrate if correct base subscription exists', async () => {
@@ -74,9 +74,9 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'fft:ns1:0x123:base:TokenPoolCreation' },
+        { name: 'fft:0x123:base:TokenPoolCreation' },
       ]);
-      expect(await service.migrationCheck('ns1')).toBe(false);
+      expect(await service.migrationCheck()).toBe(false);
     });
 
     it('should migrate if any event subscriptions are missing', async () => {
@@ -86,7 +86,7 @@ describe('TokensService', () => {
       eventStream.getSubscriptions.mockReturnValueOnce([
         { name: 'fft:ns1:0x123:p1:TokenPoolCreation' },
       ]);
-      expect(await service.migrationCheck('ns1')).toBe(true);
+      expect(await service.migrationCheck()).toBe(true);
     });
 
     it('should not migrate if all event subscriptions exist', async () => {
@@ -99,7 +99,7 @@ describe('TokensService', () => {
         { name: 'fft:ns1:0x123:p1:TransferBatch' },
         { name: 'fft:ns1:0x123:p1:ApprovalForAll' },
       ]);
-      expect(await service.migrationCheck('ns1')).toBe(false);
+      expect(await service.migrationCheck()).toBe(false);
     });
   });
 });

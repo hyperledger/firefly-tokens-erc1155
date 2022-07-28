@@ -94,12 +94,6 @@ const approvalConfigDescription =
 const transferConfigDescription =
   'Optional configuration info for the token transfer. Reserved for future use.';
 
-export class InitRequest {
-  @ApiProperty()
-  @IsOptional()
-  namespace?: string;
-}
-
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
   @IsDefined()
@@ -293,10 +287,6 @@ class tokenEventBase {
 
   @ApiProperty()
   blockchain: BlockchainEvent;
-
-  @ApiProperty()
-  @IsOptional()
-  namespace?: string;
 }
 
 export class TokenPoolEventInfo {
@@ -346,6 +336,9 @@ export class TokenTransferEvent extends tokenEventBase {
 
   @ApiProperty()
   amount: string;
+
+  @ApiProperty()
+  namespace?: string;
 }
 
 export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
@@ -363,4 +356,7 @@ export class TokenApprovalEvent extends tokenEventBase {
 
   @ApiProperty()
   approved: boolean;
+
+  @ApiProperty()
+  namespace?: string;
 }

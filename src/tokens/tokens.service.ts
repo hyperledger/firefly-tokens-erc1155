@@ -52,7 +52,6 @@ import {
   TokenType,
   TransferBatchEvent,
   TransferSingleEvent,
-  InitRequest,
   TokenPoolEventInfo,
 } from './tokens.interfaces';
 import {
@@ -130,26 +129,15 @@ export class TokensService {
   }
 
   /**
-   * Initialization of event stream and base subscription.
+   * One-time initialization of event stream and base subscription.
    */
-  async init(dto: InitRequest) {
-    if (dto.namespace === undefined) {
-      // Quietly ignore this instead of failing, to avoid breaking older CLIs
-      this.logger.warn('Ignoring init request with no namespace provided');
-      return;
-    }
-    await this.migrationCheck(dto.namespace);
+  async init() {
     this.stream = await this.getStream();
     await this.eventstream.getOrCreateSubscription(
       this.instancePath,
       this.stream.id,
       tokenCreateEvent,
-      packSubscriptionName(
-        dto.namespace,
-        this.instancePath,
-        BASE_SUBSCRIPTION_NAME,
-        tokenCreateEvent,
-      ),
+      packSubscriptionName(undefined, this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
     );
 
     this.supportsCustomUri = await this.queryUriSupport();
@@ -161,7 +149,7 @@ export class TokensService {
         interfaceId: CUSTOM_URI_IID,
       });
       this.logger.debug(
-        `Resullt for URI support on instance '${this.instancePath}': ${result.output}`,
+        `Result for URI support on instance '${this.instancePath}': ${result.output}`,
       );
       return result.output === true;
     } catch (err) {
@@ -199,7 +187,7 @@ export class TokensService {
    * Log a warning if any potential issues are flagged. User may need to delete
    * subscriptions manually and reactivate the pool directly.
    */
-  async migrationCheck(namespace: string) {
+  async migrationCheck() {
     const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
     let existingStream = streams.find(s => s.name === name);
@@ -219,7 +207,7 @@ export class TokensService {
 
     const allSubscriptions = await this.eventstream.getSubscriptions();
     const baseSubscription = packSubscriptionName(
-      namespace,
+      undefined,
       this.instancePath,
       BASE_SUBSCRIPTION_NAME,
       tokenCreateEvent,
@@ -241,19 +229,19 @@ export class TokensService {
             `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
-      } else if (parts.namespace !== namespace) {
-        continue;
       }
-      const existing = foundEvents.get(parts.poolLocator);
+      const key = [parts.namespace, parts.poolLocator].join(':');
+      const existing = foundEvents.get(key);
       if (existing !== undefined) {
         existing.push(parts.event);
       } else {
-        foundEvents.set(parts.poolLocator, [parts.event]);
+        foundEvents.set(key, [parts.event]);
       }
     }
 
     // Expect to have found subscriptions for each of the events.
-    for (const [poolLocator, events] of foundEvents) {
+    for (const [key, events] of foundEvents) {
+      const [_, poolLocator] = key.split(':', 2);
       if (
         ALL_SUBSCRIBED_EVENTS.length !== events.length ||
         !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
@@ -556,7 +544,6 @@ class TokenListener implements EventListener {
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
-        namespace: unpackedSub.namespace,
         standard: TOKEN_STANDARD,
         poolLocator: packPoolLocator(unpackedId.poolId, event.blockNumber),
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
