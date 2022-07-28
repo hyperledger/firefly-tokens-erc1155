@@ -84,7 +84,7 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'fft:ns1:0x123:p1:TokenPoolCreation' },
+        { name: 'fft:0x123:p1:TokenPoolCreation' },
       ]);
       expect(await service.migrationCheck()).toBe(true);
     });
@@ -94,10 +94,10 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'fft:ns1:0x123:p1:TokenPoolCreation' },
-        { name: 'fft:ns1:0x123:p1:TransferSingle' },
-        { name: 'fft:ns1:0x123:p1:TransferBatch' },
-        { name: 'fft:ns1:0x123:p1:ApprovalForAll' },
+        { name: 'fft:0x123:p1:TokenPoolCreation:ns1' },
+        { name: 'fft:0x123:p1:TransferSingle:ns1' },
+        { name: 'fft:0x123:p1:TransferBatch:ns1' },
+        { name: 'fft:0x123:p1:ApprovalForAll:ns1' },
       ]);
       expect(await service.migrationCheck()).toBe(false);
     });

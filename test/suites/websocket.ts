@@ -46,7 +46,7 @@ const transferBatchEventSignature = 'TransferBatch(address,address,address,uint2
 export default (context: TestContext) => {
   it('Token pool event', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'F1', ''),
+      name: packSubscriptionName('0x123', 'F1', '', 'default'),
     });
 
     return context.server
@@ -113,7 +113,7 @@ export default (context: TestContext) => {
 
   it('Token pool event from base subscription', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'base', ''),
+      name: packSubscriptionName('0x123', 'base', '', 'default'),
     });
 
     return context.server
@@ -180,7 +180,7 @@ export default (context: TestContext) => {
 
   it('Token pool event with old signature', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'base', ''),
+      name: packSubscriptionName('0x123', 'base', '', 'default'),
     });
 
     return context.server
@@ -247,7 +247,7 @@ export default (context: TestContext) => {
 
   it('Token mint event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=F1&block=1', '', 'default'),
     });
 
     await context.server
@@ -292,7 +292,7 @@ export default (context: TestContext) => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
-            namespace: 'default',
+            poolData: 'default',
             poolLocator: 'id=F1&block=1',
             to: 'A',
             amount: '5',
@@ -334,7 +334,7 @@ export default (context: TestContext) => {
 
   it('Token mint event with old pool ID', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'N1', ''),
+      name: packSubscriptionName('0x123', 'N1', '', 'default'),
     });
 
     context.http.get = jest.fn(
@@ -386,7 +386,7 @@ export default (context: TestContext) => {
           event: 'token-mint',
           data: <TokenMintEvent>{
             id: '000000000001/000000/000001',
-            namespace: 'default',
+            poolData: 'default',
             poolLocator: 'N1',
             tokenIndex: '1',
             to: 'A',
@@ -437,7 +437,7 @@ export default (context: TestContext) => {
 
   it('Token burn event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=N1&block=1', '', 'default'),
     });
 
     context.http.get = jest.fn(
@@ -488,7 +488,7 @@ export default (context: TestContext) => {
           event: 'token-burn',
           data: <TokenBurnEvent>{
             id: '000000000001/000000/000001',
-            namespace: 'default',
+            poolData: 'default',
             poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
@@ -538,7 +538,7 @@ export default (context: TestContext) => {
 
   it('Token transfer event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=N1&block=1', '', 'default'),
     });
 
     context.http.get = jest.fn(
@@ -580,7 +580,7 @@ export default (context: TestContext) => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001',
-            namespace: 'default',
+            poolData: 'default',
             poolLocator: 'id=N1&block=1',
             tokenIndex: '1',
             from: 'A',
@@ -626,7 +626,7 @@ export default (context: TestContext) => {
 
   it('Token approval event', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=N1&block=1', '', 'default'),
     });
 
     await context.server
@@ -659,7 +659,7 @@ export default (context: TestContext) => {
           event: 'token-approval',
           data: <TokenApprovalEvent>{
             id: '000000000001/000000/000001/N1',
-            namespace: 'default',
+            poolData: 'default',
             subject: 'A:B',
             signer: 'A',
             operator: 'B',
@@ -695,7 +695,7 @@ export default (context: TestContext) => {
 
   it('Token transfer event from wrong pool', () => {
     const sub = <EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=N1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=N1&block=1', '', 'default'),
     };
     context.eventstream.getSubscription.mockReturnValueOnce(sub).mockReturnValueOnce(sub);
 
@@ -749,7 +749,7 @@ export default (context: TestContext) => {
 
   it('Token batch transfer', async () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'N1', ''),
+      name: packSubscriptionName('0x123', 'N1', '', 'default'),
     });
 
     context.http.get = jest.fn(
@@ -794,7 +794,7 @@ export default (context: TestContext) => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000000',
-            namespace: 'default',
+            poolData: 'default',
             poolLocator: 'N1',
             tokenIndex: '1',
             from: 'A',
@@ -831,7 +831,7 @@ export default (context: TestContext) => {
           event: 'token-transfer',
           data: <TokenTransferEvent>{
             id: '000000000001/000000/000001/000001',
-            namespace: 'default',
+            poolData: 'default',
             poolLocator: 'N1',
             tokenIndex: '2',
             from: 'A',
@@ -943,7 +943,7 @@ export default (context: TestContext) => {
     };
 
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=F1&block=1', '', 'default'),
     });
 
     await context.server
@@ -986,7 +986,7 @@ export default (context: TestContext) => {
     };
 
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('default', '0x123', 'id=F1&block=1', ''),
+      name: packSubscriptionName('0x123', 'id=F1&block=1', '', 'default'),
     });
 
     const ws1 = context.server.ws('/api/ws');

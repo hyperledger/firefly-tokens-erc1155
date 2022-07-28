@@ -113,13 +113,13 @@ export function packStreamName(prefix: string, instancePath: string) {
 }
 
 export function packSubscriptionName(
-  namespace: string | undefined,
   instancePath: string,
   poolLocator: string,
   event: string,
+  poolData?: string,
 ) {
-  if (namespace !== undefined) {
-    return [SUBSCRIPTION_PREFIX, namespace, instancePath, poolLocator, event].join(':');
+  if (poolData !== undefined) {
+    return [SUBSCRIPTION_PREFIX, instancePath, poolLocator, event, poolData].join(':');
   }
   return [SUBSCRIPTION_PREFIX, instancePath, poolLocator, event].join(':');
 }
@@ -128,17 +128,17 @@ export function unpackSubscriptionName(data: string) {
   const parts = data.split(':');
   if (parts.length === 5 && parts[0] === SUBSCRIPTION_PREFIX) {
     return {
-      namespace: parts[1],
-      instancePath: parts[2],
-      poolLocator: parts[3],
-      event: parts[4],
-    };
-  } else if (parts.length === 4) {
-    return {
-      namespace: undefined,
       instancePath: parts[1],
       poolLocator: parts[2],
       event: parts[3],
+      poolData: parts[4],
+    };
+  } else if (parts.length === 4) {
+    return {
+      instancePath: parts[1],
+      poolLocator: parts[2],
+      event: parts[3],
+      poolData: undefined,
     };
   } else {
     return {};

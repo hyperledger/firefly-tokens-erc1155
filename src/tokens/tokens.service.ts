@@ -137,7 +137,7 @@ export class TokensService {
       this.instancePath,
       this.stream.id,
       tokenCreateEvent,
-      packSubscriptionName(undefined, this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
+      packSubscriptionName(this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
     );
 
     this.supportsCustomUri = await this.queryUriSupport();
@@ -207,7 +207,6 @@ export class TokensService {
 
     const allSubscriptions = await this.eventstream.getSubscriptions();
     const baseSubscription = packSubscriptionName(
-      undefined,
       this.instancePath,
       BASE_SUBSCRIPTION_NAME,
       tokenCreateEvent,
@@ -223,14 +222,14 @@ export class TokensService {
     const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
       const parts = unpackSubscriptionName(sub.name);
-      if (parts.namespace === undefined) {
+      if (parts.poolData === undefined) {
         this.logger.warn(
           `Non-parseable subscription names found in event stream ${existingStream.name}.` +
             `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
       }
-      const key = [parts.namespace, parts.poolLocator].join(':');
+      const key = [parts.poolData, parts.poolLocator].join(':');
       const existing = foundEvents.get(key);
       if (existing !== undefined) {
         existing.push(parts.event);
@@ -345,38 +344,28 @@ export class TokensService {
         this.instancePath,
         stream.id,
         tokenCreateEvent,
-        packSubscriptionName(dto.namespace, this.instancePath, dto.poolLocator, tokenCreateEvent),
+        packSubscriptionName(this.instancePath, dto.poolLocator, tokenCreateEvent, dto.poolData),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferSingleEvent,
-        packSubscriptionName(
-          dto.namespace,
-          this.instancePath,
-          dto.poolLocator,
-          transferSingleEvent,
-        ),
+        packSubscriptionName(this.instancePath, dto.poolLocator, transferSingleEvent, dto.poolData),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         transferBatchEvent,
-        packSubscriptionName(dto.namespace, this.instancePath, dto.poolLocator, transferBatchEvent),
+        packSubscriptionName(this.instancePath, dto.poolLocator, transferBatchEvent, dto.poolData),
         poolLocator.blockNumber ?? '0',
       ),
       this.eventstream.getOrCreateSubscription(
         this.instancePath,
         stream.id,
         approvalForAllEvent,
-        packSubscriptionName(
-          dto.namespace,
-          this.instancePath,
-          dto.poolLocator,
-          approvalForAllEvent,
-        ),
+        packSubscriptionName(this.instancePath, dto.poolLocator, approvalForAllEvent, dto.poolData),
         // Block number is 0 because it is important to receive all approval events,
         // so existing approvals will be reflected in the newly created pool
         '0',
@@ -602,7 +591,7 @@ class TokenListener implements EventListener {
 
     const commonData = <TokenTransferEvent>{
       id: transferId,
-      namespace: unpackedSub.namespace,
+      poolData: unpackedSub.poolData,
       poolLocator: unpackedSub.poolLocator,
       tokenIndex: unpackedId.tokenIndex,
       uri,
@@ -695,7 +684,7 @@ class TokenListener implements EventListener {
       event: 'token-approval',
       data: <TokenApprovalEvent>{
         id: approvalId,
-        namespace: unpackedSub.namespace,
+        poolData: unpackedSub.poolData,
         subject: `${output.account}:${output.operator}`,
         poolLocator: unpackedSub.poolLocator,
         operator: output.operator,
