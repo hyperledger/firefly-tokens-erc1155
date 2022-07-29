@@ -203,33 +203,34 @@ export class TokensService {
           `to create a new stream with the name ${name}.`,
       );
     }
-    this.stream = existingStream;
+    const streamId = existingStream.id;
 
     const allSubscriptions = await this.eventstream.getSubscriptions();
+    const subscriptions = allSubscriptions.filter(s => s.stream === streamId);
+    if (subscriptions.length === 0) {
+      return false;
+    }
+
     const baseSubscription = packSubscriptionName(
       this.instancePath,
       BASE_SUBSCRIPTION_NAME,
       tokenCreateEvent,
     );
-    const streamId = existingStream.id;
-    const subscriptions = allSubscriptions.filter(
-      s => s.stream === streamId && s.name !== baseSubscription,
-    );
-    if (subscriptions.length === 0) {
-      return false;
-    }
 
     const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
+      if (sub.name === baseSubscription) {
+        continue;
+      }
       const parts = unpackSubscriptionName(sub.name);
-      if (parts.poolData === undefined) {
+      if (parts.poolLocator === undefined || parts.event === undefined) {
         this.logger.warn(
-          `Non-parseable subscription names found in event stream ${existingStream.name}.` +
+          `Non-parseable subscription name '${sub.name}' found in event stream '${existingStream.name}'.` +
             `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
       }
-      const key = [parts.poolData, parts.poolLocator].join(':');
+      const key = packSubscriptionName(parts.instancePath, parts.poolLocator, '', parts.poolData);
       const existing = foundEvents.get(key);
       if (existing !== undefined) {
         existing.push(parts.event);
@@ -240,13 +241,13 @@ export class TokensService {
 
     // Expect to have found subscriptions for each of the events.
     for (const [key, events] of foundEvents) {
-      const [_, poolLocator] = key.split(':', 2);
+      const parts = unpackSubscriptionName(key);
       if (
         ALL_SUBSCRIBED_EVENTS.length !== events.length ||
         !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
       ) {
         this.logger.warn(
-          `Event stream subscriptions for pool ${poolLocator} do not include all expected events ` +
+          `Event stream subscriptions for pool ${parts.poolLocator} do not include all expected events ` +
             `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
             `It is recommended to delete its subscriptions and activate the pool again.`,
         );
