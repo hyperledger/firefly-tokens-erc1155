@@ -73,6 +73,7 @@ async function bootstrap() {
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
   const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
   const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
+  const autoInit = config.get<string>('AUTO_INIT', 'true');
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
 
@@ -83,6 +84,16 @@ async function bootstrap() {
   app
     .get(TokensService)
     .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password);
+
+  try {
+    await app.get(TokensService).migrationCheck();
+  } catch (err) {
+    this.logger.debug('Subscription checks skipped (ethconnect may not be up)');
+  }
+
+  if (autoInit.toLowerCase() !== 'false') {
+    await app.get(TokensService).init();
+  }
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);
