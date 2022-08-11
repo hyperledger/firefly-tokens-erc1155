@@ -76,6 +76,7 @@ async function bootstrap() {
   const autoInit = config.get<string>('AUTO_INIT', 'true');
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
+  const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
 
   const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
 
@@ -83,7 +84,7 @@ async function bootstrap() {
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
   app
     .get(TokensService)
-    .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password);
+    .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password, contractAddress);
 
   try {
     await app.get(TokensService).migrationCheck();

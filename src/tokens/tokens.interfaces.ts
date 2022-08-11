@@ -36,6 +36,11 @@ export interface EthConnectReturn {
   output: any;
 }
 
+export interface ContractInfoReturn {
+  address: string
+}
+
+
 export interface TokenPoolCreationEvent extends Event {
   data: {
     operator: string;
@@ -270,7 +275,7 @@ export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
   @IsOptional()
   uri?: string;
 }
-export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
+export class TokenBurn extends OmitType(TokenTransfer, ['to']) { }
 
 // Websocket notifications
 
@@ -341,8 +346,8 @@ export class TokenTransferEvent extends tokenEventBase {
   poolData?: string;
 }
 
-export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
-export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) {}
+export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) { }
+export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) { }
 
 export class TokenApprovalEvent extends tokenEventBase {
   @ApiProperty()
@@ -359,4 +364,32 @@ export class TokenApprovalEvent extends tokenEventBase {
 
   @ApiProperty()
   poolData?: string;
+}
+
+// ABI format
+
+export interface IAbiInput {
+  indexed?: boolean;
+  internalType: string;
+  name: string;
+  type: string;
+}
+
+export interface IAbiMethod {
+  anonymous?: boolean;
+  inputs?: IAbiInput[];
+  outputs?: any[];
+  stateMutability?: string;
+  name?: string;
+  type?: string;
+}
+
+export interface EthConnectMsgRequest {
+  headers: {
+    type: string;
+  };
+  from?: string;
+  to: string;
+  method: IAbiMethod;
+  params: any[];
 }
