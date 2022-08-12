@@ -922,7 +922,7 @@ export default (context: TestContext) => {
               type: 'Error',
             },
             errorMessage: 'Failed',
-            },
+          },
         });
         return true;
       });
