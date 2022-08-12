@@ -84,7 +84,15 @@ async function bootstrap() {
   app.get(EventStreamProxyGateway).configure(wsUrl, topic);
   app
     .get(TokensService)
-    .configure(ethConnectUrl, instancePath, topic, shortPrefix, username, password, contractAddress);
+    .configure(
+      ethConnectUrl,
+      instancePath,
+      topic,
+      shortPrefix,
+      username,
+      password,
+      contractAddress,
+    );
 
   try {
     await app.get(TokensService).migrationCheck();

@@ -37,7 +37,7 @@ export interface EthConnectReturn {
 }
 
 export interface ContractInfoResponse {
-  address: string
+  address: string;
 }
 
 export interface TokenPoolCreationEvent extends Event {
@@ -274,7 +274,7 @@ export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
   @IsOptional()
   uri?: string;
 }
-export class TokenBurn extends OmitType(TokenTransfer, ['to']) { }
+export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
 
 // Websocket notifications
 
@@ -345,8 +345,8 @@ export class TokenTransferEvent extends tokenEventBase {
   poolData?: string;
 }
 
-export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) { }
-export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) { }
+export class TokenMintEvent extends OmitType(TokenTransferEvent, ['from']) {}
+export class TokenBurnEvent extends OmitType(TokenTransferEvent, ['to']) {}
 
 export class TokenApprovalEvent extends tokenEventBase {
   @ApiProperty()

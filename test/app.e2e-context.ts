@@ -64,7 +64,9 @@ export class TestContext {
     await this.app.init();
 
     this.app.get(EventStreamProxyGateway).configure('url', TOPIC);
-    this.app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '', CONTRACT_ADDRESS);
+    this.app
+      .get(TokensService)
+      .configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '', CONTRACT_ADDRESS);
 
     (this.app.getHttpServer() as Server).listen();
     this.server = request(this.app.getHttpServer());
@@ -76,7 +78,7 @@ export class TestContext {
 }
 
 export class FakeObservable<T> {
-  constructor(public data: T) { }
+  constructor(public data: T) {}
 
   subscribe(observer?: Partial<Observer<AxiosResponse<T>>>) {
     observer?.next &&

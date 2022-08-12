@@ -17,7 +17,6 @@ const queryHeader = 'Query';
 const sendTransactionHeader = 'SendTransaction';
 const requestId = 'default:6f2f0aaf-be21-4977-b34a-8853b602d69d';
 
-
 const IDENTITY = '0x1';
 
 export default (context: TestContext) => {
@@ -43,14 +42,14 @@ export default (context: TestContext) => {
       {
         headers: {
           id: requestId,
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
-        params: [true, '0x747831']
+        params: [true, '0x747831'],
       },
-      {}
+      {},
     );
   });
 
@@ -58,8 +57,7 @@ export default (context: TestContext) => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
       signer: IDENTITY,
-      requestId
-
+      requestId,
     };
     const response: EthConnectAsyncResponse = {
       id: requestId,
@@ -76,14 +74,14 @@ export default (context: TestContext) => {
       {
         headers: {
           id: requestId,
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
-        params: [false, '0x00']
+        params: [false, '0x00'],
       },
-      {}
+      {},
     );
   });
 
@@ -92,7 +90,7 @@ export default (context: TestContext) => {
       type: TokenType.FUNGIBLE,
       signer: IDENTITY,
       isBestPool: true, // will be stripped but will not cause an error
-      requestId
+      requestId,
     };
     const response: EthConnectAsyncResponse = {
       id: requestId,
@@ -111,7 +109,7 @@ export default (context: TestContext) => {
       amount: '2',
       data: 'test',
       signer: IDENTITY,
-      requestId
+      requestId,
     };
     const response: EthConnectAsyncResponse = {
       id: requestId,
@@ -128,14 +126,14 @@ export default (context: TestContext) => {
       {
         headers: {
           id: requestId,
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
-        params: ['340282366920938463463374607431768211456', ['1'], ['2'], '0x74657374']
+        params: ['340282366920938463463374607431768211456', ['1'], ['2'], '0x74657374'],
       },
-      {}
+      {},
     );
   });
 
@@ -160,14 +158,18 @@ export default (context: TestContext) => {
       `${BASE_URL}`,
       {
         headers: {
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
-        params: ['57896044618658097711785492504343953926975274699741220483192166611388333031424', ['1', '1'], '0x00']
+        params: [
+          '57896044618658097711785492504343953926975274699741220483192166611388333031424',
+          ['1', '1'],
+          '0x00',
+        ],
       },
-      {}
+      {},
     );
   });
 
@@ -194,14 +196,19 @@ export default (context: TestContext) => {
       `${BASE_URL}`,
       {
         headers: {
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
-        params: ['A', '57896044618658097711785492504343953926975274699741220483192166611388333031425', '1', '0x747831']
+        params: [
+          'A',
+          '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+          '1',
+          '0x747831',
+        ],
       },
-      {}
+      {},
     );
   });
 
@@ -227,14 +234,14 @@ export default (context: TestContext) => {
       `${BASE_URL}`,
       {
         headers: {
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
-        params: ['1', '2', '340282366920938463463374607431768211456', '2', '0x00']
+        params: ['1', '2', '340282366920938463463374607431768211456', '2', '0x00'],
       },
-      {}
+      {},
     );
   });
 
@@ -259,14 +266,14 @@ export default (context: TestContext) => {
       `${BASE_URL}`,
       {
         headers: {
-          type: sendTransactionHeader
+          type: sendTransactionHeader,
         },
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'setApprovalForAllWithData'),
-        params: ['2', true, '0x00']
+        params: ['2', true, '0x00'],
       },
-      {}
+      {},
     );
   });
 
@@ -295,13 +302,13 @@ export default (context: TestContext) => {
       `${BASE_URL}`,
       {
         headers: {
-          type: queryHeader
+          type: queryHeader,
         },
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
-        params: ['1', '340282366920938463463374607431768211456']
+        params: ['1', '340282366920938463463374607431768211456'],
       },
-      {}
+      {},
     );
   });
 };

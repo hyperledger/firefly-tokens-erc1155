@@ -114,7 +114,7 @@ export class TokensService {
     private http: HttpService,
     private eventstream: EventStreamService,
     private proxy: EventStreamProxyGateway,
-  ) { }
+  ) {}
 
   configure(
     baseUrl: string,
@@ -123,7 +123,7 @@ export class TokensService {
     shortPrefix: string,
     username: string,
     password: string,
-    contractAddress: string
+    contractAddress: string,
   ) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
@@ -151,7 +151,9 @@ export class TokensService {
     this.supportsCustomUri = await this.queryUriSupport();
 
     if (!this.contractAddress) {
-      this.logger.debug(`CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`)
+      this.logger.debug(
+        `CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`,
+      );
       const response = await this.wrapError(
         lastValueFrom(
           this.http.get<ContractInfoResponse>(`${this.instanceUrl}`, {
@@ -167,7 +169,7 @@ export class TokensService {
     try {
       const result = await this.query(
         ERC1155MixedFungibleAbi.find(m => m.name === 'supportsInterface'),
-        [CUSTOM_URI_IID]
+        [CUSTOM_URI_IID],
       );
       this.logger.debug(
         `Result for URI support on instance '${this.instancePath}': ${result.output}`,
@@ -185,7 +187,7 @@ export class TokensService {
     try {
       const result = await this.query(
         ERC1155MixedFungibleAbi.find(m => m.name === 'baseTokenUri'),
-        [CUSTOM_URI_IID]
+        [CUSTOM_URI_IID],
       );
       return result.output as string;
     } catch (err) {
@@ -221,8 +223,8 @@ export class TokensService {
       }
       this.logger.warn(
         `Old event stream found with name ${existingStream.name}. ` +
-        `The connector will continue to use this stream, but it is recommended ` +
-        `to create a new stream with the name ${name}.`,
+          `The connector will continue to use this stream, but it is recommended ` +
+          `to create a new stream with the name ${name}.`,
       );
     }
     const streamId = existingStream.id;
@@ -248,7 +250,7 @@ export class TokensService {
       if (parts.poolLocator === undefined || parts.event === undefined) {
         this.logger.warn(
           `Non-parseable subscription name '${sub.name}' found in event stream '${existingStream.name}'.` +
-          `It is recommended to delete all subscriptions and activate all pools again.`,
+            `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
       }
@@ -270,8 +272,8 @@ export class TokensService {
       ) {
         this.logger.warn(
           `Event stream subscriptions for pool ${parts.poolLocator} do not include all expected events ` +
-          `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
-          `It is recommended to delete its subscriptions and activate the pool again.`,
+            `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
+            `It is recommended to delete its subscriptions and activate the pool again.`,
         );
         return true;
       }
@@ -345,7 +347,13 @@ export class TokensService {
       lastValueFrom(
         this.http.post<EthConnectAsyncResponse>(
           this.baseUrl,
-          { headers: { id, type: sendTransactionHeader }, from, to: this.contractAddress, method, params },
+          {
+            headers: { id, type: sendTransactionHeader },
+            from,
+            to: this.contractAddress,
+            method,
+            params,
+          },
           this.requestOptions(),
         ),
       ),
@@ -373,7 +381,7 @@ export class TokensService {
       dto.signer,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
-      [dto.type === TokenType.FUNGIBLE, encodeHex(dto.data ?? '')]
+      [dto.type === TokenType.FUNGIBLE, encodeHex(dto.data ?? '')],
     );
     return { id: response.id };
   }
@@ -416,7 +424,6 @@ export class TokensService {
   }
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
-
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const typeId = packTokenId(poolLocator.poolId);
     if (isFungible(poolLocator.poolId)) {
@@ -424,7 +431,7 @@ export class TokensService {
         dto.signer,
         dto.requestId,
         ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
-        [typeId, [dto.to], [dto.amount], encodeHex(dto.data ?? '')]
+        [typeId, [dto.to], [dto.amount], encodeHex(dto.data ?? '')],
       );
       return { id: response.id };
     } else {
@@ -442,7 +449,7 @@ export class TokensService {
           dto.signer,
           dto.requestId,
           ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungibleWithURI'),
-          [typeId, to, encodeHex(dto.data ?? ''), dto.uri]
+          [typeId, to, encodeHex(dto.data ?? ''), dto.uri],
         );
         return { id: response.id };
       } else {
@@ -450,7 +457,7 @@ export class TokensService {
           dto.signer,
           dto.requestId,
           ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
-          [typeId, to, encodeHex(dto.data ?? '')]
+          [typeId, to, encodeHex(dto.data ?? '')],
         );
         return { id: response.id };
       }
@@ -462,7 +469,7 @@ export class TokensService {
       dto.signer,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'setApprovalForAllWithData'),
-      [dto.operator, dto.approved, encodeHex(dto.data ?? '')]
+      [dto.operator, dto.approved, encodeHex(dto.data ?? '')],
     );
     return { id: response.id };
   }
@@ -473,7 +480,13 @@ export class TokensService {
       dto.signer,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
-      [dto.from, dto.to, packTokenId(poolLocator.poolId, dto.tokenIndex), dto.amount, encodeHex(dto.data ?? '')]
+      [
+        dto.from,
+        dto.to,
+        packTokenId(poolLocator.poolId, dto.tokenIndex),
+        dto.amount,
+        encodeHex(dto.data ?? ''),
+      ],
     );
     return { id: response.id };
   }
@@ -484,7 +497,12 @@ export class TokensService {
       dto.signer,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
-      [dto.from, packTokenId(poolLocator.poolId, dto.tokenIndex), dto.amount, encodeHex(dto.data ?? '')]
+      [
+        dto.from,
+        packTokenId(poolLocator.poolId, dto.tokenIndex),
+        dto.amount,
+        encodeHex(dto.data ?? ''),
+      ],
     );
 
     return { id: response.id };
@@ -494,7 +512,7 @@ export class TokensService {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const response = await this.query(
       ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
-      [dto.account, packTokenId(poolLocator.poolId, dto.tokenIndex)]
+      [dto.account, packTokenId(poolLocator.poolId, dto.tokenIndex)],
     );
     return { balance: response.output };
   }
@@ -503,7 +521,7 @@ export class TokensService {
 class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  constructor(private readonly service: TokensService) { }
+  constructor(private readonly service: TokensService) {}
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
@@ -760,7 +778,7 @@ class TokenListener implements EventListener {
     try {
       const response = await this.service.query(
         ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
-        [id]
+        [id],
       );
       const output = response.output as string;
       if (output.includes('{id}') === true) {
