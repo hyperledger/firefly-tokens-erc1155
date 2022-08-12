@@ -98,6 +98,8 @@ const ALL_SUBSCRIBED_EVENTS = [
 @Injectable()
 export class TokensService {
   private readonly logger = new Logger(TokensService.name);
+  private contractAddress: string;
+  private supportsCustomUri: boolean;
 
   baseUrl: string;
   instancePath: string;
@@ -107,8 +109,6 @@ export class TokensService {
   stream: EventStream | undefined;
   username: string;
   password: string;
-  supportsCustomUri: boolean;
-  contractAddress: string;
 
   constructor(
     private http: HttpService,
@@ -147,9 +147,9 @@ export class TokensService {
       tokenCreateEvent,
       packSubscriptionName(this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
     );
+  }
 
-    this.supportsCustomUri = await this.queryUriSupport();
-
+  private async getContractAddress() {
     if (!this.contractAddress) {
       this.logger.debug(
         `CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`,
@@ -161,26 +161,32 @@ export class TokensService {
           }),
         ),
       );
-      this.contractAddress = response.data.address;
+      this.contractAddress = response.data.address.toLowerCase();
+      this.logger.debug(`s: ${this.contractAddress}`);
     }
+
+    return this.contractAddress;
   }
 
-  async queryUriSupport() {
-    try {
-      const result = await this.query(
-        ERC1155MixedFungibleAbi.find(m => m.name === 'supportsInterface'),
-        [CUSTOM_URI_IID],
-      );
-      this.logger.debug(
-        `Result for URI support on instance '${this.instancePath}': ${result.output}`,
-      );
-      return result.output === true;
-    } catch (err) {
-      this.logger.log(
-        `Failed to query URI support on instance '${this.instancePath}': assuming false`,
-      );
-      return false;
+  async isCustomUriSupported() {
+    if (this.supportsCustomUri === undefined) {
+      try {
+        const result = await this.query(
+          ERC1155MixedFungibleAbi.find(m => m.name === 'supportsInterface'),
+          [CUSTOM_URI_IID],
+        );
+        this.logger.debug(
+          `Result for URI support on instance '${this.instancePath}': ${result.output}`,
+        );
+        this.supportsCustomUri = result.output === true;
+      } catch (err) {
+        this.logger.log(
+          `Failed to query URI support on instance '${this.instancePath}': assuming false`,
+        );
+        this.supportsCustomUri = false;
+      }
     }
+    return this.supportsCustomUri;
   }
 
   async queryBaseUri() {
@@ -321,7 +327,7 @@ export class TokensService {
       lastValueFrom(
         this.http.post<EthConnectReturn>(
           this.baseUrl,
-          { headers: { type: queryHeader }, to: this.contractAddress, method, params },
+          { headers: { type: queryHeader }, to: await this.getContractAddress(), method, params },
           this.requestOptions(),
         ),
       ),
@@ -350,7 +356,7 @@ export class TokensService {
           {
             headers: { id, type: sendTransactionHeader },
             from,
-            to: this.contractAddress,
+            to: await this.getContractAddress(),
             method,
             params,
           },
@@ -444,7 +450,7 @@ export class TokensService {
         to.push(dto.to);
       }
 
-      if (dto.uri !== undefined && this.supportsCustomUri === true) {
+      if (dto.uri !== undefined && (await this.isCustomUriSupported())) {
         const response = await this.sendTransaction(
           dto.signer,
           dto.requestId,
@@ -589,7 +595,7 @@ class TokenListener implements EventListener {
       typeId: '0x' + encodeHexIDForURI(output.type_id),
     };
 
-    if (this.service.supportsCustomUri === true) {
+    if (await this.service.isCustomUriSupported()) {
       eventInfo.baseUri = await this.service.queryBaseUri();
     }
 
