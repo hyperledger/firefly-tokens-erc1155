@@ -34,7 +34,7 @@ import { basicAuth } from '../utils';
 import {
   ApprovalForAllEvent,
   AsyncResponse,
-  ContractInfoReturn,
+  ContractInfoResponse,
   EthConnectAsyncResponse,
   EthConnectReturn,
   IAbiMethod,
@@ -154,7 +154,7 @@ export class TokensService {
       this.logger.debug(`CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`)
       const response = await this.wrapError(
         lastValueFrom(
-          this.http.get<ContractInfoReturn>(`${this.instanceUrl}`, {
+          this.http.get<ContractInfoResponse>(`${this.instanceUrl}`, {
             ...basicAuth(this.username, this.password),
           }),
         ),

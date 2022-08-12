@@ -19,12 +19,6 @@ const requestId = 'default:6f2f0aaf-be21-4977-b34a-8853b602d69d';
 
 
 const IDENTITY = '0x1';
-const OPTIONS = {
-  params: {
-    'fly-from': IDENTITY,
-    'fly-sync': 'false',
-  },
-};
 
 export default (context: TestContext) => {
   it('Create fungible pool', async () => {
