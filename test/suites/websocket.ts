@@ -32,7 +32,10 @@ import {
 } from '../../src/tokens/tokens.interfaces';
 import { WebSocketMessage } from '../../src/websocket-events/websocket-events.base';
 import { packSubscriptionName } from '../../src/tokens/tokens.util';
-import { BASE_URL, FakeObservable, INSTANCE_PATH, TestContext } from '../app.e2e-context';
+import { BASE_URL, FakeObservable, CONTRACT_ADDRESS, TestContext } from '../app.e2e-context';
+import { abi as ERC1155MixedFungibleAbi } from "../../src/abi/ERC1155MixedFungible.json"
+const queryHeader = 'Query';
+
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -336,7 +339,7 @@ export default (context: TestContext) => {
       name: packSubscriptionName('0x123', 'N1', '', 'default'),
     });
 
-    context.http.get = jest.fn(
+    context.http.post = jest.fn(
       () =>
         new FakeObservable(<EthConnectReturn>{
           output: 'firefly://token/{id}',
@@ -426,12 +429,19 @@ export default (context: TestContext) => {
         return true;
       });
 
-    expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
-      params: {
-        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+    expect(context.http.post).toHaveBeenCalledTimes(1);
+    expect(context.http.post).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      {
+        headers: {
+          type: queryHeader
+        },
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
+        params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425']
       },
-    });
+      {}
+    );
   });
 
   it('Token burn event', async () => {
@@ -439,7 +449,7 @@ export default (context: TestContext) => {
       name: packSubscriptionName('0x123', 'id=N1&block=1', '', 'default'),
     });
 
-    context.http.get = jest.fn(
+    context.http.post = jest.fn(
       () =>
         new FakeObservable(<EthConnectReturn>{
           output: 'firefly://token/{id}',
@@ -527,12 +537,20 @@ export default (context: TestContext) => {
         return true;
       });
 
-    expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
-      params: {
-        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+    expect(context.http.post).toHaveBeenCalledTimes(1);
+    expect(context.http.post).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      {
+        headers: {
+          type: queryHeader
+        },
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
+        params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425']
       },
-    });
+      {}
+    );
+
   });
 
   it('Token transfer event', async () => {
@@ -540,7 +558,7 @@ export default (context: TestContext) => {
       name: packSubscriptionName('0x123', 'id=N1&block=1', '', 'default'),
     });
 
-    context.http.get = jest.fn(
+    context.http.post = jest.fn(
       () =>
         new FakeObservable(<EthConnectReturn>{
           output: 'firefly://token/{id}',
@@ -615,12 +633,19 @@ export default (context: TestContext) => {
         return true;
       });
 
-    expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
-      params: {
-        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+    expect(context.http.post).toHaveBeenCalledTimes(1);
+    expect(context.http.post).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      {
+        headers: {
+          type: queryHeader
+        },
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
+        params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425']
       },
-    });
+      {}
+    );
   });
 
   it('Token approval event', async () => {
@@ -751,7 +776,7 @@ export default (context: TestContext) => {
       name: packSubscriptionName('0x123', 'N1', '', 'default'),
     });
 
-    context.http.get = jest.fn(
+    context.http.post = jest.fn(
       () =>
         new FakeObservable(<EthConnectReturn>{
           output: 'firefly://token/{id}',
@@ -866,12 +891,19 @@ export default (context: TestContext) => {
         return true;
       });
 
-    expect(context.http.get).toHaveBeenCalledTimes(2);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/uri`, {
-      params: {
-        id: '57896044618658097711785492504343953926975274699741220483192166611388333031426',
+    expect(context.http.post).toHaveBeenCalledTimes(2);
+    expect(context.http.post).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      {
+        headers: {
+          type: queryHeader
+        },
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
+        params: ['57896044618658097711785492504343953926975274699741220483192166611388333031426']
       },
-    });
+      {}
+    );
   });
 
   it('Success receipt', () => {
@@ -922,7 +954,7 @@ export default (context: TestContext) => {
               type: 'Error',
             },
             errorMessage: 'Failed',
-            },
+          },
         });
         return true;
       });

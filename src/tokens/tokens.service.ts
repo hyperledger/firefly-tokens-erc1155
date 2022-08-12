@@ -77,6 +77,7 @@ const BASE_SUBSCRIPTION_NAME = 'base';
 const CUSTOM_URI_IID = '0xa1d87d57';
 
 const sendTransactionHeader = 'SendTransaction';
+const queryHeader = 'Query';
 const tokenCreateEvent = 'TokenPoolCreation';
 const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
 const tokenCreateEventSignature = 'TokenPoolCreation(address,uint256,bytes)';
@@ -135,18 +136,6 @@ export class TokensService {
     this.proxy.addListener(new TokenListener(this));
   }
 
-  async fetchContractAddress() {
-    this.logger.log('fetchContractAddress')
-    const response = await this.wrapError(
-      lastValueFrom(
-        this.http.get<ContractInfoReturn>(`${this.instanceUrl}`, {
-          ...basicAuth(this.username, this.password),
-        }),
-      ),
-    );
-    return response.data.address;
-  }
-
   /**
    * One-time initialization of event stream and base subscription.
    */
@@ -162,15 +151,24 @@ export class TokensService {
     this.supportsCustomUri = await this.queryUriSupport();
 
     if (!this.contractAddress) {
-      this.contractAddress = await this.fetchContractAddress()
+      this.logger.debug(`CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`)
+      const response = await this.wrapError(
+        lastValueFrom(
+          this.http.get<ContractInfoReturn>(`${this.instanceUrl}`, {
+            ...basicAuth(this.username, this.password),
+          }),
+        ),
+      );
+      this.contractAddress = response.data.address;
     }
   }
 
   async queryUriSupport() {
     try {
-      const result = await this.query('/supportsInterface', {
-        interfaceId: CUSTOM_URI_IID,
-      });
+      const result = await this.query(
+        ERC1155MixedFungibleAbi.find(m => m.name === 'supportsInterface'),
+        [CUSTOM_URI_IID]
+      );
       this.logger.debug(
         `Result for URI support on instance '${this.instancePath}': ${result.output}`,
       );
@@ -185,9 +183,10 @@ export class TokensService {
 
   async queryBaseUri() {
     try {
-      const result = await this.query('/baseTokenUri', {
-        interfaceId: CUSTOM_URI_IID,
-      });
+      const result = await this.query(
+        ERC1155MixedFungibleAbi.find(m => m.name === 'baseTokenUri'),
+        [CUSTOM_URI_IID]
+      );
       return result.output as string;
     } catch (err) {
       this.logger.error(`Failed to query base URI`);
@@ -315,20 +314,20 @@ export class TokensService {
     });
   }
 
-  async query(path: string, params?: any) {
+  async query(method?: IAbiMethod, params?: any[]) {
     const response = await this.wrapError(
       lastValueFrom(
-        this.http.get<EthConnectReturn>(`${this.instanceUrl}${path}`, {
-          params,
-          ...basicAuth(this.username, this.password),
-        }),
+        this.http.post<EthConnectReturn>(
+          this.baseUrl,
+          { headers: { type: queryHeader }, to: this.contractAddress, method, params },
+          this.requestOptions(),
+        ),
       ),
     );
     return response.data;
   }
 
   async invoke(path: string, from: string, id?: string, body?: any) {
-    this.logger.warn(`inoke method: ${path} --, ${from} --, ${id} --, ${body}--.`)
     const response = await this.wrapError(
       lastValueFrom(
         this.http.post<EthConnectAsyncResponse>(
@@ -341,12 +340,12 @@ export class TokensService {
     return response.data;
   }
 
-  async sendTransaction(from: string, to: string, id?: string, method?: IAbiMethod, params?: any[]) {
+  async sendTransaction(from: string, id?: string, method?: IAbiMethod, params?: any[]) {
     const response = await this.wrapError(
       lastValueFrom(
         this.http.post<EthConnectAsyncResponse>(
           this.baseUrl,
-          { headers: { id, type: sendTransactionHeader }, from, to, method, params },
+          { headers: { id, type: sendTransactionHeader }, from, to: this.contractAddress, method, params },
           this.requestOptions(),
         ),
       ),
@@ -370,10 +369,12 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
-    const response = await this.invoke('/create', dto.signer, dto.requestId, {
-      is_fungible: dto.type === TokenType.FUNGIBLE,
-      data: encodeHex(dto.data ?? ''),
-    });
+    const response = await this.sendTransaction(
+      dto.signer,
+      dto.requestId,
+      ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
+      [dto.type === TokenType.FUNGIBLE, encodeHex(dto.data ?? '')]
+    );
     return { id: response.id };
   }
 
@@ -418,11 +419,9 @@ export class TokensService {
 
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const typeId = packTokenId(poolLocator.poolId);
-    this.logger.warn(`mint method: ${dto.poolLocator} --, ${ERC1155MixedFungibleAbi} --, ${typeId} --, ${dto.to} --, ${dto.signer}--, ${dto.requestId}--, ${dto.amount}--, ${dto.data}--, ${this.contractAddress}--.`)
     if (isFungible(poolLocator.poolId)) {
       const response = await this.sendTransaction(
         dto.signer,
-        this.contractAddress,
         dto.requestId,
         ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
         [typeId, [dto.to], [dto.amount], encodeHex(dto.data ?? '')]
@@ -439,62 +438,64 @@ export class TokensService {
       }
 
       if (dto.uri !== undefined && this.supportsCustomUri === true) {
-        const response = await this.invoke('/mintNonFungibleWithURI', dto.signer, dto.requestId, {
-          type_id: typeId,
-          to,
-          data: encodeHex(dto.data ?? ''),
-          _uri: dto.uri,
-        });
+        const response = await this.sendTransaction(
+          dto.signer,
+          dto.requestId,
+          ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungibleWithURI'),
+          [typeId, to, encodeHex(dto.data ?? ''), dto.uri]
+        );
         return { id: response.id };
       } else {
-        const response = await this.invoke('/mintNonFungible', dto.signer, dto.requestId, {
-          type_id: typeId,
-          to,
-          data: encodeHex(dto.data ?? ''),
-        });
+        const response = await this.sendTransaction(
+          dto.signer,
+          dto.requestId,
+          ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
+          [typeId, to, encodeHex(dto.data ?? '')]
+        );
         return { id: response.id };
       }
     }
   }
 
   async approval(dto: TokenApproval): Promise<AsyncResponse> {
-    const response = await this.invoke('/setApprovalForAllWithData', dto.signer, dto.requestId, {
-      operator: dto.operator,
-      approved: dto.approved,
-      data: encodeHex(dto.data ?? ''),
-    });
+    const response = await this.sendTransaction(
+      dto.signer,
+      dto.requestId,
+      ERC1155MixedFungibleAbi.find(m => m.name === 'setApprovalForAllWithData'),
+      [dto.operator, dto.approved, encodeHex(dto.data ?? '')]
+    );
     return { id: response.id };
   }
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const response = await this.invoke('/safeTransferFrom', dto.signer, dto.requestId, {
-      from: dto.from,
-      to: dto.to,
-      id: packTokenId(poolLocator.poolId, dto.tokenIndex),
-      amount: dto.amount,
-      data: encodeHex(dto.data ?? ''),
-    });
+    const response = await this.sendTransaction(
+      dto.signer,
+      dto.requestId,
+      ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
+      [dto.from, dto.to, packTokenId(poolLocator.poolId, dto.tokenIndex), dto.amount, encodeHex(dto.data ?? '')]
+    );
     return { id: response.id };
   }
 
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const response = await this.invoke('/burn', dto.signer, dto.requestId, {
-      from: dto.from,
-      id: packTokenId(poolLocator.poolId, dto.tokenIndex),
-      amount: dto.amount,
-      data: encodeHex(dto.data ?? ''),
-    });
+    const response = await this.sendTransaction(
+      dto.signer,
+      dto.requestId,
+      ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
+      [dto.from, packTokenId(poolLocator.poolId, dto.tokenIndex), dto.amount, encodeHex(dto.data ?? '')]
+    );
+
     return { id: response.id };
   }
 
   async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const response = await this.query('/balanceOf', {
-      account: dto.account,
-      id: packTokenId(poolLocator.poolId, dto.tokenIndex),
-    });
+    const response = await this.query(
+      ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
+      [dto.account, packTokenId(poolLocator.poolId, dto.tokenIndex)]
+    );
     return { balance: response.output };
   }
 }
@@ -757,9 +758,10 @@ class TokenListener implements EventListener {
 
   private async getTokenUri(id: string): Promise<string> {
     try {
-      const response = await this.service.query('/uri', {
-        id: id,
-      });
+      const response = await this.service.query(
+        ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
+        [id]
+      );
       const output = response.output as string;
       if (output.includes('{id}') === true) {
         return output.replace('{id}', encodeHexIDForURI(id));
