@@ -114,7 +114,7 @@ export class TokensService {
     private http: HttpService,
     private eventstream: EventStreamService,
     private proxy: EventStreamProxyGateway,
-  ) {}
+  ) { }
 
   configure(
     baseUrl: string,
@@ -162,7 +162,6 @@ export class TokensService {
         ),
       );
       this.contractAddress = response.data.address.toLowerCase();
-      this.logger.debug(`s: ${this.contractAddress}`);
     }
 
     return this.contractAddress;
@@ -229,8 +228,8 @@ export class TokensService {
       }
       this.logger.warn(
         `Old event stream found with name ${existingStream.name}. ` +
-          `The connector will continue to use this stream, but it is recommended ` +
-          `to create a new stream with the name ${name}.`,
+        `The connector will continue to use this stream, but it is recommended ` +
+        `to create a new stream with the name ${name}.`,
       );
     }
     const streamId = existingStream.id;
@@ -256,7 +255,7 @@ export class TokensService {
       if (parts.poolLocator === undefined || parts.event === undefined) {
         this.logger.warn(
           `Non-parseable subscription name '${sub.name}' found in event stream '${existingStream.name}'.` +
-            `It is recommended to delete all subscriptions and activate all pools again.`,
+          `It is recommended to delete all subscriptions and activate all pools again.`,
         );
         return true;
       }
@@ -278,8 +277,8 @@ export class TokensService {
       ) {
         this.logger.warn(
           `Event stream subscriptions for pool ${parts.poolLocator} do not include all expected events ` +
-            `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
-            `It is recommended to delete its subscriptions and activate the pool again.`,
+          `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
+          `It is recommended to delete its subscriptions and activate the pool again.`,
         );
         return true;
       }
@@ -514,7 +513,7 @@ export class TokensService {
 class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  constructor(private readonly service: TokensService) {}
+  constructor(private readonly service: TokensService) { }
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (event.signature) {
