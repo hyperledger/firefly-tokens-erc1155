@@ -127,7 +127,7 @@ export class TokensService {
   ) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
-    this.instanceUrl = baseUrl + instancePath;
+    this.instanceUrl = new URL(this.instancePath, this.baseUrl).href;
     this.topic = topic;
     this.shortPrefix = shortPrefix;
     this.username = username;
@@ -156,7 +156,7 @@ export class TokensService {
       );
       const response = await this.wrapError(
         lastValueFrom(
-          this.http.get<ContractInfoResponse>(`${this.instanceUrl}`, {
+          this.http.get<ContractInfoResponse>(this.instanceUrl, {
             ...basicAuth(this.username, this.password),
           }),
         ),
@@ -357,7 +357,7 @@ export class TokensService {
   async getReceipt(id: string): Promise<EventStreamReply> {
     const response = await this.wrapError(
       lastValueFrom(
-        this.http.get<EventStreamReply>(`${this.baseUrl}/reply/${id}`, {
+        this.http.get<EventStreamReply>(new URL(`/reply/${id}`, this.baseUrl).href, {
           validateStatus: status => status < 300 || status === 404,
           ...basicAuth(this.username, this.password),
         }),
