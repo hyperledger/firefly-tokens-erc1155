@@ -10,78 +10,78 @@ import {
   EthConnectReturn,
   TokenBalance,
 } from '../../src/tokens/tokens.interfaces';
-import { TestContext, FakeObservable, BASE_URL, INSTANCE_PATH } from '../app.e2e-context';
+import { TestContext, FakeObservable, BASE_URL, CONTRACT_ADDRESS } from '../app.e2e-context';
+import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
+
+const queryHeader = 'Query';
+const sendTransactionHeader = 'SendTransaction';
+const requestId = 'default:6f2f0aaf-be21-4977-b34a-8853b602d69d';
 
 const IDENTITY = '0x1';
-const OPTIONS = {
-  params: {
-    'fly-from': IDENTITY,
-    'fly-sync': 'false',
-  },
-};
 
 export default (context: TestContext) => {
   it('Create fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.FUNGIBLE,
-      requestId: 'op1',
+      requestId,
       data: 'tx1',
       signer: IDENTITY,
     };
     const response: EthConnectAsyncResponse = {
-      id: 'op1',
+      id: requestId,
       sent: true,
     };
 
     context.http.post = jest.fn(() => new FakeObservable(response));
 
-    await context.server.post('/createpool').send(request).expect(202).expect({ id: 'op1' });
+    await context.server.post('/createpool').send(request).expect(202).expect({ id: requestId });
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/create`,
+      `${BASE_URL}`,
       {
-        data: '0x747831',
-        is_fungible: true,
-      },
-      {
-        ...OPTIONS,
-        params: {
-          ...OPTIONS.params,
-          'fly-id': 'op1',
+        headers: {
+          id: requestId,
+          type: sendTransactionHeader,
         },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
+        params: [true, '0x747831'],
       },
+      {},
     );
   });
 
   it('Create non-fungible pool', async () => {
     const request: TokenPool = {
       type: TokenType.NONFUNGIBLE,
-      signer: '0xabc',
+      signer: IDENTITY,
+      requestId,
     };
     const response: EthConnectAsyncResponse = {
-      id: '1',
+      id: requestId,
       sent: true,
     };
 
     context.http.post = jest.fn(() => new FakeObservable(response));
 
-    await context.server.post('/createpool').send(request).expect(202).expect({ id: '1' });
+    await context.server.post('/createpool').send(request).expect(202).expect({ id: requestId });
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/create`,
+      `${BASE_URL}`,
       {
-        data: '0x00',
-        is_fungible: false,
-      },
-      {
-        ...OPTIONS,
-        params: {
-          ...OPTIONS.params,
-          'fly-from': '0xabc',
+        headers: {
+          id: requestId,
+          type: sendTransactionHeader,
         },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
+        params: [false, '0x00'],
       },
+      {},
     );
   });
 
@@ -90,15 +90,16 @@ export default (context: TestContext) => {
       type: TokenType.FUNGIBLE,
       signer: IDENTITY,
       isBestPool: true, // will be stripped but will not cause an error
+      requestId,
     };
     const response: EthConnectAsyncResponse = {
-      id: 'op1',
+      id: requestId,
       sent: true,
     };
 
     context.http.post = jest.fn(() => new FakeObservable(response));
 
-    await context.server.post('/createpool').send(request).expect(202).expect({ id: 'op1' });
+    await context.server.post('/createpool').send(request).expect(202).expect({ id: requestId });
   });
 
   it('Mint fungible token', async () => {
@@ -108,26 +109,31 @@ export default (context: TestContext) => {
       amount: '2',
       data: 'test',
       signer: IDENTITY,
+      requestId,
     };
     const response: EthConnectAsyncResponse = {
-      id: '1',
+      id: requestId,
       sent: true,
     };
 
     context.http.post = jest.fn(() => new FakeObservable(response));
 
-    await context.server.post('/mint').send(request).expect(202).expect({ id: '1' });
+    await context.server.post('/mint').send(request).expect(202).expect({ id: requestId });
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/mintFungible`,
+      `${BASE_URL}`,
       {
-        type_id: '340282366920938463463374607431768211456',
-        to: ['1'],
-        amounts: ['2'],
-        data: '0x74657374',
+        headers: {
+          id: requestId,
+          type: sendTransactionHeader,
+        },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
+        params: ['340282366920938463463374607431768211456', ['1'], ['2'], '0x74657374'],
       },
-      OPTIONS,
+      {},
     );
   });
 
@@ -149,13 +155,21 @@ export default (context: TestContext) => {
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/mintNonFungible`,
+      `${BASE_URL}`,
       {
-        type_id: '57896044618658097711785492504343953926975274699741220483192166611388333031424',
-        to: ['1', '1'],
-        data: '0x00',
+        headers: {
+          type: sendTransactionHeader,
+        },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
+        params: [
+          '57896044618658097711785492504343953926975274699741220483192166611388333031424',
+          ['1', '1'],
+          '0x00',
+        ],
       },
-      OPTIONS,
+      {},
     );
   });
 
@@ -179,14 +193,22 @@ export default (context: TestContext) => {
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/burn`,
+      `${BASE_URL}`,
       {
-        id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-        from: 'A',
-        amount: '1',
-        data: '0x747831',
+        headers: {
+          type: sendTransactionHeader,
+        },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
+        params: [
+          'A',
+          '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+          '1',
+          '0x747831',
+        ],
       },
-      OPTIONS,
+      {},
     );
   });
 
@@ -209,15 +231,17 @@ export default (context: TestContext) => {
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/safeTransferFrom`,
+      `${BASE_URL}`,
       {
-        id: '340282366920938463463374607431768211456',
-        from: '1',
-        to: '2',
-        amount: '2',
-        data: '0x00',
+        headers: {
+          type: sendTransactionHeader,
+        },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
+        params: ['1', '2', '340282366920938463463374607431768211456', '2', '0x00'],
       },
-      OPTIONS,
+      {},
     );
   });
 
@@ -239,13 +263,17 @@ export default (context: TestContext) => {
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
-      `${BASE_URL}${INSTANCE_PATH}/setApprovalForAllWithData`,
+      `${BASE_URL}`,
       {
-        operator: '2',
-        approved: true,
-        data: '0x00',
+        headers: {
+          type: sendTransactionHeader,
+        },
+        from: IDENTITY,
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'setApprovalForAllWithData'),
+        params: ['2', true, '0x00'],
       },
-      OPTIONS,
+      {},
     );
   });
 
@@ -259,7 +287,7 @@ export default (context: TestContext) => {
       output: '1',
     };
 
-    context.http.get = jest.fn(() => new FakeObservable(response));
+    context.http.post = jest.fn(() => new FakeObservable(response));
 
     await context.server
       .get('/balance')
@@ -269,12 +297,18 @@ export default (context: TestContext) => {
         balance: '1',
       });
 
-    expect(context.http.get).toHaveBeenCalledTimes(1);
-    expect(context.http.get).toHaveBeenCalledWith(`${BASE_URL}${INSTANCE_PATH}/balanceOf`, {
-      params: {
-        account: '1',
-        id: '340282366920938463463374607431768211456',
+    expect(context.http.post).toHaveBeenCalledTimes(1);
+    expect(context.http.post).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      {
+        headers: {
+          type: queryHeader,
+        },
+        to: CONTRACT_ADDRESS,
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
+        params: ['1', '340282366920938463463374607431768211456'],
       },
-    });
+      {},
+    );
   });
 };

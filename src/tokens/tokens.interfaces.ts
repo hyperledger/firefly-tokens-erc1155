@@ -36,6 +36,10 @@ export interface EthConnectReturn {
   output: any;
 }
 
+export interface ContractInfoResponse {
+  address: string;
+}
+
 export interface TokenPoolCreationEvent extends Event {
   data: {
     operator: string;
@@ -359,4 +363,32 @@ export class TokenApprovalEvent extends tokenEventBase {
 
   @ApiProperty()
   poolData?: string;
+}
+
+// ABI format
+
+export interface IAbiInput {
+  indexed?: boolean;
+  internalType: string;
+  name: string;
+  type: string;
+}
+
+export interface IAbiMethod {
+  anonymous?: boolean;
+  inputs?: IAbiInput[];
+  outputs?: any[];
+  stateMutability?: string;
+  name?: string;
+  type?: string;
+}
+
+export interface EthConnectMsgRequest {
+  headers: {
+    type: string;
+  };
+  from?: string;
+  to: string;
+  method: IAbiMethod;
+  params: any[];
 }

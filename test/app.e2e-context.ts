@@ -16,6 +16,7 @@ export const BASE_URL = 'http://eth';
 export const INSTANCE_PATH = '/tokens';
 export const PREFIX = 'fly';
 export const TOPIC = 'tokentest';
+export const CONTRACT_ADDRESS = '0x888';
 
 export class TestContext {
   app: INestApplication;
@@ -63,7 +64,9 @@ export class TestContext {
     await this.app.init();
 
     this.app.get(EventStreamProxyGateway).configure('url', TOPIC);
-    this.app.get(TokensService).configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '');
+    this.app
+      .get(TokensService)
+      .configure(BASE_URL, INSTANCE_PATH, TOPIC, PREFIX, '', '', CONTRACT_ADDRESS);
 
     (this.app.getHttpServer() as Server).listen();
     this.server = request(this.app.getHttpServer());
