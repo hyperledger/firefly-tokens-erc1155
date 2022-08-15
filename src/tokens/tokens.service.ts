@@ -335,19 +335,6 @@ export class TokensService {
     return response.data;
   }
 
-  async invoke(path: string, from: string, id?: string, body?: any) {
-    const response = await this.wrapError(
-      lastValueFrom(
-        this.http.post<EthConnectAsyncResponse>(
-          `${this.instanceUrl}${path}`,
-          body,
-          this.postOptions(from, id),
-        ),
-      ),
-    );
-    return response.data;
-  }
-
   async sendTransaction(from: string, id?: string, method?: IAbiMethod, params?: any[]) {
     const response = await this.wrapError(
       lastValueFrom(
