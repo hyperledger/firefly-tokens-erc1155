@@ -154,13 +154,14 @@ export class TokensService {
     const methodABI = ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateFunctionName);
 
     if (eventABI !== undefined && methodABI !== undefined) {
+      const contractAddress = await this.getContractAddress();
       await this.eventstream.getOrCreateSubscription(
         this.baseUrl,
         eventABI,
         stream.id,
         tokenCreateEvent,
         packSubscriptionName(this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
-        this.contractAddress,
+        contractAddress,
         [methodABI],
         '0',
       );
@@ -179,8 +180,8 @@ export class TokensService {
           }),
         ),
       );
-      this.contractAddress = response.data.address.toLowerCase();
-      this.logger.debug(`s: ${this.contractAddress}`);
+      this.contractAddress = '0x' + response.data.address.toLowerCase();
+      this.logger.debug(`Contract address: ${this.contractAddress}`);
     }
 
     return this.contractAddress;
@@ -435,6 +436,7 @@ export class TokensService {
       transferBatchEventABI !== undefined &&
       approvalForAllEventABI !== undefined
     ) {
+      const contractAddress = await this.getContractAddress();
       await Promise.all([
         this.eventstream.getOrCreateSubscription(
           this.baseUrl,
@@ -442,7 +444,7 @@ export class TokensService {
           stream.id,
           tokenCreateEvent,
           packSubscriptionName(this.instancePath, dto.poolLocator, tokenCreateEvent, dto.poolData),
-          this.contractAddress,
+          contractAddress,
           [tokenCreateFunctionABI],
           poolLocator.blockNumber ?? '0',
         ),
@@ -457,7 +459,7 @@ export class TokensService {
             transferSingleEvent,
             dto.poolData,
           ),
-          this.contractAddress,
+          contractAddress,
           transferFunctionABIs,
           poolLocator.blockNumber ?? '0',
         ),
@@ -472,7 +474,7 @@ export class TokensService {
             transferBatchEvent,
             dto.poolData,
           ),
-          this.contractAddress,
+          contractAddress,
           transferFunctionABIs,
           poolLocator.blockNumber ?? '0',
         ),
@@ -487,7 +489,7 @@ export class TokensService {
             approvalForAllEvent,
             dto.poolData,
           ),
-          this.contractAddress,
+          contractAddress,
           approvalFunctionABIs,
           // Block number is 0 because it is important to receive all approval events,
           // so existing approvals will be reflected in the newly created pool
