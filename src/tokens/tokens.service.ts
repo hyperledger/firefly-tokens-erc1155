@@ -405,12 +405,12 @@ export class TokensService {
     );
     const transferBatchEventABI = ERC1155MixedFungibleAbi.find(m => m.name === transferBatchEvent);
     const transferFunctionABIs = ERC1155MixedFungibleAbi.filter(
-      m => m.name?.includes('mint') || m.name?.includes('transfer') || m.name?.includes('burn'),
+      m => m.name?.toLowerCase().includes('mint') || m.name?.toLowerCase().includes('transfer') || m.name?.toLowerCase().includes('burn'),
     );
     const approvalForAllEventABI = ERC1155MixedFungibleAbi.find(
       m => m.name === approvalForAllEvent,
     );
-    const approvalFunctionABIs = ERC1155MixedFungibleAbi.filter(m => m.name?.includes('approval'));
+    const approvalFunctionABIs = ERC1155MixedFungibleAbi.filter(m => m.name?.toLowerCase().includes('approval'));
 
     if (
       tokenCreateEventABI !== undefined &&
