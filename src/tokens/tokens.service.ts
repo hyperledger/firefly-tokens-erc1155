@@ -82,11 +82,9 @@ const tokenCreateFunctionName = 'create';
 const tokenCreateEvent = 'TokenPoolCreation';
 const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
 const tokenCreateEventSignature = 'TokenPoolCreation(address,uint256,bytes)';
-const safeTransferFromFunctionName = 'safeTransferFrom';
 const transferSingleEvent = 'TransferSingle';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 const transferBatchEvent = 'TransferBatch';
-const safeBatchTransferFromFunctionName = 'safeBatchTransferFrom';
 const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
 const approvalForAllEvent = 'ApprovalForAll';
 const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
@@ -136,14 +134,21 @@ export class TokensService {
     this.username = username;
     this.password = password;
     this.contractAddress = contractAddress.toLowerCase();
-    this.proxy.addListener(new TokenListener(this));
+    this.proxy.addConnectionListener(this);
+    this.proxy.addEventListener(new TokenListener(this));
+  }
+
+  async onConnect() {
+    const wsUrl = this.baseUrl.replace('http', 'ws') + '/ws';
+    const stream = await this.getStream();
+    this.proxy.configure(wsUrl, stream.name);
   }
 
   /**
    * One-time initialization of event stream and base subscription.
    */
   async init() {
-    this.stream = await this.getStream();
+    const stream = await this.getStream();
 
     const eventABI = ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateEvent);
     const methodABI = ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateFunctionName);
@@ -152,7 +157,7 @@ export class TokensService {
       await this.eventstream.getOrCreateSubscription(
         this.baseUrl,
         eventABI,
-        this.stream.id,
+        stream.id,
         tokenCreateEvent,
         packSubscriptionName(this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
         this.contractAddress,
@@ -216,10 +221,14 @@ export class TokensService {
   }
 
   private async getStream() {
-    if (this.stream === undefined) {
-      const name = packStreamName(this.topic, this.instancePath);
-      this.stream = await this.eventstream.createOrUpdateStream(name, this.topic);
+    const stream = this.stream;
+    if (stream !== undefined) {
+      return stream;
     }
+    await this.migrationCheck();
+    const name = this.stream?.name ?? packStreamName(this.topic, this.instancePath);
+    this.logger.log('Creating stream with name ' + name);
+    this.stream = await this.eventstream.createOrUpdateStream(name, name);
     return this.stream;
   }
 
@@ -246,6 +255,7 @@ export class TokensService {
           `to create a new stream with the name ${name}.`,
       );
     }
+    this.stream = existingStream;
     const streamId = existingStream.id;
 
     const allSubscriptions = await this.eventstream.getSubscriptions();
@@ -405,12 +415,18 @@ export class TokensService {
     );
     const transferBatchEventABI = ERC1155MixedFungibleAbi.find(m => m.name === transferBatchEvent);
     const transferFunctionABIs = ERC1155MixedFungibleAbi.filter(
-      m => m.name?.toLowerCase().includes('mint') || m.name?.toLowerCase().includes('transfer') || m.name?.toLowerCase().includes('burn'),
+      m =>
+        m.name !== undefined &&
+        (m.name.toLowerCase().includes('mint') ||
+          m.name.toLowerCase().includes('transfer') ||
+          m.name.toLowerCase().includes('burn')),
     );
     const approvalForAllEventABI = ERC1155MixedFungibleAbi.find(
       m => m.name === approvalForAllEvent,
     );
-    const approvalFunctionABIs = ERC1155MixedFungibleAbi.filter(m => m.name?.toLowerCase().includes('approval'));
+    const approvalFunctionABIs = ERC1155MixedFungibleAbi.filter(m =>
+      m.name?.toLowerCase().includes('approval'),
+    );
 
     if (
       tokenCreateEventABI !== undefined &&
@@ -624,7 +640,7 @@ class TokenListener implements EventListener {
   }
 
   private trimEventSignature(signature: string) {
-    let firstColon = signature.indexOf(':');
+    const firstColon = signature.indexOf(':');
     if (firstColon > 0) {
       return signature.substring(firstColon + 1);
     }

@@ -39,6 +39,7 @@ export interface Event {
   data: any;
   inputMethod?: string;
   inputArgs?: Record<string, any>;
+  inputSigner?: string;
 }
 
 export class EventStreamReplyHeaders {
