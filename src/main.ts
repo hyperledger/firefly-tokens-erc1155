@@ -23,7 +23,6 @@ import { version as API_VERSION } from '../package.json';
 import { AppModule } from './app.module';
 import { RequestLoggingInterceptor } from './request-logging.interceptor';
 import { TokensService } from './tokens/tokens.service';
-import { EventStreamProxyGateway } from './eventstream-proxy/eventstream-proxy.gateway';
 import { EventStreamReply } from './event-stream/event-stream.interfaces';
 import {
   TokenApprovalEvent,
@@ -78,10 +77,7 @@ async function bootstrap() {
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
   const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
 
-  const wsUrl = ethConnectUrl.replace('http', 'ws') + '/ws';
-
   app.get(EventStreamService).configure(ethConnectUrl, username, password);
-  app.get(EventStreamProxyGateway).configure(wsUrl, topic);
   app
     .get(TokensService)
     .configure(
@@ -93,12 +89,6 @@ async function bootstrap() {
       password,
       contractAddress,
     );
-
-  try {
-    await app.get(TokensService).migrationCheck();
-  } catch (err) {
-    this.logger.debug('Subscription checks skipped (ethconnect may not be up)');
-  }
 
   if (autoInit.toLowerCase() !== 'false') {
     await app.get(TokensService).init();

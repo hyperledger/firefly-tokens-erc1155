@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,6 +39,7 @@ export interface Event {
   data: any;
   inputMethod?: string;
   inputArgs?: Record<string, any>;
+  inputSigner?: string;
 }
 
 export class EventStreamReplyHeaders {
