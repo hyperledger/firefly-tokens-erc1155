@@ -39,6 +39,8 @@ export class TestContext {
       this.receiptHandler = handleReceipt;
     },
 
+    getStreams: jest.fn(),
+    createOrUpdateStream: jest.fn(),
     getSubscription: jest.fn(),
   };
 
@@ -47,6 +49,9 @@ export class TestContext {
       get: jest.fn(),
       post: jest.fn(),
     };
+    this.eventstream.getStreams.mockReset().mockReturnValue([]);
+    this.eventstream.createOrUpdateStream.mockReset().mockReturnValue({ name: TOPIC });
+
     this.eventstream.getSubscription.mockReset();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

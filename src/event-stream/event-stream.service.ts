@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
+import { IAbiMethod } from '../tokens/tokens.interfaces';
 import { basicAuth } from '../utils';
 import {
   Event,
@@ -236,18 +237,24 @@ export class EventStreamService {
 
   async createSubscription(
     instancePath: string,
+    eventABI: IAbiMethod,
     streamId: string,
     event: string,
     name: string,
+    address: string,
+    methods: IAbiMethod[],
     fromBlock = '0', // subscribe from the start of the chain by default
   ): Promise<EventStreamSubscription> {
     const response = await lastValueFrom(
       this.http.post<EventStreamSubscription>(
-        new URL(`/${instancePath}/${event}`, this.baseUrl).href,
+        new URL(`/subscriptions`, instancePath).href,
         {
           name,
           stream: streamId,
           fromBlock,
+          event: eventABI,
+          address,
+          methods,
         },
         {
           ...basicAuth(this.username, this.password),
@@ -260,9 +267,12 @@ export class EventStreamService {
 
   async getOrCreateSubscription(
     instancePath: string,
+    eventABI: IAbiMethod,
     streamId: string,
     event: string,
     name: string,
+    contractAddress: string,
+    possibleABIs: IAbiMethod[],
     fromBlock = '0', // subscribe from the start of the chain by default
   ): Promise<EventStreamSubscription> {
     const existingSubscriptions = await this.getSubscriptions();
@@ -271,7 +281,16 @@ export class EventStreamService {
       this.logger.log(`Existing subscription for ${event}: ${sub.id}`);
       return sub;
     }
-    return this.createSubscription(instancePath, streamId, event, name, fromBlock);
+    return this.createSubscription(
+      instancePath,
+      eventABI,
+      streamId,
+      event,
+      name,
+      contractAddress,
+      possibleABIs,
+      fromBlock,
+    );
   }
 
   connect(
