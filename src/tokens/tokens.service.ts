@@ -139,7 +139,7 @@ export class TokensService {
   }
 
   async onConnect() {
-    const wsUrl = new URL('/ws',this.baseUrl.replace('http', 'ws')).href;
+    const wsUrl = new URL('/ws', this.baseUrl.replace('http', 'ws')).href;
     const stream = await this.getStream();
     this.proxy.configure(wsUrl, stream.name);
   }
