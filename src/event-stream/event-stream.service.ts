@@ -22,6 +22,7 @@ import { IAbiMethod } from '../tokens/tokens.interfaces';
 import { basicAuth } from '../utils';
 import {
   Event,
+  EventBatch,
   EventStream,
   EventStreamReply,
   EventStreamSubscription,
@@ -44,7 +45,7 @@ export class EventStreamSocket {
     private topic: string,
     private username: string,
     private password: string,
-    private handleEvents: (events: Event[]) => void,
+    private handleEvents: (events: EventBatch) => void,
     private handleReceipt: (receipt: EventStreamReply) => void,
   ) {
     this.init();
@@ -106,8 +107,8 @@ export class EventStreamSocket {
     this.ws.send(JSON.stringify(message));
   }
 
-  ack() {
-    this.produce({ type: 'ack', topic: this.topic });
+  ack(batchNumber: number | undefined) {
+    this.produce({ type: 'ack', topic: this.topic, batchNumber });
   }
 
   close() {
@@ -115,19 +116,29 @@ export class EventStreamSocket {
     this.ws.terminate();
   }
 
-  private handleMessage(message: EventStreamReply | Event[]) {
+  private handleMessage(message: EventStreamReply | Event[] | EventBatch) {
     if (Array.isArray(message)) {
       for (const event of message) {
         this.logger.log(`Ethconnect '${event.signature}' message: ${JSON.stringify(event.data)}`);
       }
+      this.handleEvents({ events: message });
+    } else if ('batchNumber' in message && Array.isArray(message.events)) {
+      for (const event of message.events) {
+        this.logger.log(
+          `Ethconnect '${event.signature}' message (batch=${message.batchNumber}): ${JSON.stringify(
+            event.data,
+          )}`,
+        );
+      }
       this.handleEvents(message);
     } else {
-      const replyType = message.headers.type;
-      const errorMessage = message.errorMessage ?? '';
+      const reply = message as EventStreamReply;
+      const replyType = reply.headers.type;
+      const errorMessage = reply.errorMessage ?? '';
       this.logger.log(
-        `Ethconnect '${replyType}' reply request=${message.headers.requestId} tx=${message.transactionHash} ${errorMessage}`,
+        `Ethconnect '${replyType}' reply request=${reply.headers.requestId} tx=${reply.transactionHash} ${errorMessage}`,
       );
-      this.handleReceipt(message);
+      this.handleReceipt(reply);
     }
   }
 }
@@ -150,7 +161,7 @@ export class EventStreamService {
 
   async getStreams(): Promise<EventStream[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStream[]>(`${this.baseUrl}/eventstreams`, {
+      this.http.get<EventStream[]>(new URL('/eventstreams', this.baseUrl).href, {
         ...basicAuth(this.username, this.password),
       }),
     );
@@ -175,7 +186,7 @@ export class EventStreamService {
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
         this.http.patch<EventStream>(
-          `${this.baseUrl}/eventstreams/${stream.id}`,
+          new URL(`/eventstreams/${stream.id}`, this.baseUrl).href,
           {
             ...streamDetails,
           },
@@ -189,7 +200,7 @@ export class EventStreamService {
     }
     const newStreamRes = await lastValueFrom(
       this.http.post<EventStream>(
-        `${this.baseUrl}/eventstreams`,
+        new URL('/eventstreams', this.baseUrl).href,
         {
           ...streamDetails,
         },
@@ -204,7 +215,7 @@ export class EventStreamService {
 
   async deleteStream(id: string) {
     await lastValueFrom(
-      this.http.delete(`${this.baseUrl}/eventstreams/${id}`, {
+      this.http.delete(new URL(`/eventstreams/${id}`, this.baseUrl).href, {
         ...basicAuth(this.username, this.password),
       }),
     );
@@ -212,7 +223,7 @@ export class EventStreamService {
 
   async getSubscriptions(): Promise<EventStreamSubscription[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStreamSubscription[]>(`${this.baseUrl}/subscriptions`, {
+      this.http.get<EventStreamSubscription[]>(new URL('/subscriptions', this.baseUrl).href, {
         ...basicAuth(this.username, this.password),
       }),
     );
@@ -221,10 +232,13 @@ export class EventStreamService {
 
   async getSubscription(subId: string): Promise<EventStreamSubscription | undefined> {
     const response = await lastValueFrom(
-      this.http.get<EventStreamSubscription>(`${this.baseUrl}/subscriptions/${subId}`, {
-        validateStatus: status => status < 300 || status === 404,
-        ...basicAuth(this.username, this.password),
-      }),
+      this.http.get<EventStreamSubscription>(
+        new URL(`/subscriptions/${subId}`, this.baseUrl).href,
+        {
+          validateStatus: status => status < 300 || status === 404,
+          ...basicAuth(this.username, this.password),
+        },
+      ),
     );
     if (response.status === 404) {
       return undefined;
@@ -293,7 +307,7 @@ export class EventStreamService {
   connect(
     url: string,
     topic: string,
-    handleEvents: (events: Event[]) => void,
+    handleEvents: (events: EventBatch) => void,
     handleReceipt: (receipt: EventStreamReply) => void,
   ) {
     return new EventStreamSocket(
