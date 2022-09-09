@@ -54,22 +54,24 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TokenPoolCreationEvent>{
-            subId: 'sb123',
-            signature: tokenCreateEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              operator: 'bob',
-              type_id: '340282366920938463463374607431768211456',
-              data: '0x00',
+        context.eventHandler({
+          events: [
+            <TokenPoolCreationEvent>{
+              subId: 'sb123',
+              signature: tokenCreateEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                operator: 'bob',
+                type_id: '340282366920938463463374607431768211456',
+                data: '0x00',
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -121,22 +123,24 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TokenPoolCreationEvent>{
-            subId: 'sb123',
-            signature: tokenCreateEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              operator: 'bob',
-              type_id: '340282366920938463463374607431768211456',
-              data: '0x00',
+        context.eventHandler({
+          events: [
+            <TokenPoolCreationEvent>{
+              subId: 'sb123',
+              signature: tokenCreateEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                operator: 'bob',
+                type_id: '340282366920938463463374607431768211456',
+                data: '0x00',
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -188,22 +192,24 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TokenPoolCreationEvent>{
-            subId: 'sb123',
-            signature: tokenCreateEventSignatureOld,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              operator: 'bob',
-              type_id: '340282366920938463463374607431768211456',
-              data: '0x00',
+        context.eventHandler({
+          events: [
+            <TokenPoolCreationEvent>{
+              subId: 'sb123',
+              signature: tokenCreateEventSignatureOld,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                operator: 'bob',
+                type_id: '340282366920938463463374607431768211456',
+                data: '0x00',
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -255,35 +261,37 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TransferSingleEvent>{
-            subId: 'sb-123',
-            signature: transferSingleEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            logIndex: '1',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              id: '340282366920938463463374607431768211456',
-              from: ZERO_ADDRESS,
-              to: 'A',
-              operator: 'A',
-              value: '5',
-              transaction: {
-                blockNumber: '1',
-                transactionIndex: '0x0',
-                transactionHash: '0x123',
-                logIndex: '1',
+        context.eventHandler({
+          events: [
+            <TransferSingleEvent>{
+              subId: 'sb-123',
+              signature: transferSingleEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                id: '340282366920938463463374607431768211456',
+                from: ZERO_ADDRESS,
+                to: 'A',
+                operator: 'A',
+                value: '5',
+                transaction: {
+                  blockNumber: '1',
+                  transactionIndex: '0x0',
+                  transactionHash: '0x123',
+                  logIndex: '1',
+                },
+              },
+              inputMethod: 'mintFungible',
+              inputArgs: {
+                data: '0x74657374',
               },
             },
-            inputMethod: 'mintFungible',
-            inputArgs: {
-              data: '0x74657374',
-            },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -349,35 +357,37 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TransferSingleEvent>{
-            subId: 'sb-123',
-            signature: transferSingleEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            logIndex: '1',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              from: ZERO_ADDRESS,
-              to: 'A',
-              operator: 'A',
-              value: '5',
-              transaction: {
-                blockNumber: '1',
-                transactionIndex: '0x0',
-                transactionHash: '0x123',
-                logIndex: '1',
+        context.eventHandler({
+          events: [
+            <TransferSingleEvent>{
+              subId: 'sb-123',
+              signature: transferSingleEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                from: ZERO_ADDRESS,
+                to: 'A',
+                operator: 'A',
+                value: '5',
+                transaction: {
+                  blockNumber: '1',
+                  transactionIndex: '0x0',
+                  transactionHash: '0x123',
+                  logIndex: '1',
+                },
+              },
+              inputMethod: 'mintFungible',
+              inputArgs: {
+                data: '0x74657374',
               },
             },
-            inputMethod: 'mintFungible',
-            inputArgs: {
-              data: '0x74657374',
-            },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -459,34 +469,36 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TransferSingleEvent>{
-            subId: 'sb-123',
-            signature: transferSingleEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            logIndex: '1',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              from: 'A',
-              to: ZERO_ADDRESS,
-              operator: 'A',
-              value: '1',
-              transaction: {
-                blockNumber: '1',
-                transactionIndex: '0x0',
-                transactionHash: '0x123',
+        context.eventHandler({
+          events: [
+            <TransferSingleEvent>{
+              subId: 'sb-123',
+              signature: transferSingleEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                from: 'A',
+                to: ZERO_ADDRESS,
+                operator: 'A',
+                value: '1',
+                transaction: {
+                  blockNumber: '1',
+                  transactionIndex: '0x0',
+                  transactionHash: '0x123',
+                },
+              },
+              inputMethod: 'burn',
+              inputArgs: {
+                data: '0x74657374',
               },
             },
-            inputMethod: 'burn',
-            inputArgs: {
-              data: '0x74657374',
-            },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -567,25 +579,27 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TransferSingleEvent>{
-            subId: 'sb123',
-            signature: transferSingleEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            logIndex: '1',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              value: '1',
+        context.eventHandler({
+          events: [
+            <TransferSingleEvent>{
+              subId: 'sb123',
+              signature: transferSingleEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                value: '1',
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -655,23 +669,25 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <ApprovalForAllEvent>{
-            signature: approvalForAllEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            logIndex: '1',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              account: 'A',
-              approved: true,
-              operator: 'B',
-              data: '1',
+        context.eventHandler({
+          events: [
+            <ApprovalForAllEvent>{
+              signature: approvalForAllEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                account: 'A',
+                approved: true,
+                operator: 'B',
+                data: '1',
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -725,38 +741,40 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TransferSingleEvent>{
-            subId: 'sb123',
-            signature: transferSingleEventSignature,
-            address: '',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            data: {
-              id: '340282366920938463463374607431768211456',
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              value: '1',
+        context.eventHandler({
+          events: [
+            <TransferSingleEvent>{
+              subId: 'sb123',
+              signature: transferSingleEventSignature,
+              address: '',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              data: {
+                id: '340282366920938463463374607431768211456',
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                value: '1',
+              },
             },
-          },
-          <TransferSingleEvent>{
-            subId: 'sb123',
-            signature: transferSingleEventSignature,
-            address: '',
-            blockNumber: '2',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            data: {
-              id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              value: '1',
+            <TransferSingleEvent>{
+              subId: 'sb123',
+              signature: transferSingleEventSignature,
+              address: '',
+              blockNumber: '2',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              data: {
+                id: '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                value: '1',
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         // Only the second transfer should have been processed
@@ -785,28 +803,30 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([
-          <TransferBatchEvent>{
-            subId: 'sb123',
-            signature: transferBatchEventSignature,
-            address: '0x00001',
-            blockNumber: '1',
-            transactionIndex: '0x0',
-            transactionHash: '0x123',
-            logIndex: '1',
-            timestamp: '2020-01-01 00:00:00Z',
-            data: {
-              from: 'A',
-              to: 'B',
-              operator: 'A',
-              ids: [
-                '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-                '57896044618658097711785492504343953926975274699741220483192166611388333031426',
-              ],
-              values: ['1', '1'],
+        context.eventHandler({
+          events: [
+            <TransferBatchEvent>{
+              subId: 'sb123',
+              signature: transferBatchEventSignature,
+              address: '0x00001',
+              blockNumber: '1',
+              transactionIndex: '0x0',
+              transactionHash: '0x123',
+              logIndex: '1',
+              timestamp: '2020-01-01 00:00:00Z',
+              data: {
+                from: 'A',
+                to: 'B',
+                operator: 'A',
+                ids: [
+                  '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+                  '57896044618658097711785492504343953926975274699741220483192166611388333031426',
+                ],
+                values: ['1', '1'],
+              },
             },
-          },
-        ]);
+          ],
+        });
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -983,7 +1003,7 @@ export default (context: TestContext) => {
       .ws('/api/ws')
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([tokenPoolMessage]);
+        context.eventHandler({ events: [tokenPoolMessage] });
       })
       .expectJson(message => {
         expect(message.event).toEqual('batch');
@@ -1028,7 +1048,7 @@ export default (context: TestContext) => {
     await ws1
       .exec(() => {
         expect(context.eventHandler).toBeDefined();
-        context.eventHandler([tokenPoolMessage]);
+        context.eventHandler({ events: [tokenPoolMessage] });
       })
       .expectJson(message => {
         expect(message.event).toEqual('batch');
