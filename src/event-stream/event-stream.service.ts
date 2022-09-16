@@ -258,7 +258,7 @@ export class EventStreamService {
   ): Promise<EventStreamSubscription> {
     const response = await lastValueFrom(
       this.http.post<EventStreamSubscription>(
-        `${instancePath}/subscriptions`,
+        new URL(`/subscriptions`, instancePath).href,
         {
           name,
           stream: streamId,
