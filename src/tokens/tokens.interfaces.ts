@@ -23,6 +23,7 @@ import { Event } from '../event-stream/event-stream.interfaces';
 export interface PoolLocator {
   poolId: string;
   blockNumber?: string;
+  address?: string;
 }
 
 // Ethconnect interfaces
@@ -98,6 +99,16 @@ const approvalConfigDescription =
 const transferConfigDescription =
   'Optional configuration info for the token transfer. Reserved for future use.';
 
+export class TokenPoolConfig {
+  @ApiProperty()
+  @IsOptional()
+  address?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  blockNumber?: string;
+}
+
 export class TokenPool {
   @ApiProperty({ enum: TokenType })
   @IsDefined()
@@ -117,7 +128,7 @@ export class TokenPool {
 
   @ApiProperty({ description: poolConfigDescription })
   @IsOptional()
-  config?: any;
+  config?: TokenPoolConfig;
 }
 
 export class TokenApproval {

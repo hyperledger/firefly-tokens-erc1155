@@ -42,6 +42,7 @@ export class TestContext {
     getStreams: jest.fn(),
     createOrUpdateStream: jest.fn(),
     getSubscription: jest.fn(),
+    getOrCreateSubscription: jest.fn(),
   };
 
   async begin() {
@@ -53,6 +54,7 @@ export class TestContext {
     this.eventstream.createOrUpdateStream.mockReset().mockReturnValue({ name: TOPIC });
 
     this.eventstream.getSubscription.mockReset();
+    this.eventstream.getOrCreateSubscription.mockReset();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

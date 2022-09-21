@@ -71,7 +71,7 @@ describe('Util', () => {
   });
 
   it('packPoolLocator', () => {
-    expect(packPoolLocator('N1', '5')).toEqual('id=N1&block=5');
+    expect(packPoolLocator('0x123', 'N1', '5')).toEqual('address=0x123&id=N1&block=5');
   });
 
   it('unpackPoolLocator', () => {

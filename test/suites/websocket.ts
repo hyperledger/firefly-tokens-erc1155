@@ -32,7 +32,7 @@ import {
 } from '../../src/tokens/tokens.interfaces';
 import { WebSocketMessage } from '../../src/websocket-events/websocket-events.base';
 import { packSubscriptionName } from '../../src/tokens/tokens.util';
-import { BASE_URL, FakeObservable, CONTRACT_ADDRESS, TestContext } from '../app.e2e-context';
+import { BASE_URL, FakeObservable, TestContext } from '../app.e2e-context';
 import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
 const queryHeader = 'Query';
 
@@ -81,7 +81,7 @@ export default (context: TestContext) => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolLocator: 'id=F1&block=1',
+            poolLocator: 'F1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -150,7 +150,7 @@ export default (context: TestContext) => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolLocator: 'id=F1&block=1',
+            poolLocator: 'address=0x00001&id=F1&block=1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -219,7 +219,7 @@ export default (context: TestContext) => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
-            poolLocator: 'id=F1&block=1',
+            poolLocator: 'address=0x00001&id=F1&block=1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -445,7 +445,7 @@ export default (context: TestContext) => {
         headers: {
           type: queryHeader,
         },
-        to: CONTRACT_ADDRESS,
+        to: '0x00001',
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425'],
       },
@@ -555,7 +555,7 @@ export default (context: TestContext) => {
         headers: {
           type: queryHeader,
         },
-        to: CONTRACT_ADDRESS,
+        to: '0x00001',
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425'],
       },
@@ -652,7 +652,7 @@ export default (context: TestContext) => {
         headers: {
           type: queryHeader,
         },
-        to: CONTRACT_ADDRESS,
+        to: '0x00001',
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425'],
       },
@@ -916,7 +916,7 @@ export default (context: TestContext) => {
         headers: {
           type: queryHeader,
         },
-        to: CONTRACT_ADDRESS,
+        to: '0x00001',
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031426'],
       },

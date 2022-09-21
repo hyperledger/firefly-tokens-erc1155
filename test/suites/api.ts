@@ -85,6 +85,53 @@ export default (context: TestContext) => {
     );
   });
 
+  it('Create non-fungible pool - non-default address', async () => {
+    const request: TokenPool = {
+      type: TokenType.NONFUNGIBLE,
+      signer: IDENTITY,
+      requestId,
+      config: {
+        address: '0x12345678',
+        blockNumber: '42000',
+      },
+    };
+    const response: EthConnectAsyncResponse = {
+      id: requestId,
+      sent: true,
+    };
+
+    context.http.post = jest.fn(() => new FakeObservable(response));
+
+    await context.server.post('/createpool').send(request).expect(202).expect({ id: requestId });
+
+    expect(context.http.post).toHaveBeenCalledTimes(1);
+    expect(context.http.post).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      {
+        headers: {
+          id: requestId,
+          type: sendTransactionHeader,
+        },
+        from: IDENTITY,
+        to: '0x12345678',
+        method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
+        params: [false, '0x00'],
+      },
+      {},
+    );
+
+    expect(context.eventstream.getOrCreateSubscription).toHaveBeenCalledWith(
+      `${BASE_URL}`,
+      ERC1155MixedFungibleAbi.find(m => m.name === 'TokenPoolCreation'),
+      undefined,
+      'TokenPoolCreation',
+      'fft:0x12345678:base:TokenPoolCreation',
+      '0x12345678',
+      [ERC1155MixedFungibleAbi.find(m => m.name === 'create')],
+      '42000',
+    );
+  });
+
   it('Create pool - unrecognized fields', async () => {
     const request = {
       type: TokenType.FUNGIBLE,
