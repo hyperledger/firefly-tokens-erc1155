@@ -87,8 +87,9 @@ export function unpackTokenId(id: string) {
  * never re-pack a locator during event or request processing (always send
  * back the one provided as input or unpacked from the subscription).
  */
-export function packPoolLocator(poolId: string, blockNumber?: string) {
+export function packPoolLocator(address: string, poolId: string, blockNumber?: string) {
   const encoded = new URLSearchParams();
+  encoded.set('address', address);
   encoded.set('id', poolId);
   if (blockNumber !== undefined) {
     encoded.set('block', blockNumber);
@@ -103,7 +104,11 @@ export function unpackPoolLocator(data: string): PoolLocator {
   const encoded = new URLSearchParams(data);
   const tokenId = encoded.get('id');
   if (tokenId !== null) {
-    return { poolId: tokenId, blockNumber: encoded.get('block') ?? undefined };
+    return {
+      poolId: tokenId,
+      blockNumber: encoded.get('block') ?? undefined,
+      address: encoded.get('address') ?? undefined,
+    };
   }
   return { poolId: data };
 }

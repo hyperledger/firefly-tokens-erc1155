@@ -91,8 +91,7 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
     }
 
     function _setNonFungibleURI(uint256 type_id, uint256 id, string memory _uri)
-        public
-        virtual
+        private
         creatorOnly(type_id)
     {
         require(isNonFungible(type_id), "ERC1155MixedFungible: id does not represent a non-fungible type");

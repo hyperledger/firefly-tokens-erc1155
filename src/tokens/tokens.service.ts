@@ -56,6 +56,7 @@ import {
   TransferBatchEvent,
   TransferSingleEvent,
   TokenPoolEventInfo,
+  TokenPoolConfig,
 } from './tokens.interfaces';
 import {
   decodeHex,
@@ -148,22 +149,23 @@ export class TokensService {
    * One-time initialization of event stream and base subscription.
    */
   async init() {
-    const stream = await this.getStream();
+    await this.createPoolSubscription(await this.getContractAddress());
+  }
 
+  private async createPoolSubscription(address: string, blockNumber?: string) {
+    const stream = await this.getStream();
     const eventABI = ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateEvent);
     const methodABI = ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateFunctionName);
-
     if (eventABI !== undefined && methodABI !== undefined) {
-      const contractAddress = await this.getContractAddress();
       await this.eventstream.getOrCreateSubscription(
         this.baseUrl,
         eventABI,
         stream.id,
         tokenCreateEvent,
-        packSubscriptionName(this.instancePath, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
-        contractAddress,
+        packSubscriptionName(address, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
+        address,
         [methodABI],
-        '0',
+        blockNumber ?? '0',
       );
     }
   }
@@ -187,10 +189,11 @@ export class TokensService {
     return this.contractAddress;
   }
 
-  async isCustomUriSupported() {
+  async isCustomUriSupported(address: string) {
     if (this.supportsCustomUri === undefined) {
       try {
         const result = await this.query(
+          address,
           ERC1155MixedFungibleAbi.find(m => m.name === 'supportsInterface'),
           [CUSTOM_URI_IID],
         );
@@ -208,9 +211,10 @@ export class TokensService {
     return this.supportsCustomUri;
   }
 
-  async queryBaseUri() {
+  async queryBaseUri(address: string) {
     try {
       const result = await this.query(
+        address,
         ERC1155MixedFungibleAbi.find(m => m.name === 'baseTokenUri'),
         [CUSTOM_URI_IID],
       );
@@ -315,22 +319,6 @@ export class TokensService {
     return basicAuth(this.username, this.password);
   }
 
-  private postOptions(signer: string, requestId?: string) {
-    const from = `${this.shortPrefix}-from`;
-    const sync = `${this.shortPrefix}-sync`;
-    const id = `${this.shortPrefix}-id`;
-
-    const requestOptions: AxiosRequestConfig = {
-      params: {
-        [from]: signer,
-        [sync]: 'false',
-        [id]: requestId,
-      },
-      ...basicAuth(this.username, this.password),
-    };
-
-    return requestOptions;
-  }
   private async wrapError<T>(response: Promise<AxiosResponse<T>>) {
     return response.catch(err => {
       if (axios.isAxiosError(err)) {
@@ -346,12 +334,12 @@ export class TokensService {
     });
   }
 
-  async query(method?: IAbiMethod, params?: any[]) {
+  async query(to: string, method?: IAbiMethod, params?: any[]) {
     const response = await this.wrapError(
       lastValueFrom(
         this.http.post<EthConnectReturn>(
           this.baseUrl,
-          { headers: { type: queryHeader }, to: await this.getContractAddress(), method, params },
+          { headers: { type: queryHeader }, to, method, params },
           this.requestOptions(),
         ),
       ),
@@ -359,7 +347,13 @@ export class TokensService {
     return response.data;
   }
 
-  async sendTransaction(from: string, id?: string, method?: IAbiMethod, params?: any[]) {
+  async sendTransaction(
+    from: string,
+    to: string,
+    id?: string,
+    method?: IAbiMethod,
+    params?: any[],
+  ) {
     const response = await this.wrapError(
       lastValueFrom(
         this.http.post<EthConnectAsyncResponse>(
@@ -367,7 +361,7 @@ export class TokensService {
           {
             headers: { id, type: sendTransactionHeader },
             from,
-            to: await this.getContractAddress(),
+            to,
             method,
             params,
           },
@@ -394,8 +388,18 @@ export class TokensService {
   }
 
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
+    if (dto.config?.address !== undefined && dto.config.address !== '') {
+      await this.createPoolSubscription(dto.config.address, dto.config.blockNumber);
+      return this.createWithAddress(dto.config.address, dto);
+    }
+    return this.createWithAddress(await this.getContractAddress(), dto);
+  }
+
+  async createWithAddress(address: string, dto: TokenPool) {
+    this.logger.log(`Create token pool from contract: '${address}'`);
     const response = await this.sendTransaction(
       dto.signer,
+      address,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateFunctionName),
       [dto.type === TokenType.FUNGIBLE, encodeHex(dto.data ?? '')],
@@ -406,6 +410,7 @@ export class TokensService {
   async activatePool(dto: TokenPoolActivate) {
     const stream = await this.getStream();
     const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? (await this.getContractAddress());
 
     const tokenCreateEventABI = ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateEvent);
     const tokenCreateFunctionABI = ERC1155MixedFungibleAbi.find(
@@ -436,7 +441,6 @@ export class TokensService {
       transferBatchEventABI !== undefined &&
       approvalForAllEventABI !== undefined
     ) {
-      const contractAddress = await this.getContractAddress();
       await Promise.all([
         this.eventstream.getOrCreateSubscription(
           this.baseUrl,
@@ -444,7 +448,7 @@ export class TokensService {
           stream.id,
           tokenCreateEvent,
           packSubscriptionName(this.instancePath, dto.poolLocator, tokenCreateEvent, dto.poolData),
-          contractAddress,
+          address,
           [tokenCreateFunctionABI],
           poolLocator.blockNumber ?? '0',
         ),
@@ -459,7 +463,7 @@ export class TokensService {
             transferSingleEvent,
             dto.poolData,
           ),
-          contractAddress,
+          address,
           transferFunctionABIs,
           poolLocator.blockNumber ?? '0',
         ),
@@ -474,7 +478,7 @@ export class TokensService {
             transferBatchEvent,
             dto.poolData,
           ),
-          contractAddress,
+          address,
           transferFunctionABIs,
           poolLocator.blockNumber ?? '0',
         ),
@@ -489,7 +493,7 @@ export class TokensService {
             approvalForAllEvent,
             dto.poolData,
           ),
-          contractAddress,
+          address,
           approvalFunctionABIs,
           // Block number is 0 because it is important to receive all approval events,
           // so existing approvals will be reflected in the newly created pool
@@ -501,10 +505,12 @@ export class TokensService {
 
   async mint(dto: TokenMint): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? (await this.getContractAddress());
     const typeId = packTokenId(poolLocator.poolId);
     if (isFungible(poolLocator.poolId)) {
       const response = await this.sendTransaction(
         dto.signer,
+        address,
         dto.requestId,
         ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
         [typeId, [dto.to], [dto.amount], encodeHex(dto.data ?? '')],
@@ -520,9 +526,10 @@ export class TokensService {
         to.push(dto.to);
       }
 
-      if (dto.uri !== undefined && (await this.isCustomUriSupported())) {
+      if (dto.uri !== undefined && (await this.isCustomUriSupported(address))) {
         const response = await this.sendTransaction(
           dto.signer,
+          address,
           dto.requestId,
           ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungibleWithURI'),
           [typeId, to, encodeHex(dto.data ?? ''), dto.uri],
@@ -531,6 +538,7 @@ export class TokensService {
       } else {
         const response = await this.sendTransaction(
           dto.signer,
+          address,
           dto.requestId,
           ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
           [typeId, to, encodeHex(dto.data ?? '')],
@@ -541,8 +549,11 @@ export class TokensService {
   }
 
   async approval(dto: TokenApproval): Promise<AsyncResponse> {
+    const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? (await this.getContractAddress());
     const response = await this.sendTransaction(
       dto.signer,
+      address,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'setApprovalForAllWithData'),
       [dto.operator, dto.approved, encodeHex(dto.data ?? '')],
@@ -552,8 +563,10 @@ export class TokensService {
 
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? (await this.getContractAddress());
     const response = await this.sendTransaction(
       dto.signer,
+      address,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
       [
@@ -569,8 +582,10 @@ export class TokensService {
 
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? (await this.getContractAddress());
     const response = await this.sendTransaction(
       dto.signer,
+      address,
       dto.requestId,
       ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
       [
@@ -586,7 +601,9 @@ export class TokensService {
 
   async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? (await this.getContractAddress());
     const response = await this.query(
+      address,
       ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
       [dto.account, packTokenId(poolLocator.poolId, dto.tokenIndex)],
     );
@@ -663,8 +680,15 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
-    const poolLocator = unpackPoolLocator(unpackedSub.poolLocator);
-    if (poolLocator.poolId !== BASE_SUBSCRIPTION_NAME && poolLocator.poolId !== unpackedId.poolId) {
+    let packedPoolLocator = unpackedSub.poolLocator;
+    const poolLocator = unpackPoolLocator(packedPoolLocator);
+    if (poolLocator.poolId === BASE_SUBSCRIPTION_NAME) {
+      packedPoolLocator = packPoolLocator(
+        event.address.toLowerCase(),
+        unpackedId.poolId,
+        event.blockNumber,
+      );
+    } else if (poolLocator.poolId !== unpackedId.poolId) {
       return undefined;
     }
 
@@ -673,15 +697,15 @@ class TokenListener implements EventListener {
       typeId: '0x' + encodeHexIDForURI(output.type_id),
     };
 
-    if (await this.service.isCustomUriSupported()) {
-      eventInfo.baseUri = await this.service.queryBaseUri();
+    if (await this.service.isCustomUriSupported(event.address)) {
+      eventInfo.baseUri = await this.service.queryBaseUri(event.address);
     }
 
     return {
       event: 'token-pool',
       data: <TokenPoolEvent>{
         standard: TOKEN_STANDARD,
-        poolLocator: packPoolLocator(unpackedId.poolId, event.blockNumber),
+        poolLocator: packedPoolLocator,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,
@@ -731,7 +755,9 @@ class TokenListener implements EventListener {
       return undefined;
     }
 
-    const uri = unpackedId.isFungible ? undefined : await this.getTokenUri(output.id);
+    const uri = unpackedId.isFungible
+      ? undefined
+      : await this.getTokenUri(event.address, output.id);
     const eventId = this.formatBlockchainEventId(event);
     const transferId =
       eventIndex === undefined ? eventId : eventId + '/' + eventIndex.toString(10).padStart(6, '0');
@@ -858,9 +884,10 @@ class TokenListener implements EventListener {
     };
   }
 
-  private async getTokenUri(id: string): Promise<string> {
+  private async getTokenUri(address: string, id: string): Promise<string> {
     try {
       const response = await this.service.query(
+        address,
         ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         [id],
       );
