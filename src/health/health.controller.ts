@@ -39,8 +39,8 @@ export class HealthController {
     return this.health.check([
       () =>
         this.http.pingCheck(
-          'ethconnect-contract',
-          this.tokensService.instanceUrl,
+          'ethereum-connector',
+          `${this.tokensService.baseUrl}/status`,
           basicAuth(this.tokensService.username, this.tokensService.password),
         ),
     ]);
