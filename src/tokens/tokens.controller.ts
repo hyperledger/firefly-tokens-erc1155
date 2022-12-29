@@ -17,6 +17,7 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
+import { BlockchainConnectorService } from './blockchain.service';
 import {
   AsyncResponse,
   TokenApproval,
@@ -32,7 +33,7 @@ import { TokensService } from './tokens.service';
 
 @Controller()
 export class TokensController {
-  constructor(private readonly service: TokensService) {}
+  constructor(private service: TokensService, private blockchain: BlockchainConnectorService) {}
 
   @Post('init')
   @HttpCode(204)
@@ -127,6 +128,6 @@ export class TokensController {
   @ApiOperation({ summary: 'Retrieve the result of an async operation' })
   @ApiResponse({ status: 200, type: EventStreamReply })
   getReceipt(@Param('id') id: string) {
-    return this.service.getReceipt(id);
+    return this.blockchain.getReceipt(id);
   }
 }

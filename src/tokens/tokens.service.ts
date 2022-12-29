@@ -14,27 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ClientRequest } from 'http';
-import { HttpService } from '@nestjs/axios';
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { lastValueFrom } from 'rxjs';
+import { Injectable, Logger } from '@nestjs/common';
 import { abi as ERC1155MixedFungibleAbi } from '../abi/ERC1155MixedFungible.json';
 import { EventStreamService } from '../event-stream/event-stream.service';
-import { EventStream, EventStreamReply } from '../event-stream/event-stream.interfaces';
+import { EventStream } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
-import { basicAuth } from '../utils';
 import {
   AsyncResponse,
-  ContractInfoResponse,
-  EthConnectAsyncResponse,
-  EthConnectReturn,
-  IAbiMethod,
   TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
@@ -55,13 +41,12 @@ import {
   unpackSubscriptionName,
 } from './tokens.util';
 import { TokenListener } from './tokens.listener';
+import { BlockchainConnectorService } from './blockchain.service';
 
 export const BASE_SUBSCRIPTION_NAME = 'base';
 
 const CUSTOM_URI_IID = '0xa1d87d57';
 
-const sendTransactionHeader = 'SendTransaction';
-const queryHeader = 'Query';
 const tokenCreateFunctionName = 'create';
 const tokenCreateEvent = 'TokenPoolCreation';
 const transferSingleEvent = 'TransferSingle';
@@ -85,36 +70,22 @@ export class TokensService {
   instancePath: string;
   instanceUrl: string;
   topic: string;
-  shortPrefix: string;
   stream: EventStream | undefined;
-  username: string;
-  password: string;
 
   constructor(
-    private http: HttpService,
     private eventstream: EventStreamService,
     private proxy: EventStreamProxyGateway,
+    private blockchain: BlockchainConnectorService,
   ) {}
 
-  configure(
-    baseUrl: string,
-    instancePath: string,
-    topic: string,
-    shortPrefix: string,
-    username: string,
-    password: string,
-    contractAddress: string,
-  ) {
+  configure(baseUrl: string, instancePath: string, topic: string, contractAddress: string) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
     this.instanceUrl = new URL(this.instancePath, this.baseUrl).href;
     this.topic = topic;
-    this.shortPrefix = shortPrefix;
-    this.username = username;
-    this.password = password;
     this.contractAddress = contractAddress.toLowerCase();
     this.proxy.addConnectionListener(this);
-    this.proxy.addEventListener(new TokenListener(this));
+    this.proxy.addEventListener(new TokenListener(this, this.blockchain));
   }
 
   async onConnect() {
@@ -153,24 +124,17 @@ export class TokensService {
       this.logger.debug(
         `CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`,
       );
-      const response = await this.wrapError(
-        lastValueFrom(
-          this.http.get<ContractInfoResponse>(this.instanceUrl, {
-            ...basicAuth(this.username, this.password),
-          }),
-        ),
-      );
-      this.contractAddress = '0x' + response.data.address.toLowerCase();
+      const data = await this.blockchain.getContractInfo(this.instanceUrl);
+      this.contractAddress = '0x' + data.address.toLowerCase();
       this.logger.debug(`Contract address: ${this.contractAddress}`);
     }
-
     return this.contractAddress;
   }
 
   async isCustomUriSupported(address: string) {
     if (this.supportsCustomUri === undefined) {
       try {
-        const result = await this.query(
+        const result = await this.blockchain.query(
           address,
           ERC1155MixedFungibleAbi.find(m => m.name === 'supportsInterface'),
           [CUSTOM_URI_IID],
@@ -191,7 +155,7 @@ export class TokensService {
 
   async queryBaseUri(address: string) {
     try {
-      const result = await this.query(
+      const result = await this.blockchain.query(
         address,
         ERC1155MixedFungibleAbi.find(m => m.name === 'baseTokenUri'),
         [CUSTOM_URI_IID],
@@ -293,78 +257,6 @@ export class TokensService {
     return false;
   }
 
-  private requestOptions(): AxiosRequestConfig {
-    return basicAuth(this.username, this.password);
-  }
-
-  private async wrapError<T>(response: Promise<AxiosResponse<T>>) {
-    return response.catch(err => {
-      if (axios.isAxiosError(err)) {
-        const request: ClientRequest | undefined = err.request;
-        const response: AxiosResponse | undefined = err.response;
-        const errorMessage = response?.data?.error ?? err.message;
-        this.logger.warn(
-          `${request?.path} <-- HTTP ${response?.status} ${response?.statusText}: ${errorMessage}`,
-        );
-        throw new InternalServerErrorException(errorMessage);
-      }
-      throw err;
-    });
-  }
-
-  async query(to: string, method?: IAbiMethod, params?: any[]) {
-    const response = await this.wrapError(
-      lastValueFrom(
-        this.http.post<EthConnectReturn>(
-          this.baseUrl,
-          { headers: { type: queryHeader }, to, method, params },
-          this.requestOptions(),
-        ),
-      ),
-    );
-    return response.data;
-  }
-
-  async sendTransaction(
-    from: string,
-    to: string,
-    id?: string,
-    method?: IAbiMethod,
-    params?: any[],
-  ) {
-    const response = await this.wrapError(
-      lastValueFrom(
-        this.http.post<EthConnectAsyncResponse>(
-          this.baseUrl,
-          {
-            headers: { id, type: sendTransactionHeader },
-            from,
-            to,
-            method,
-            params,
-          },
-          this.requestOptions(),
-        ),
-      ),
-    );
-    return response.data;
-  }
-
-  async getReceipt(id: string): Promise<EventStreamReply> {
-    const response = await this.wrapError(
-      lastValueFrom(
-        this.http.get<EventStreamReply>(new URL(`/reply/${id}`, this.baseUrl).href, {
-          validateStatus: status => status < 300 || status === 404,
-          ...basicAuth(this.username, this.password),
-        }),
-      ),
-    );
-    if (response.status === 404) {
-      throw new NotFoundException();
-    }
-    return response.data;
-  }
-
   async createPool(dto: TokenPool): Promise<AsyncResponse> {
     if (dto.config?.address !== undefined && dto.config.address !== '') {
       await this.createPoolSubscription(dto.config.address, dto.config.blockNumber);
@@ -375,7 +267,7 @@ export class TokensService {
 
   async createWithAddress(address: string, dto: TokenPool) {
     this.logger.log(`Create token pool from contract: '${address}'`);
-    const response = await this.sendTransaction(
+    const response = await this.blockchain.sendTransaction(
       dto.signer,
       address,
       dto.requestId,
@@ -486,7 +378,7 @@ export class TokensService {
     const address = poolLocator.address ?? (await this.getContractAddress());
     const typeId = packTokenId(poolLocator.poolId);
     if (isFungible(poolLocator.poolId)) {
-      const response = await this.sendTransaction(
+      const response = await this.blockchain.sendTransaction(
         dto.signer,
         address,
         dto.requestId,
@@ -505,7 +397,7 @@ export class TokensService {
       }
 
       if (dto.uri !== undefined && (await this.isCustomUriSupported(address))) {
-        const response = await this.sendTransaction(
+        const response = await this.blockchain.sendTransaction(
           dto.signer,
           address,
           dto.requestId,
@@ -514,7 +406,7 @@ export class TokensService {
         );
         return { id: response.id };
       } else {
-        const response = await this.sendTransaction(
+        const response = await this.blockchain.sendTransaction(
           dto.signer,
           address,
           dto.requestId,
@@ -529,7 +421,7 @@ export class TokensService {
   async approval(dto: TokenApproval): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const response = await this.sendTransaction(
+    const response = await this.blockchain.sendTransaction(
       dto.signer,
       address,
       dto.requestId,
@@ -542,7 +434,7 @@ export class TokensService {
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const response = await this.sendTransaction(
+    const response = await this.blockchain.sendTransaction(
       dto.signer,
       address,
       dto.requestId,
@@ -561,7 +453,7 @@ export class TokensService {
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const response = await this.sendTransaction(
+    const response = await this.blockchain.sendTransaction(
       dto.signer,
       address,
       dto.requestId,
@@ -580,7 +472,7 @@ export class TokensService {
   async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const response = await this.query(
+    const response = await this.blockchain.query(
       address,
       ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
       [dto.account, packTokenId(poolLocator.poolId, dto.tokenIndex)],

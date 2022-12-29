@@ -16,7 +16,7 @@
 
 import { Controller, Get } from '@nestjs/common';
 import { HealthCheckService, HealthCheck, HttpHealthIndicator } from '@nestjs/terminus';
-import { TokensService } from '../tokens/tokens.service';
+import { BlockchainConnectorService } from '../tokens/blockchain.service';
 import { basicAuth } from '../utils';
 
 @Controller('health')
@@ -24,7 +24,7 @@ export class HealthController {
   constructor(
     private health: HealthCheckService,
     private http: HttpHealthIndicator,
-    private readonly tokensService: TokensService,
+    private blockchain: BlockchainConnectorService,
   ) {}
 
   @Get('/liveness')
@@ -39,9 +39,9 @@ export class HealthController {
     return this.health.check([
       () =>
         this.http.pingCheck(
-          'ethconnect-contract',
-          this.tokensService.instanceUrl,
-          basicAuth(this.tokensService.username, this.tokensService.password),
+          'ethconnect',
+          this.blockchain.baseUrl,
+          basicAuth(this.blockchain.username, this.blockchain.password),
         ),
     ]);
   }

@@ -41,6 +41,7 @@ import {
   unpackTokenId,
 } from './tokens.util';
 import { BASE_SUBSCRIPTION_NAME, TokensService } from './tokens.service';
+import { BlockchainConnectorService } from './blockchain.service';
 
 const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -54,7 +55,7 @@ const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
 export class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  constructor(private readonly service: TokensService) {}
+  constructor(private service: TokensService, private blockchain: BlockchainConnectorService) {}
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (this.trimEventSignature(event.signature)) {
@@ -326,7 +327,7 @@ export class TokenListener implements EventListener {
 
   private async getTokenUri(address: string, id: string): Promise<string> {
     try {
-      const response = await this.service.query(
+      const response = await this.blockchain.query(
         address,
         ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         [id],
