@@ -131,36 +131,6 @@ export class TokenPool {
   config?: TokenPoolConfig;
 }
 
-export class TokenApproval {
-  @ApiProperty()
-  @IsNotEmpty()
-  poolLocator: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  signer: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  operator: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  approved: boolean;
-
-  @ApiProperty({ description: requestIdDescription })
-  @IsOptional()
-  requestId?: string;
-
-  @ApiProperty()
-  @IsOptional()
-  data?: string;
-
-  @ApiProperty({ description: approvalConfigDescription })
-  @IsOptional()
-  config?: any;
-}
-
 export class BlockchainInfo {
   @ApiProperty()
   @IsNotEmpty()
@@ -242,6 +212,12 @@ export class TokenBalance {
   balance: string;
 }
 
+export class TokenInterface {
+  @ApiProperty({ isArray: true })
+  @IsOptional()
+  abi?: IAbiMethod[];
+}
+
 export class TokenTransfer {
   @ApiProperty()
   @IsNotEmpty()
@@ -278,6 +254,10 @@ export class TokenTransfer {
   @ApiProperty({ description: transferConfigDescription })
   @IsOptional()
   config?: any;
+
+  @ApiProperty()
+  @IsOptional()
+  interface?: TokenInterface;
 }
 
 export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
@@ -286,6 +266,40 @@ export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
   uri?: string;
 }
 export class TokenBurn extends OmitType(TokenTransfer, ['to']) {}
+
+export class TokenApproval {
+  @ApiProperty()
+  @IsNotEmpty()
+  poolLocator: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  signer: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  operator: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  approved: boolean;
+
+  @ApiProperty({ description: requestIdDescription })
+  @IsOptional()
+  requestId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  data?: string;
+
+  @ApiProperty({ description: approvalConfigDescription })
+  @IsOptional()
+  config?: any;
+
+  @ApiProperty()
+  @IsOptional()
+  interface?: TokenInterface;
+}
 
 // Websocket notifications
 

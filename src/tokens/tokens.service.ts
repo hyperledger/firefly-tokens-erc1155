@@ -231,10 +231,8 @@ export class TokensService {
     const stream = await this.getStream();
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-
     const tokenCreateEvent = this.mapper.getCreateEvent();
     const tokenCreateMethod = this.mapper.getCreateMethod();
-
     const abi = this.mapper.getAbi();
     const possibleMethods = this.mapper.allInvokeMethods(abi);
 
@@ -316,7 +314,7 @@ export class TokensService {
   async mint(dto: TokenMint): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = await this.getAbiForMint(address, dto);
+    const abi = dto.interface?.abi || (await this.getAbiForMint(address, dto));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'mint', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
@@ -331,7 +329,7 @@ export class TokensService {
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = this.mapper.getAbi();
+    const abi = dto.interface?.abi || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'transfer', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
@@ -346,7 +344,7 @@ export class TokensService {
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = this.mapper.getAbi();
+    const abi = dto.interface?.abi || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'burn', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
@@ -362,7 +360,7 @@ export class TokensService {
   async approval(dto: TokenApproval): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = this.mapper.getAbi();
+    const abi = dto.interface?.abi || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approve', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
