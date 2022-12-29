@@ -21,6 +21,7 @@ import { EventStreamModule } from '../event-stream/event-stream.module';
 import { TokensController } from './tokens.controller';
 import { TokensService } from './tokens.service';
 import { BlockchainConnectorService } from './blockchain.service';
+import { AbiMapperService } from './abimapper.service';
 @Module({
   imports: [
     HttpModule.register({
@@ -30,7 +31,7 @@ import { BlockchainConnectorService } from './blockchain.service';
     EventStreamProxyModule,
   ],
   controllers: [TokensController],
-  providers: [TokensService, BlockchainConnectorService],
+  providers: [TokensService, BlockchainConnectorService, AbiMapperService],
   exports: [TokensService, BlockchainConnectorService],
 })
 export class TokensModule {}

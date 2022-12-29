@@ -250,7 +250,6 @@ export class EventStreamService {
     instancePath: string,
     eventABI: IAbiMethod,
     streamId: string,
-    event: string,
     name: string,
     address: string,
     methods: IAbiMethod[],
@@ -272,7 +271,7 @@ export class EventStreamService {
         },
       ),
     );
-    this.logger.log(`Created subscription ${event}: ${response.data.id}`);
+    this.logger.log(`Created subscription ${name}: ${response.data.id}`);
     return response.data;
   }
 
@@ -280,7 +279,6 @@ export class EventStreamService {
     instancePath: string,
     eventABI: IAbiMethod,
     streamId: string,
-    event: string,
     name: string,
     contractAddress: string,
     possibleABIs: IAbiMethod[],
@@ -289,14 +287,13 @@ export class EventStreamService {
     const existingSubscriptions = await this.getSubscriptions();
     const sub = existingSubscriptions.find(s => s.name === name && s.stream === streamId);
     if (sub) {
-      this.logger.log(`Existing subscription for ${event}: ${sub.id}`);
+      this.logger.log(`Existing subscription for ${name}: ${sub.id}`);
       return sub;
     }
     return this.createSubscription(
       instancePath,
       eventABI,
       streamId,
-      event,
       name,
       contractAddress,
       possibleABIs,

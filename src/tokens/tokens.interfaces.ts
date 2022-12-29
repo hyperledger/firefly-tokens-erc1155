@@ -310,10 +310,6 @@ export class TokenPoolEventInfo {
 
   @ApiProperty()
   typeId: string;
-
-  @ApiProperty()
-  @IsOptional()
-  baseUri?: string;
 }
 
 export class TokenPoolEvent extends tokenEventBase {
@@ -403,3 +399,11 @@ export interface EthConnectMsgRequest {
   method: IAbiMethod;
   params: any[];
 }
+
+export interface MethodSignature {
+  name: string;
+  inputs: { type: string }[];
+  map: (poolLocator: PoolLocator, dto: any) => any[] | undefined;
+}
+
+export type TokenOperation = 'approve' | 'burn' | 'mint' | 'transfer';

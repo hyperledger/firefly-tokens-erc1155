@@ -15,7 +15,6 @@
 // limitations under the License.
 
 import { Logger } from '@nestjs/common';
-import { abi as ERC1155MixedFungibleAbi } from '../abi/ERC1155MixedFungible.json';
 import { Event } from '../event-stream/event-stream.interfaces';
 import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
@@ -40,8 +39,9 @@ import {
   unpackSubscriptionName,
   unpackTokenId,
 } from './tokens.util';
-import { BASE_SUBSCRIPTION_NAME, TokensService } from './tokens.service';
+import { BASE_SUBSCRIPTION_NAME } from './tokens.service';
 import { BlockchainConnectorService } from './blockchain.service';
+import { URI } from './erc1155';
 
 const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -55,13 +55,13 @@ const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
 export class TokenListener implements EventListener {
   private readonly logger = new Logger(TokenListener.name);
 
-  constructor(private service: TokensService, private blockchain: BlockchainConnectorService) {}
+  constructor(private blockchain: BlockchainConnectorService) {}
 
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (this.trimEventSignature(event.signature)) {
       case tokenCreateEventSignatureOld:
       case tokenCreateEventSignature:
-        process(await this.transformTokenPoolCreationEvent(subName, event));
+        process(this.transformTokenPoolCreationEvent(subName, event));
         break;
       case transferSingleEventSignature:
         process(await this.transformTransferSingleEvent(subName, event));
@@ -107,10 +107,10 @@ export class TokenListener implements EventListener {
     return signature;
   }
 
-  private async transformTokenPoolCreationEvent(
+  private transformTokenPoolCreationEvent(
     subName: string,
     event: TokenPoolCreationEvent,
-  ): Promise<WebSocketMessage | undefined> {
+  ): WebSocketMessage | undefined {
     const { data: output } = event;
     const unpackedId = unpackTokenId(output.type_id);
     const unpackedSub = unpackSubscriptionName(subName);
@@ -137,10 +137,6 @@ export class TokenListener implements EventListener {
       address: event.address,
       typeId: '0x' + encodeHexIDForURI(output.type_id),
     };
-
-    if (await this.service.isCustomUriSupported(event.address)) {
-      eventInfo.baseUri = await this.service.queryBaseUri(event.address);
-    }
 
     return {
       event: 'token-pool',
@@ -327,11 +323,7 @@ export class TokenListener implements EventListener {
 
   private async getTokenUri(address: string, id: string): Promise<string> {
     try {
-      const response = await this.blockchain.query(
-        address,
-        ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
-        [id],
-      );
+      const response = await this.blockchain.query(address, URI, [id]);
       const output = response.output as string;
       if (output.includes('{id}') === true) {
         return output.replace('{id}', encodeHexIDForURI(id));
