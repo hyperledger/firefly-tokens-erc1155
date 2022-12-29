@@ -361,7 +361,7 @@ export class TokensService {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
     const abi = dto.interface?.abi || this.mapper.getAbi();
-    const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approve', dto);
+    const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approval', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
       address,

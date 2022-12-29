@@ -420,4 +420,4 @@ export interface MethodSignature {
   map: (poolLocator: PoolLocator, dto: any) => any[] | undefined;
 }
 
-export type TokenOperation = 'approve' | 'burn' | 'mint' | 'transfer';
+export type TokenOperation = 'approval' | 'burn' | 'mint' | 'transfer';

@@ -47,7 +47,7 @@ export class AbiMapperService {
 
   allInvokeMethods(abi: IAbiMethod[]) {
     const allSignatures = [
-      ...DynamicMethods.approve,
+      ...DynamicMethods.approval,
       ...DynamicMethods.burn,
       ...DynamicMethods.mint,
       ...DynamicMethods.transfer,
