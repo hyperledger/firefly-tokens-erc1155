@@ -220,6 +220,14 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
         ];
       },
     },
+    {
+      // Source: OpenZeppelin extension
+      name: 'burn',
+      inputs: [{ type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+      map: (poolLocator: PoolLocator, dto: TokenBurn) => {
+        return [dto.from, packTokenId(poolLocator.poolId, dto.tokenIndex), dto.amount];
+      },
+    },
   ],
 
   mint: [
