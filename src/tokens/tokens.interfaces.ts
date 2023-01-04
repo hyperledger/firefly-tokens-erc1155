@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { IsDefined, IsNotEmpty, IsOptional } from 'class-validator';
+import { Equals, IsDefined, IsNotEmpty, IsOptional } from 'class-validator';
 import { Event } from '../event-stream/event-stream.interfaces';
 
 // Internal types
@@ -87,6 +87,11 @@ export class AsyncResponse {
 export enum TokenType {
   FUNGIBLE = 'fungible',
   NONFUNGIBLE = 'nonfungible',
+}
+
+export enum InterfaceFormat {
+  ABI = 'abi',
+  FFI = 'ffi',
 }
 
 const requestIdDescription =
@@ -213,9 +218,37 @@ export class TokenBalance {
 }
 
 export class TokenInterface {
+  @ApiProperty({ enum: InterfaceFormat })
+  @Equals(InterfaceFormat.ABI)
+  format: InterfaceFormat;
+
   @ApiProperty({ isArray: true })
-  @IsOptional()
-  abi?: IAbiMethod[];
+  @IsDefined()
+  abi: IAbiMethod[];
+}
+
+export class CheckInterfaceRequest extends TokenInterface {
+  @ApiProperty()
+  @IsNotEmpty()
+  poolLocator: string;
+}
+
+type TokenAbi = {
+  [op in TokenOperation]: TokenInterface;
+};
+
+export class CheckInterfaceResponse implements TokenAbi {
+  @ApiProperty()
+  approval: TokenInterface;
+
+  @ApiProperty()
+  burn: TokenInterface;
+
+  @ApiProperty()
+  mint: TokenInterface;
+
+  @ApiProperty()
+  transfer: TokenInterface;
 }
 
 export class TokenTransfer {

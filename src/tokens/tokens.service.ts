@@ -20,10 +20,15 @@ import { EventStream, EventStreamSubscription } from '../event-stream/event-stre
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import {
   AsyncResponse,
+  CheckInterfaceRequest,
+  CheckInterfaceResponse,
+  IAbiMethod,
+  InterfaceFormat,
   TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
+  TokenInterface,
   TokenMint,
   TokenPool,
   TokenPoolActivate,
@@ -39,7 +44,14 @@ import {
 import { TokenListener } from './tokens.listener';
 import { BlockchainConnectorService } from './blockchain.service';
 import { AbiMapperService } from './abimapper.service';
-import { AllEvents, ApprovalForAll, BalanceOf, TransferBatch, TransferSingle } from './erc1155';
+import {
+  AllEvents,
+  ApprovalForAll,
+  BalanceOf,
+  DynamicMethods,
+  TransferBatch,
+  TransferSingle,
+} from './erc1155';
 
 export const BASE_SUBSCRIPTION_NAME = 'base';
 
@@ -304,6 +316,19 @@ export class TokensService {
       ],
     );
     await Promise.all(promises);
+  }
+
+  checkInterface(dto: CheckInterfaceRequest): CheckInterfaceResponse {
+    const wrapMethods = (methods: IAbiMethod[]): TokenInterface => {
+      return { format: InterfaceFormat.ABI, abi: methods };
+    };
+
+    return {
+      approval: wrapMethods(this.mapper.getAllMethods(dto.abi, DynamicMethods.approval)),
+      burn: wrapMethods(this.mapper.getAllMethods(dto.abi, DynamicMethods.burn)),
+      mint: wrapMethods(this.mapper.getAllMethods(dto.abi, DynamicMethods.mint)),
+      transfer: wrapMethods(this.mapper.getAllMethods(dto.abi, DynamicMethods.transfer)),
+    };
   }
 
   private async getAbiForMint(address: string, dto: TokenMint) {
