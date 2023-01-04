@@ -32,6 +32,7 @@ import {
   TokenTransferEvent,
 } from './tokens/tokens.interfaces';
 import { EventStreamService } from './event-stream/event-stream.service';
+import { BlockchainConnectorService } from './tokens/blockchain.service';
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
@@ -71,24 +72,14 @@ async function bootstrap() {
   const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
   const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
-  const shortPrefix = config.get<string>('ETHCONNECT_PREFIX', 'fly');
   const autoInit = config.get<string>('AUTO_INIT', 'true');
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
   const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
 
   app.get(EventStreamService).configure(ethConnectUrl, username, password);
-  app
-    .get(TokensService)
-    .configure(
-      ethConnectUrl,
-      instancePath,
-      topic,
-      shortPrefix,
-      username,
-      password,
-      contractAddress,
-    );
+  app.get(TokensService).configure(ethConnectUrl, instancePath, topic, contractAddress);
+  app.get(BlockchainConnectorService).configure(ethConnectUrl, username, password);
 
   if (autoInit.toLowerCase() !== 'false') {
     await app.get(TokensService).init();

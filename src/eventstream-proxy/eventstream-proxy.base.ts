@@ -190,7 +190,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       return;
     }
 
-    const inflight = this.awaitingAck.find(msg => msg.id === data.id)
+    const inflight = this.awaitingAck.find(msg => msg.id === data.id);
     this.logger.log(`Received ack ${data.id} inflight=${!!inflight}`);
     if (this.socket !== undefined && inflight !== undefined) {
       this.awaitingAck = this.awaitingAck.filter(msg => msg.id !== data.id);
