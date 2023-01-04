@@ -30,6 +30,7 @@ import {
   TransferBatchEvent,
   TransferSingleEvent,
   TokenPoolEventInfo,
+  InterfaceFormat,
 } from './tokens.interfaces';
 import {
   decodeHex,
@@ -142,6 +143,7 @@ export class TokenListener implements EventListener {
       event: 'token-pool',
       data: <TokenPoolEvent>{
         standard: TOKEN_STANDARD,
+        interfaceFormat: InterfaceFormat.ABI,
         poolLocator: packedPoolLocator,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,

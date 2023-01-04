@@ -367,6 +367,9 @@ export class TokenPoolEvent extends tokenEventBase {
   standard: string;
 
   @ApiProperty()
+  interfaceFormat: InterfaceFormat;
+
+  @ApiProperty()
   @IsOptional()
   symbol?: string;
 
