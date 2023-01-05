@@ -20,10 +20,15 @@ import { EventStream, EventStreamSubscription } from '../event-stream/event-stre
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import {
   AsyncResponse,
+  CheckInterfaceRequest,
+  CheckInterfaceResponse,
+  IAbiMethod,
+  InterfaceFormat,
   TokenApproval,
   TokenBalance,
   TokenBalanceQuery,
   TokenBurn,
+  TokenInterface,
   TokenMint,
   TokenPool,
   TokenPoolActivate,
@@ -39,7 +44,14 @@ import {
 import { TokenListener } from './tokens.listener';
 import { BlockchainConnectorService } from './blockchain.service';
 import { AbiMapperService } from './abimapper.service';
-import { AllEvents, ApprovalForAll, BalanceOf, TransferBatch, TransferSingle } from './erc1155';
+import {
+  AllEvents,
+  ApprovalForAll,
+  BalanceOf,
+  DynamicMethods,
+  TransferBatch,
+  TransferSingle,
+} from './erc1155';
 
 export const BASE_SUBSCRIPTION_NAME = 'base';
 
@@ -306,6 +318,19 @@ export class TokensService {
     await Promise.all(promises);
   }
 
+  checkInterface(dto: CheckInterfaceRequest): CheckInterfaceResponse {
+    const wrapMethods = (methods: IAbiMethod[]): TokenInterface => {
+      return { format: InterfaceFormat.ABI, methods };
+    };
+
+    return {
+      approval: wrapMethods(this.mapper.getAllMethods(dto.methods, DynamicMethods.approval)),
+      burn: wrapMethods(this.mapper.getAllMethods(dto.methods, DynamicMethods.burn)),
+      mint: wrapMethods(this.mapper.getAllMethods(dto.methods, DynamicMethods.mint)),
+      transfer: wrapMethods(this.mapper.getAllMethods(dto.methods, DynamicMethods.transfer)),
+    };
+  }
+
   private async getAbiForMint(address: string, dto: TokenMint) {
     const supportsUri = dto.uri !== undefined && (await this.mapper.supportsMintWithUri(address));
     return this.mapper.getAbi(supportsUri);
@@ -314,7 +339,7 @@ export class TokensService {
   async mint(dto: TokenMint): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = dto.interface?.abi || (await this.getAbiForMint(address, dto));
+    const abi = dto.interface?.methods || (await this.getAbiForMint(address, dto));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'mint', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
@@ -329,7 +354,7 @@ export class TokensService {
   async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = dto.interface?.abi || this.mapper.getAbi();
+    const abi = dto.interface?.methods || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'transfer', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
@@ -344,7 +369,7 @@ export class TokensService {
   async burn(dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = dto.interface?.abi || this.mapper.getAbi();
+    const abi = dto.interface?.methods || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'burn', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,
@@ -360,7 +385,7 @@ export class TokensService {
   async approval(dto: TokenApproval): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = dto.interface?.abi || this.mapper.getAbi();
+    const abi = dto.interface?.methods || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approval', dto);
     const response = await this.blockchain.sendTransaction(
       dto.signer,

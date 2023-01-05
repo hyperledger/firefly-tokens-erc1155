@@ -81,6 +81,7 @@ export default (context: TestContext) => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
+            interfaceFormat: 'abi',
             poolLocator: 'F1',
             type: 'fungible',
             signer: 'bob',
@@ -150,6 +151,7 @@ export default (context: TestContext) => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
+            interfaceFormat: 'abi',
             poolLocator: 'address=0x00001&id=F1&block=1',
             type: 'fungible',
             signer: 'bob',
@@ -219,6 +221,7 @@ export default (context: TestContext) => {
           event: 'token-pool',
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
+            interfaceFormat: 'abi',
             poolLocator: 'address=0x00001&id=F1&block=1',
             type: 'fungible',
             signer: 'bob',

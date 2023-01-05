@@ -9,6 +9,9 @@ import {
   EthConnectReturn,
   TokenBalance,
   TokenBalanceQuery,
+  CheckInterfaceRequest,
+  InterfaceFormat,
+  CheckInterfaceResponse,
 } from '../../src/tokens/tokens.interfaces';
 import { TestContext, FakeObservable, BASE_URL, CONTRACT_ADDRESS } from '../app.e2e-context';
 import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
@@ -356,5 +359,41 @@ export default (context: TestContext) => {
       },
       {},
     );
+  });
+
+  it('Check interface', async () => {
+    const request: CheckInterfaceRequest = {
+      poolLocator: 'F1',
+      format: InterfaceFormat.ABI,
+      methods: ERC1155MixedFungibleAbi,
+    };
+
+    const response: CheckInterfaceResponse = {
+      approval: {
+        format: InterfaceFormat.ABI,
+        methods: [
+          ...ERC1155MixedFungibleAbi.filter(m => m.name === 'setApprovalForAllWithData'),
+          ...ERC1155MixedFungibleAbi.filter(m => m.name === 'setApprovalForAll'),
+        ],
+      },
+      burn: {
+        format: InterfaceFormat.ABI,
+        methods: ERC1155MixedFungibleAbi.filter(m => m.name === 'burn'),
+      },
+      mint: {
+        format: InterfaceFormat.ABI,
+        methods: [
+          ...ERC1155MixedFungibleAbi.filter(m => m.name === 'mintFungible'),
+          ...ERC1155MixedFungibleAbi.filter(m => m.name === 'mintNonFungibleWithURI'),
+          ...ERC1155MixedFungibleAbi.filter(m => m.name === 'mintNonFungible'),
+        ],
+      },
+      transfer: {
+        format: InterfaceFormat.ABI,
+        methods: ERC1155MixedFungibleAbi.filter(m => m.name === 'safeTransferFrom'),
+      },
+    };
+
+    await context.server.post('/checkinterface').send(request).expect(200).expect(response);
   });
 };
