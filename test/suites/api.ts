@@ -365,24 +365,24 @@ export default (context: TestContext) => {
     const request: CheckInterfaceRequest = {
       poolLocator: 'F1',
       format: InterfaceFormat.ABI,
-      abi: ERC1155MixedFungibleAbi,
+      methods: ERC1155MixedFungibleAbi,
     };
 
     const response: CheckInterfaceResponse = {
       approval: {
         format: InterfaceFormat.ABI,
-        abi: [
+        methods: [
           ...ERC1155MixedFungibleAbi.filter(m => m.name === 'setApprovalForAllWithData'),
           ...ERC1155MixedFungibleAbi.filter(m => m.name === 'setApprovalForAll'),
         ],
       },
       burn: {
         format: InterfaceFormat.ABI,
-        abi: ERC1155MixedFungibleAbi.filter(m => m.name === 'burn'),
+        methods: ERC1155MixedFungibleAbi.filter(m => m.name === 'burn'),
       },
       mint: {
         format: InterfaceFormat.ABI,
-        abi: [
+        methods: [
           ...ERC1155MixedFungibleAbi.filter(m => m.name === 'mintFungible'),
           ...ERC1155MixedFungibleAbi.filter(m => m.name === 'mintNonFungibleWithURI'),
           ...ERC1155MixedFungibleAbi.filter(m => m.name === 'mintNonFungible'),
@@ -390,7 +390,7 @@ export default (context: TestContext) => {
       },
       transfer: {
         format: InterfaceFormat.ABI,
-        abi: ERC1155MixedFungibleAbi.filter(m => m.name === 'safeTransferFrom'),
+        methods: ERC1155MixedFungibleAbi.filter(m => m.name === 'safeTransferFrom'),
       },
     };
 
