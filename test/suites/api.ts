@@ -6,9 +6,9 @@ import {
   TokenBurn,
   TokenTransfer,
   TokenApproval,
-  TokenBalanceQuery,
   EthConnectReturn,
   TokenBalance,
+  TokenBalanceQuery,
 } from '../../src/tokens/tokens.interfaces';
 import { TestContext, FakeObservable, BASE_URL, CONTRACT_ADDRESS } from '../app.e2e-context';
 import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
@@ -124,7 +124,6 @@ export default (context: TestContext) => {
       `${BASE_URL}`,
       ERC1155MixedFungibleAbi.find(m => m.name === 'TokenPoolCreation'),
       undefined,
-      'TokenPoolCreation',
       'fft:0x12345678:base:TokenPoolCreation',
       '0x12345678',
       [ERC1155MixedFungibleAbi.find(m => m.name === 'create')],

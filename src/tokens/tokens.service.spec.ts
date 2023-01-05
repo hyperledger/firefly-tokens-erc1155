@@ -18,6 +18,7 @@ import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
+import { AbiMapperService } from './abimapper.service';
 import { BlockchainConnectorService } from './blockchain.service';
 import { TokensService } from './tokens.service';
 
@@ -40,6 +41,7 @@ describe('TokensService', () => {
       providers: [
         TokensService,
         BlockchainConnectorService,
+        AbiMapperService,
         {
           provide: HttpService,
           useValue: jest.fn(),
