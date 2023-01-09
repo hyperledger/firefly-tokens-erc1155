@@ -18,6 +18,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStream, EventStreamSubscription } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
+import { Context, newContext } from '../request-context/request-context.decorator';
 import {
   AsyncResponse,
   CheckInterfaceRequest,
@@ -88,23 +89,24 @@ export class TokensService {
 
   async onConnect() {
     const wsUrl = new URL('/ws', this.baseUrl.replace('http', 'ws')).href;
-    const stream = await this.getStream();
+    const stream = await this.getStream(newContext());
     this.proxy.configure(wsUrl, stream.name);
   }
 
   /**
    * One-time initialization of event stream and base subscription.
    */
-  async init() {
-    await this.createPoolSubscription(await this.getContractAddress());
+  async init(ctx: Context) {
+    await this.createPoolSubscription(ctx, await this.getContractAddress(ctx));
   }
 
-  private async createPoolSubscription(address: string, blockNumber?: string) {
-    const stream = await this.getStream();
+  private async createPoolSubscription(ctx: Context, address: string, blockNumber?: string) {
+    const stream = await this.getStream(ctx);
     const eventABI = this.mapper.getCreateEvent();
     const methodABI = this.mapper.getCreateMethod();
     if (eventABI !== undefined && methodABI !== undefined) {
       await this.eventstream.getOrCreateSubscription(
+        ctx,
         this.baseUrl,
         eventABI,
         stream.id,
@@ -116,27 +118,27 @@ export class TokensService {
     }
   }
 
-  private async getContractAddress() {
+  private async getContractAddress(ctx: Context) {
     if (!this.contractAddress) {
       this.logger.debug(
         `CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`,
       );
-      const data = await this.blockchain.getContractInfo(this.instanceUrl);
+      const data = await this.blockchain.getContractInfo(ctx, this.instanceUrl);
       this.contractAddress = '0x' + data.address.toLowerCase();
       this.logger.debug(`Contract address: ${this.contractAddress}`);
     }
     return this.contractAddress;
   }
 
-  private async getStream() {
+  private async getStream(ctx: Context) {
     const stream = this.stream;
     if (stream !== undefined) {
       return stream;
     }
-    await this.migrationCheck();
+    await this.migrationCheck(ctx);
     const name = this.stream?.name ?? packStreamName(this.topic, this.instancePath);
     this.logger.log('Creating stream with name ' + name);
-    this.stream = await this.eventstream.createOrUpdateStream(name, name);
+    this.stream = await this.eventstream.createOrUpdateStream(ctx, name, name);
     return this.stream;
   }
 
@@ -147,7 +149,7 @@ export class TokensService {
    * Log a warning if any potential issues are flagged. User may need to delete
    * subscriptions manually and reactivate the pool directly.
    */
-  async migrationCheck() {
+  async migrationCheck(ctx: Context) {
     const name = packStreamName(this.topic, this.instancePath);
     const streams = await this.eventstream.getStreams();
     let existingStream = streams.find(s => s.name === name);
@@ -166,7 +168,7 @@ export class TokensService {
     this.stream = existingStream;
     const streamId = existingStream.id;
 
-    const allSubscriptions = await this.eventstream.getSubscriptions();
+    const allSubscriptions = await this.eventstream.getSubscriptions(ctx);
     const subscriptions = allSubscriptions.filter(s => s.stream === streamId);
     if (subscriptions.length === 0) {
       return false;
@@ -218,18 +220,19 @@ export class TokensService {
     return false;
   }
 
-  async createPool(dto: TokenPool): Promise<AsyncResponse> {
+  async createPool(ctx: Context, dto: TokenPool): Promise<AsyncResponse> {
     if (dto.config?.address !== undefined && dto.config.address !== '') {
-      await this.createPoolSubscription(dto.config.address, dto.config.blockNumber);
-      return this.createWithAddress(dto.config.address, dto);
+      await this.createPoolSubscription(ctx, dto.config.address, dto.config.blockNumber);
+      return this.createWithAddress(ctx, dto.config.address, dto);
     }
-    return this.createWithAddress(await this.getContractAddress(), dto);
+    return this.createWithAddress(ctx, await this.getContractAddress(ctx), dto);
   }
 
-  async createWithAddress(address: string, dto: TokenPool) {
+  async createWithAddress(ctx: Context, address: string, dto: TokenPool) {
     this.logger.log(`Create token pool from contract: '${address}'`);
     const { method, params } = this.mapper.getCreateMethodAndParams(dto);
     const response = await this.blockchain.sendTransaction(
+      ctx,
       dto.signer,
       address,
       dto.requestId,
@@ -239,10 +242,10 @@ export class TokensService {
     return { id: response.id };
   }
 
-  async activatePool(dto: TokenPoolActivate) {
-    const stream = await this.getStream();
+  async activatePool(ctx: Context, dto: TokenPoolActivate) {
+    const stream = await this.getStream(ctx);
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const address = poolLocator.address ?? (await this.getContractAddress());
+    const address = poolLocator.address ?? (await this.getContractAddress(ctx));
     const tokenCreateEvent = this.mapper.getCreateEvent();
     const tokenCreateMethod = this.mapper.getCreateMethod();
     const abi = this.mapper.getAbi();
@@ -252,6 +255,7 @@ export class TokensService {
     if (tokenCreateEvent?.name !== undefined && tokenCreateMethod !== undefined) {
       promises.push(
         this.eventstream.getOrCreateSubscription(
+          ctx,
           this.baseUrl,
           tokenCreateEvent,
           stream.id,
@@ -270,6 +274,7 @@ export class TokensService {
     promises.push(
       ...[
         this.eventstream.getOrCreateSubscription(
+          ctx,
           this.baseUrl,
           TransferSingle,
           stream.id,
@@ -284,6 +289,7 @@ export class TokensService {
           poolLocator.blockNumber ?? '0',
         ),
         this.eventstream.getOrCreateSubscription(
+          ctx,
           this.baseUrl,
           TransferBatch,
           stream.id,
@@ -298,6 +304,7 @@ export class TokensService {
           poolLocator.blockNumber ?? '0',
         ),
         this.eventstream.getOrCreateSubscription(
+          ctx,
           this.baseUrl,
           ApprovalForAll,
           stream.id,
@@ -331,17 +338,19 @@ export class TokensService {
     };
   }
 
-  private async getAbiForMint(address: string, dto: TokenMint) {
-    const supportsUri = dto.uri !== undefined && (await this.mapper.supportsMintWithUri(address));
+  private async getAbiForMint(ctx: Context, address: string, dto: TokenMint) {
+    const supportsUri =
+      dto.uri !== undefined && (await this.mapper.supportsMintWithUri(ctx, address));
     return this.mapper.getAbi(supportsUri);
   }
 
-  async mint(dto: TokenMint): Promise<AsyncResponse> {
+  async mint(ctx: Context, dto: TokenMint): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const address = poolLocator.address ?? (await this.getContractAddress());
-    const abi = dto.interface?.methods || (await this.getAbiForMint(address, dto));
+    const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    const abi = dto.interface?.methods || (await this.getAbiForMint(ctx, address, dto));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'mint', dto);
     const response = await this.blockchain.sendTransaction(
+      ctx,
       dto.signer,
       address,
       dto.requestId,
@@ -351,12 +360,13 @@ export class TokensService {
     return { id: response.id };
   }
 
-  async transfer(dto: TokenTransfer): Promise<AsyncResponse> {
+  async transfer(ctx: Context, dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const address = poolLocator.address ?? (await this.getContractAddress());
+    const address = poolLocator.address ?? (await this.getContractAddress(ctx));
     const abi = dto.interface?.methods || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'transfer', dto);
     const response = await this.blockchain.sendTransaction(
+      ctx,
       dto.signer,
       address,
       dto.requestId,
@@ -366,12 +376,13 @@ export class TokensService {
     return { id: response.id };
   }
 
-  async burn(dto: TokenBurn): Promise<AsyncResponse> {
+  async burn(ctx: Context, dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const address = poolLocator.address ?? (await this.getContractAddress());
+    const address = poolLocator.address ?? (await this.getContractAddress(ctx));
     const abi = dto.interface?.methods || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'burn', dto);
     const response = await this.blockchain.sendTransaction(
+      ctx,
       dto.signer,
       address,
       dto.requestId,
@@ -382,12 +393,13 @@ export class TokensService {
     return { id: response.id };
   }
 
-  async approval(dto: TokenApproval): Promise<AsyncResponse> {
+  async approval(ctx: Context, dto: TokenApproval): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const address = poolLocator.address ?? (await this.getContractAddress());
+    const address = poolLocator.address ?? (await this.getContractAddress(ctx));
     const abi = dto.interface?.methods || this.mapper.getAbi();
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approval', dto);
     const response = await this.blockchain.sendTransaction(
+      ctx,
       dto.signer,
       address,
       dto.requestId,
@@ -397,10 +409,10 @@ export class TokensService {
     return { id: response.id };
   }
 
-  async balance(dto: TokenBalanceQuery): Promise<TokenBalance> {
+  async balance(ctx: Context, dto: TokenBalanceQuery): Promise<TokenBalance> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
-    const address = poolLocator.address ?? (await this.getContractAddress());
-    const response = await this.blockchain.query(address, BalanceOf, [
+    const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    const response = await this.blockchain.query(ctx, address, BalanceOf, [
       dto.account,
       packTokenId(poolLocator.poolId, dto.tokenIndex),
     ]);

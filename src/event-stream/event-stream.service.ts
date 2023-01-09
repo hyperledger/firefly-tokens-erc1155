@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,10 +16,13 @@
 
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
+import { AxiosRequestConfig } from 'axios';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
 import { IAbiMethod } from '../tokens/tokens.interfaces';
 import { basicAuth } from '../utils';
+import { Context } from '../request-context/request-context.decorator';
+import { FFRequestIDHeader } from '../request-context/constants';
 import {
   Event,
   EventBatch,
@@ -150,6 +153,7 @@ export class EventStreamService {
   private baseUrl: string;
   private username: string;
   private password: string;
+  private passthroughHeaders: string[];
 
   constructor(private http: HttpService) {}
 
@@ -157,6 +161,20 @@ export class EventStreamService {
     this.baseUrl = baseUrl;
     this.username = username;
     this.password = password;
+  }
+
+  private requestOptions(ctx: Context): AxiosRequestConfig {
+    const headers = {};
+    for (const key of this.passthroughHeaders) {
+      const value = ctx.headers[key];
+      if (value !== undefined) {
+        headers[key] = value;
+      }
+    }
+    headers[FFRequestIDHeader] = ctx.requestId;
+    const config = basicAuth(this.username, this.password);
+    config.headers = headers;
+    return config;
   }
 
   async getStreams(): Promise<EventStream[]> {
@@ -168,7 +186,7 @@ export class EventStreamService {
     return response.data;
   }
 
-  async createOrUpdateStream(name: string, topic: string): Promise<EventStream> {
+  async createOrUpdateStream(ctx: Context, name: string, topic: string): Promise<EventStream> {
     const streamDetails = {
       name,
       errorHandling: 'block',
@@ -191,7 +209,7 @@ export class EventStreamService {
             ...streamDetails,
           },
           {
-            ...basicAuth(this.username, this.password),
+            ...this.requestOptions(ctx),
           },
         ),
       );
@@ -205,7 +223,7 @@ export class EventStreamService {
           ...streamDetails,
         },
         {
-          ...basicAuth(this.username, this.password),
+          ...this.requestOptions(ctx),
         },
       ),
     );
@@ -213,30 +231,30 @@ export class EventStreamService {
     return newStreamRes.data;
   }
 
-  async deleteStream(id: string) {
+  async deleteStream(ctx: Context, id: string) {
     await lastValueFrom(
       this.http.delete(new URL(`/eventstreams/${id}`, this.baseUrl).href, {
-        ...basicAuth(this.username, this.password),
+        ...this.requestOptions(ctx),
       }),
     );
   }
 
-  async getSubscriptions(): Promise<EventStreamSubscription[]> {
+  async getSubscriptions(ctx: Context): Promise<EventStreamSubscription[]> {
     const response = await lastValueFrom(
       this.http.get<EventStreamSubscription[]>(new URL('/subscriptions', this.baseUrl).href, {
-        ...basicAuth(this.username, this.password),
+        ...this.requestOptions(ctx),
       }),
     );
     return response.data;
   }
 
-  async getSubscription(subId: string): Promise<EventStreamSubscription | undefined> {
+  async getSubscription(ctx: Context, subId: string): Promise<EventStreamSubscription | undefined> {
     const response = await lastValueFrom(
       this.http.get<EventStreamSubscription>(
         new URL(`/subscriptions/${subId}`, this.baseUrl).href,
         {
           validateStatus: status => status < 300 || status === 404,
-          ...basicAuth(this.username, this.password),
+          ...this.requestOptions(ctx),
         },
       ),
     );
@@ -247,6 +265,7 @@ export class EventStreamService {
   }
 
   async createSubscription(
+    ctx: Context,
     instancePath: string,
     eventABI: IAbiMethod,
     streamId: string,
@@ -267,7 +286,7 @@ export class EventStreamService {
           methods,
         },
         {
-          ...basicAuth(this.username, this.password),
+          ...this.requestOptions(ctx),
         },
       ),
     );
@@ -276,6 +295,7 @@ export class EventStreamService {
   }
 
   async getOrCreateSubscription(
+    ctx: Context,
     instancePath: string,
     eventABI: IAbiMethod,
     streamId: string,
@@ -284,13 +304,14 @@ export class EventStreamService {
     possibleABIs: IAbiMethod[],
     fromBlock = '0', // subscribe from the start of the chain by default
   ): Promise<EventStreamSubscription> {
-    const existingSubscriptions = await this.getSubscriptions();
+    const existingSubscriptions = await this.getSubscriptions(ctx);
     const sub = existingSubscriptions.find(s => s.name === name && s.stream === streamId);
     if (sub) {
       this.logger.log(`Existing subscription for ${name}: ${sub.id}`);
       return sub;
     }
     return this.createSubscription(
+      ctx,
       instancePath,
       eventABI,
       streamId,

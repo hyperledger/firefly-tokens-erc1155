@@ -37,6 +37,11 @@ import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungib
 const queryHeader = 'Query';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const OPTIONS = {
+  headers: {
+    'x-fireflyrequestid': expect.any(String),
+  },
+};
 
 const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
 const tokenCreateEventSignature = 'TokenPoolCreation(address,uint256,bytes)';
@@ -452,7 +457,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -562,7 +567,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -659,7 +664,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031425'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -923,7 +928,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'uri'),
         params: ['57896044618658097711785492504343953926975274699741220483192166611388333031426'],
       },
-      {},
+      OPTIONS,
     );
   });
 

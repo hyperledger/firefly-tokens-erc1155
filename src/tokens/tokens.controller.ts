@@ -31,6 +31,7 @@ import {
   TokenTransfer,
 } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
+import { newContext } from '../request-context/request-context.decorator';
 
 @Controller()
 export class TokensController {
@@ -40,7 +41,7 @@ export class TokensController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Perform one-time initialization (if not auto-initialized)' })
   async init() {
-    await this.service.init();
+    await this.service.init(newContext());
   }
 
   @Post('createpool')
@@ -53,7 +54,7 @@ export class TokensController {
   @ApiBody({ type: TokenPool })
   @ApiResponse({ status: 202, type: AsyncResponse })
   createPool(@Body() dto: TokenPool) {
-    return this.service.createPool(dto);
+    return this.service.createPool(newContext(), dto);
   }
 
   @Post('activatepool')
@@ -64,7 +65,7 @@ export class TokensController {
   })
   @ApiBody({ type: TokenPoolActivate })
   async activatePool(@Body() dto: TokenPoolActivate) {
-    await this.service.activatePool(dto);
+    await this.service.activatePool(newContext(), dto);
   }
 
   @Post('mint')
@@ -77,7 +78,7 @@ export class TokensController {
   @ApiBody({ type: TokenMint })
   @ApiResponse({ status: 202, type: AsyncResponse })
   mint(@Body() dto: TokenMint) {
-    return this.service.mint(dto);
+    return this.service.mint(newContext(), dto);
   }
 
   @Post('checkinterface')
@@ -99,7 +100,7 @@ export class TokensController {
   @ApiBody({ type: TokenApproval })
   @ApiResponse({ status: 202, type: AsyncResponse })
   approve(@Body() dto: TokenApproval) {
-    return this.service.approval(dto);
+    return this.service.approval(newContext(), dto);
   }
 
   @Post('burn')
@@ -112,7 +113,7 @@ export class TokensController {
   @ApiBody({ type: TokenBurn })
   @ApiResponse({ status: 202, type: AsyncResponse })
   burn(@Body() dto: TokenBurn) {
-    return this.service.burn(dto);
+    return this.service.burn(newContext(), dto);
   }
 
   @Post('transfer')
@@ -125,14 +126,14 @@ export class TokensController {
   @ApiBody({ type: TokenTransfer })
   @ApiResponse({ status: 202, type: AsyncResponse })
   transfer(@Body() dto: TokenTransfer) {
-    return this.service.transfer(dto);
+    return this.service.transfer(newContext(), dto);
   }
 
   @Get('balance')
   @ApiOperation({ summary: 'Retrieve a token balance' })
   @ApiResponse({ status: 200, type: TokenBalance })
   balance(@Query() query: TokenBalanceQuery) {
-    return this.service.balance(query);
+    return this.service.balance(newContext(), query);
   }
 
   @Get('receipt/:id')

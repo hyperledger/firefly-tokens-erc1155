@@ -33,6 +33,8 @@ import {
 } from './tokens/tokens.interfaces';
 import { EventStreamService } from './event-stream/event-stream.service';
 import { BlockchainConnectorService } from './tokens/blockchain.service';
+import { requestIDMiddleware } from './request-context/request-id.middleware';
+import { newContext } from './request-context/request-context.decorator';
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
@@ -53,6 +55,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableShutdownHooks([ShutdownSignal.SIGTERM, ShutdownSignal.SIGQUIT, ShutdownSignal.SIGINT]);
   app.useGlobalInterceptors(new RequestLoggingInterceptor());
+  app.use(requestIDMiddleware);
 
   const apiConfig = getApiConfig();
   const api = SwaggerModule.createDocument(app, apiConfig, {
@@ -76,13 +79,21 @@ async function bootstrap() {
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
   const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
+  const passthroughHeaderString = config.get<string>('PASSTHROUGH_HEADERS', '');
+
+  const passthroughHeaders: string[] = [];
+  for (const h of passthroughHeaderString.split(',')) {
+    passthroughHeaders.push(h.toLowerCase());
+  }
 
   app.get(EventStreamService).configure(ethConnectUrl, username, password);
   app.get(TokensService).configure(ethConnectUrl, instancePath, topic, contractAddress);
-  app.get(BlockchainConnectorService).configure(ethConnectUrl, username, password);
+  app
+    .get(BlockchainConnectorService)
+    .configure(ethConnectUrl, username, password, passthroughHeaders);
 
   if (autoInit.toLowerCase() !== 'false') {
-    await app.get(TokensService).init();
+    await app.get(TokensService).init(newContext());
   }
 
   const port = config.get<number>('PORT', 3000);
