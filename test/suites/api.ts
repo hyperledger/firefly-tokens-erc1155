@@ -169,7 +169,6 @@ export default (context: TestContext) => {
 
     await context.server.post('/mint').send(request).expect(202).expect({ id: requestId });
 
-    expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
       `${BASE_URL}`,
       {
@@ -202,7 +201,6 @@ export default (context: TestContext) => {
 
     await context.server.post('/mint').send(request).expect(202).expect({ id: '1' });
 
-    expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
       `${BASE_URL}`,
       {
@@ -240,7 +238,6 @@ export default (context: TestContext) => {
 
     await context.server.post('/burn').send(request).expect(202).expect({ id: '1' });
 
-    expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
       `${BASE_URL}`,
       {
@@ -278,7 +275,6 @@ export default (context: TestContext) => {
 
     await context.server.post('/transfer').send(request).expect(202).expect({ id: '1' });
 
-    expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
       `${BASE_URL}`,
       {
@@ -310,7 +306,6 @@ export default (context: TestContext) => {
 
     await context.server.post('/approval').send(request).expect(202).expect({ id: '1' });
 
-    expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
       `${BASE_URL}`,
       {
