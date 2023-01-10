@@ -1,63 +1,100 @@
 # FireFly Tokens Microservice for ERC1155
 
 This project provides a thin shim between [FireFly](https://github.com/hyperledger/firefly)
-and an ERC1155 contract exposed via [ethconnect](https://github.com/hyperledger/firefly-ethconnect).
+and an ERC1155 contract exposed via [ethconnect](https://github.com/hyperledger/firefly-ethconnect)
+or [evmconnect](https://github.com/hyperledger/firefly-evmconnect).
 
 Based on [Node.js](http://nodejs.org) and [Nest](http://nestjs.com).
 
-This service is entirely stateless - it maps incoming REST operations directly to ethconnect
-calls, and maps ethconnect events to outgoing websocket events.
+This service is entirely stateless - it maps incoming REST operations directly to blockchain
+calls, and maps blockchain events to outgoing websocket events.
 
-This repository also includes sample [Solidity contracts](samples/solidity/) that conform to the ABIs
-expected by this connector. These contracts may be used to get up and running with simple token
-support, and may provide a starting point for developing production contracts that can be used
-with this connector.
+## Smart Contracts
 
-## POST APIs
+This connector is designed to interact with ERC1155 smart contracts on an Ethereum
+blockchain which conform to a specific pattern. The repository includes a sample
+[Solidity contract](samples/solidity/) that may be used to get up and running with
+simple token support, and may provide a starting point for developing
+production contracts that can be used with this connector.
 
-The following POST APIs are exposed under `/api/v1`:
+To be usable by this connector, an ERC1155 contract should do all of the following:
+1. Conform to [IERC1155MixedFungible](samples/solidity/contracts/IERC1155MixedFungible.sol).
+2. Group tokens into clear fungible and non-fungible pools by partitioning the token ID space via the split bit implementation detailed in the comments in [ERC1155MixedFungible](samples/solidity/contracts/ERC1155MixedFungible.sol).
 
-* `POST /createpool` - Create a new token pool (inputs: type, data)
-* `POST /activatepool` - Activate a token pool to begin receiving transfers (inputs: poolLocator, poolData)
-* `POST /mint` - Mint new tokens (inputs: poolLocator, to, amount, data)
-* `POST /burn` - Burn tokens (inputs: poolLocator, tokenIndex, from, amount, data)
-* `POST /transfer` - Transfer tokens (inputs: poolLocator, tokenIndex, from, to, amount, data)
+This connector may also be used as a starting point to build a custom connector
+that interacts with ERC1155 contracts conforming to some other pattern.
 
-All requests may be optionally accompanied by a `requestId`, which must be unique for every
-request and will be returned in the "receipt" websocket event.
+### FireFly Interface Parsing
 
-All APIs are async and return 202 immediately with a response of the form `{id: string}`.
-If no `requestId` was provided, this will be a randomly assigned ID. Clients should
-subscribe to the websocket (see below) in order to receive feedback when the async
-operation completes.
+The most flexible and robust token functionality is achieved by teaching FireFly about your token
+contract, then allowing it to teach the token connector. This is optional in the sense that there
+are additional methods used by the token connector to guess at the contract ABI (detailed later),
+but is the preferred method for most use cases.
 
-## Websocket events
+To leverage this capability in a running FireFly environment, you must:
+1. [Upload the token contract ABI to FireFly](https://hyperledger.github.io/firefly/tutorials/custom_contracts/ethereum.html)
+as a contract interface.
+2. Include the `interface` parameter when [creating the pool on FireFly](https://hyperledger.github.io/firefly/tutorials/tokens).
 
-Websocket notifications can be received by connecting to `/api/ws`.
-All events have the form `{event: string, id: string, data: any}`.
+This will cause FireFly to parse the interface and provide ABI details
+to this connector, so it can determine the best methods from the ABI to be used for each operation.
+When this procedure is followed, the connector can find and call any variant of mint/burn/transfer/approval
+that is listed in the source code for [erc1155.ts](src/tokens/erc1155.ts).
+Due to strong assumptions in the source code, these are mostly the signatures from
+[IERC1155MixedFungible](samples/solidity/contracts/IERC1155MixedFungible.sol), with a few other
+variants for some methods from the [OpenZeppelin Wizard](https://wizard.openzeppelin.com).
 
-When any POST operation completes, it will trigger a websocket event of the form:
-`{event: "receipt", data: {id: string, success: bool, message?: string}}`.
-This event is sent to all connected websocket clients and is informative only (does
-not require any acknowledgment).
+### Solidity Interface Support
 
-Successful POST operations will also result in a detailed event corresponding to the type of
-transaction that was performed. The events and corresponding data items are:
+In the absence of being provided with ABI details, the token connector will attempt to guess the contract
+ABI in use. It does this by using ERC165 `supportsInterface()` to query the contract's support for
+`IERC1155MixedFungible`, as defined in this repository. If the query succeeds, the connector will leverage
+the methods on that interface to perform token operations. Therefore it is possible to use these
+contracts without the extra step of teaching FireFly about the contract interface first.
 
-* `token-pool` - Token pool created (outputs: poolLocator, signer, type, data)
-* `token-mint` - Tokens minted (outputs: id, poolLocator, tokenIndex, uri, signer, to, amount, data)
-* `token-burn` - Tokens burned (outputs: id, poolLocator, tokenIndex, uri, signer, from, amount, data)
-* `token-transfer` - Tokens transferred (outputs: id, poolLocator, tokenIndex, uri, signer, from, to, amount, data)
-* `token-approval` - Tokens approved (outputs: id, subject, poolLocator, signer, operator, approved, data)
+## API Extensions
 
-If multiple websocket clients are connected, only one will receive these events.
-Each one of these _must_ be acknowledged by replying on the websocket with `{event: "ack", data: {id}}`.
+The APIs of this connector conform to the FireFly fftokens standard, and are designed to be called by
+FireFly. They should generally not be called directly by anything other than FireFly.
 
-## GET APIs
+Below are some of the specific considerations and extra requirements enforced by this connector on
+top of the fftokens standard.
 
-The following GET APIs are exposed under `/api/v1`:
+### `/createpool`
 
-* `GET /balance` - Get token balance (inputs: poolLocator, tokenIndex, account)
+If `config.address` is specified, the connector will invoke the `create()` method of the ERC1155 token
+contract at the specified address.
+
+If `config.address` is not specified, and `CONTRACT_ADDRESS` is set in the connector's
+environment, the `create()` method of that contract will be invoked.
+
+Any `name` and `symbol` provided from FireFly are ignored by this connector.
+
+### `/mint`
+
+For fungible token pools, `tokenIndex` and `uri` will be ignored.
+
+For non-fungible token pools, `tokenIndex` will be ignored, as an index will be auto-generated.
+`amount` may be any integer that can be represented by a JavaScript `number`, and will cause that
+amount of unique tokens to be minted.
+
+### `/burn`
+
+For non-fungible token pools, `tokenIndex` is required, and `amount` must be 1.
+
+### `/transfer`
+
+For non-fungible token pools, `tokenIndex` is required, and `amount` must be 1.
+
+### `/approval`
+
+All approvals are global and will apply to all tokens across _all_ pools on a particular ERC1155 contract.
+
+## Extra APIs
+
+The following APIs are not part of the fftokens standard, but are exposed under `/api/v1`:
+
+* `GET /balance` - Get token balance
 * `GET /receipt/:id` - Get receipt for a previous request
 
 ## Running the service
