@@ -39,7 +39,7 @@ const queryHeader = 'Query';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const OPTIONS = {
   headers: {
-    'x-fireflyrequestid': expect.any(String),
+    'x-firefly-request-id': expect.any(String),
   },
 };
 

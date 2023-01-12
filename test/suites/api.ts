@@ -24,7 +24,7 @@ const requestId = 'default:6f2f0aaf-be21-4977-b34a-8853b602d69d';
 const IDENTITY = '0x1';
 const OPTIONS = {
   headers: {
-    'x-fireflyrequestid': expect.any(String),
+    'x-firefly-request-id': expect.any(String),
   },
 };
 
