@@ -246,9 +246,9 @@ export class TokensService {
     const stream = await this.getStream(ctx);
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    const abi = await this.mapper.getAbi(ctx, address);
     const tokenCreateEvent = this.mapper.getCreateEvent();
     const tokenCreateMethod = this.mapper.getCreateMethod();
-    const abi = this.mapper.getAbi();
     const possibleMethods = this.mapper.allInvokeMethods(abi);
 
     const promises: Promise<EventStreamSubscription>[] = [];
@@ -338,16 +338,10 @@ export class TokensService {
     };
   }
 
-  private async getAbiForMint(ctx: Context, address: string, dto: TokenMint) {
-    const supportsUri =
-      dto.uri !== undefined && (await this.mapper.supportsMintWithUri(ctx, address));
-    return this.mapper.getAbi(supportsUri);
-  }
-
   async mint(ctx: Context, dto: TokenMint): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
-    const abi = dto.interface?.methods || (await this.getAbiForMint(ctx, address, dto));
+    const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'mint', dto);
     const response = await this.blockchain.sendTransaction(
       ctx,
@@ -363,7 +357,7 @@ export class TokensService {
   async transfer(ctx: Context, dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
-    const abi = dto.interface?.methods || this.mapper.getAbi();
+    const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'transfer', dto);
     const response = await this.blockchain.sendTransaction(
       ctx,
@@ -379,7 +373,7 @@ export class TokensService {
   async burn(ctx: Context, dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
-    const abi = dto.interface?.methods || this.mapper.getAbi();
+    const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'burn', dto);
     const response = await this.blockchain.sendTransaction(
       ctx,
@@ -389,14 +383,13 @@ export class TokensService {
       method,
       params,
     );
-
     return { id: response.id };
   }
 
   async approval(ctx: Context, dto: TokenApproval): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
-    const abi = dto.interface?.methods || this.mapper.getAbi();
+    const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approval', dto);
     const response = await this.blockchain.sendTransaction(
       ctx,

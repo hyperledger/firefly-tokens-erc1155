@@ -56,14 +56,9 @@ export class AbiMapperService {
     return this.getAllMethods(abi, allSignatures);
   }
 
-  getAbi(uriSupport = true) {
-    if (uriSupport === false) {
-      // The newer ERC1155MixedFungible schema is a strict superset of the old, with a
-      // few new methods around URIs. Assume the URI methods exist, unless
-      // uriSupport is explicitly set to false.
-      return ERC1155MixedFungibleOldAbi;
-    }
-    return ERC1155MixedFungibleAbi;
+  async getAbi(ctx: Context, address: string) {
+    const uriSupport = await this.supportsInterface(ctx, address, CUSTOM_URI_IID);
+    return uriSupport ? ERC1155MixedFungibleAbi : ERC1155MixedFungibleOldAbi;
   }
 
   private signatureMatch(method: IAbiMethod, signature: MethodSignature) {
@@ -138,17 +133,14 @@ export class AbiMapperService {
     try {
       const result = await this.blockchain.query(ctx, address, SupportsInterface, [iid]);
       support = result.output === true;
+      this.logger.log(`Querying interface '${iid}' support on contract '${address}': ${support}`);
     } catch (err) {
-      // do nothing
+      this.logger.log(
+        `Querying interface '${iid}' support on contract '${address}': failed (assuming false)`,
+      );
     }
 
     this.supportCache.set(cacheKey, support);
     return support;
-  }
-
-  async supportsMintWithUri(ctx: Context, address: string): Promise<boolean> {
-    const result = await this.supportsInterface(ctx, address, CUSTOM_URI_IID);
-    this.logger.log(`Querying URI support on contract '${address}': ${result}`);
-    return result;
   }
 }
