@@ -29,7 +29,7 @@ const OPTIONS = {
 };
 
 const CTX = {
-  headers: {},
+  headers: expect.any(Object),
   requestId: expect.any(String),
 };
 

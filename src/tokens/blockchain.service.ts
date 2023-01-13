@@ -131,12 +131,12 @@ export class BlockchainConnectorService {
     return response.data;
   }
 
-  async getReceipt(id: string): Promise<EventStreamReply> {
+  async getReceipt(ctx: Context, id: string): Promise<EventStreamReply> {
     const response = await this.wrapError(
       lastValueFrom(
         this.http.get<EventStreamReply>(new URL(`/reply/${id}`, this.baseUrl).href, {
           validateStatus: status => status < 300 || status === 404,
-          ...basicAuth(this.username, this.password),
+          ...this.requestOptions(ctx),
         }),
       ),
     );

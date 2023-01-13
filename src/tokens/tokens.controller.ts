@@ -31,7 +31,7 @@ import {
   TokenTransfer,
 } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
-import { newContext } from '../request-context/request-context.decorator';
+import { RequestContext } from '../request-context/request-context.decorator';
 
 @Controller()
 export class TokensController {
@@ -40,8 +40,8 @@ export class TokensController {
   @Post('init')
   @HttpCode(204)
   @ApiOperation({ summary: 'Perform one-time initialization (if not auto-initialized)' })
-  async init() {
-    await this.service.init(newContext());
+  async init(@RequestContext() ctx) {
+    await this.service.init(ctx);
   }
 
   @Post('createpool')
@@ -53,8 +53,8 @@ export class TokensController {
   })
   @ApiBody({ type: TokenPool })
   @ApiResponse({ status: 202, type: AsyncResponse })
-  createPool(@Body() dto: TokenPool) {
-    return this.service.createPool(newContext(), dto);
+  createPool(@RequestContext() ctx, @Body() dto: TokenPool) {
+    return this.service.createPool(ctx, dto);
   }
 
   @Post('activatepool')
@@ -64,8 +64,8 @@ export class TokensController {
     description: 'Will retrigger the token-pool event for this pool as a side-effect',
   })
   @ApiBody({ type: TokenPoolActivate })
-  async activatePool(@Body() dto: TokenPoolActivate) {
-    await this.service.activatePool(newContext(), dto);
+  async activatePool(@RequestContext() ctx, @Body() dto: TokenPoolActivate) {
+    await this.service.activatePool(ctx, dto);
   }
 
   @Post('mint')
@@ -77,8 +77,8 @@ export class TokensController {
   })
   @ApiBody({ type: TokenMint })
   @ApiResponse({ status: 202, type: AsyncResponse })
-  mint(@Body() dto: TokenMint) {
-    return this.service.mint(newContext(), dto);
+  mint(@RequestContext() ctx, @Body() dto: TokenMint) {
+    return this.service.mint(ctx, dto);
   }
 
   @Post('checkinterface')
@@ -99,8 +99,8 @@ export class TokensController {
   })
   @ApiBody({ type: TokenApproval })
   @ApiResponse({ status: 202, type: AsyncResponse })
-  approve(@Body() dto: TokenApproval) {
-    return this.service.approval(newContext(), dto);
+  approve(@RequestContext() ctx, @Body() dto: TokenApproval) {
+    return this.service.approval(ctx, dto);
   }
 
   @Post('burn')
@@ -112,8 +112,8 @@ export class TokensController {
   })
   @ApiBody({ type: TokenBurn })
   @ApiResponse({ status: 202, type: AsyncResponse })
-  burn(@Body() dto: TokenBurn) {
-    return this.service.burn(newContext(), dto);
+  burn(@RequestContext() ctx, @Body() dto: TokenBurn) {
+    return this.service.burn(ctx, dto);
   }
 
   @Post('transfer')
@@ -125,21 +125,21 @@ export class TokensController {
   })
   @ApiBody({ type: TokenTransfer })
   @ApiResponse({ status: 202, type: AsyncResponse })
-  transfer(@Body() dto: TokenTransfer) {
-    return this.service.transfer(newContext(), dto);
+  transfer(@RequestContext() ctx, @Body() dto: TokenTransfer) {
+    return this.service.transfer(ctx, dto);
   }
 
   @Get('balance')
   @ApiOperation({ summary: 'Retrieve a token balance' })
   @ApiResponse({ status: 200, type: TokenBalance })
-  balance(@Query() query: TokenBalanceQuery) {
-    return this.service.balance(newContext(), query);
+  balance(@RequestContext() ctx, @Query() query: TokenBalanceQuery) {
+    return this.service.balance(ctx, query);
   }
 
   @Get('receipt/:id')
   @ApiOperation({ summary: 'Retrieve the result of an async operation' })
   @ApiResponse({ status: 200, type: EventStreamReply })
-  getReceipt(@Param('id') id: string) {
-    return this.blockchain.getReceipt(id);
+  getReceipt(@RequestContext() ctx, @Param('id') id: string) {
+    return this.blockchain.getReceipt(ctx, id);
   }
 }
