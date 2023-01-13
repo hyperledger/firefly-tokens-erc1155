@@ -21,6 +21,7 @@ import { abi as ERC1155MixedFungibleOldAbi } from '../abi/ERC1155MixedFungibleOl
 import { BlockchainConnectorService } from './blockchain.service';
 import { SupportsInterface } from './erc165';
 import { DynamicMethods } from './erc1155';
+import { Context } from '../request-context/request-context.decorator';
 import {
   IAbiMethod,
   MethodSignature,
@@ -55,8 +56,8 @@ export class AbiMapperService {
     return this.getAllMethods(abi, allSignatures);
   }
 
-  async getAbi(address: string) {
-    const uriSupport = await this.supportsInterface(address, CUSTOM_URI_IID);
+  async getAbi(ctx: Context, address: string) {
+    const uriSupport = await this.supportsInterface(ctx, address, CUSTOM_URI_IID);
     return uriSupport ? ERC1155MixedFungibleAbi : ERC1155MixedFungibleOldAbi;
   }
 
@@ -121,7 +122,7 @@ export class AbiMapperService {
     return { method, params };
   }
 
-  private async supportsInterface(address: string, iid: string) {
+  private async supportsInterface(ctx: Context, address: string, iid: string) {
     const cacheKey = `${address}:${iid}`;
     const cached = this.supportCache.get(cacheKey);
     if (cached !== undefined) {
@@ -130,7 +131,7 @@ export class AbiMapperService {
 
     let support = false;
     try {
-      const result = await this.blockchain.query(address, SupportsInterface, [iid]);
+      const result = await this.blockchain.query(ctx, address, SupportsInterface, [iid]);
       support = result.output === true;
       this.logger.log(`Querying interface '${iid}' support on contract '${address}': ${support}`);
     } catch (err) {

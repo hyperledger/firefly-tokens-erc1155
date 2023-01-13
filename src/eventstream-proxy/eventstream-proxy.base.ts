@@ -19,6 +19,7 @@ import { MessageBody, SubscribeMessage } from '@nestjs/websockets';
 import { v4 as uuidv4 } from 'uuid';
 import { EventBatch, EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { EventStreamService, EventStreamSocket } from '../event-stream/event-stream.service';
+import { Context, newContext } from '../request-context/request-context.decorator';
 import {
   WebSocketEventsBase,
   WebSocketEx,
@@ -128,7 +129,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     const messages: WebSocketMessage[] = [];
     for (const event of batch.events) {
       this.logger.log(`Proxying event: ${JSON.stringify(event)}`);
-      const subName = await this.getSubscriptionName(event.subId);
+      const subName = await this.getSubscriptionName(newContext(), event.subId);
       if (subName === undefined) {
         this.logger.error(`Unknown subscription ID: ${event.subId}`);
         return;
@@ -158,14 +159,14 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
     this.currentClient?.send(JSON.stringify(message));
   }
 
-  private async getSubscriptionName(subId: string) {
+  private async getSubscriptionName(ctx: Context, subId: string) {
     const subName = this.subscriptionNames.get(subId);
     if (subName !== undefined) {
       return subName;
     }
 
     try {
-      const sub = await this.eventstream.getSubscription(subId);
+      const sub = await this.eventstream.getSubscription(ctx, subId);
       if (sub !== undefined) {
         this.subscriptionNames.set(subId, sub.name);
         return sub.name;
@@ -197,11 +198,10 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       if (
         // If nothing is left awaiting an ack - then we clearly need to ack
         this.awaitingAck.length === 0 ||
-        (
-          // Or if we have a batch number associated with this ID, then we can only ack if there
-          // are no other messages in-flight with the same batch number.
-          inflight.batchNumber !== undefined && !this.awaitingAck.find(msg => msg.batchNumber === inflight.batchNumber)
-        )
+        // Or if we have a batch number associated with this ID, then we can only ack if there
+        // are no other messages in-flight with the same batch number.
+        (inflight.batchNumber !== undefined &&
+          !this.awaitingAck.find(msg => msg.batchNumber === inflight.batchNumber))
       ) {
         this.logger.log(`In-flight batch complete (batchNumber=${inflight.batchNumber})`);
         this.socket.ack(inflight.batchNumber);

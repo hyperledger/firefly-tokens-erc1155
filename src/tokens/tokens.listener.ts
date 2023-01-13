@@ -43,6 +43,7 @@ import {
 import { BASE_SUBSCRIPTION_NAME } from './tokens.service';
 import { BlockchainConnectorService } from './blockchain.service';
 import { URI } from './erc1155';
+import { Context, newContext } from '../request-context/request-context.decorator';
 
 const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -65,13 +66,13 @@ export class TokenListener implements EventListener {
         process(this.transformTokenPoolCreationEvent(subName, event));
         break;
       case transferSingleEventSignature:
-        process(await this.transformTransferSingleEvent(subName, event));
+        process(await this.transformTransferSingleEvent(newContext(), subName, event));
         break;
       case approvalForAllEventSignature:
         process(this.transformApprovalForAllEvent(subName, event));
         break;
       case transferBatchEventSignature:
-        for (const msg of await this.transformTransferBatchEvent(subName, event)) {
+        for (const msg of await this.transformTransferBatchEvent(newContext(), subName, event)) {
           process(msg);
         }
         break;
@@ -170,6 +171,7 @@ export class TokenListener implements EventListener {
   }
 
   private async transformTransferSingleEvent(
+    ctx: Context,
     subName: string,
     event: TransferSingleEvent,
     eventIndex?: number,
@@ -196,7 +198,7 @@ export class TokenListener implements EventListener {
 
     const uri = unpackedId.isFungible
       ? undefined
-      : await this.getTokenUri(event.address, output.id);
+      : await this.getTokenUri(ctx, event.address, output.id);
     const eventId = this.formatBlockchainEventId(event);
     const transferId =
       eventIndex === undefined ? eventId : eventId + '/' + eventIndex.toString(10).padStart(6, '0');
@@ -247,12 +249,14 @@ export class TokenListener implements EventListener {
   }
 
   private async transformTransferBatchEvent(
+    ctx: Context,
     subName: string,
     event: TransferBatchEvent,
   ): Promise<WebSocketMessage[]> {
     const messages: WebSocketMessage[] = [];
     for (let i = 0; i < event.data.ids.length; i++) {
       const message = await this.transformTransferSingleEvent(
+        ctx,
         subName,
         {
           ...event,
@@ -323,9 +327,9 @@ export class TokenListener implements EventListener {
     };
   }
 
-  private async getTokenUri(address: string, id: string): Promise<string> {
+  private async getTokenUri(ctx: Context, address: string, id: string): Promise<string> {
     try {
-      const response = await this.blockchain.query(address, URI, [id]);
+      const response = await this.blockchain.query(ctx, address, URI, [id]);
       const output = response.output as string;
       if (output.includes('{id}') === true) {
         return output.replace('{id}', encodeHexIDForURI(id));

@@ -21,6 +21,7 @@ import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.
 import { AbiMapperService } from './abimapper.service';
 import { BlockchainConnectorService } from './blockchain.service';
 import { TokensService } from './tokens.service';
+import { newContext } from '../request-context/request-context.decorator';
 
 describe('TokensService', () => {
   let service: TokensService;
@@ -70,7 +71,7 @@ describe('TokensService', () => {
       service.instancePath = '0x123';
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([]);
-      expect(await service.migrationCheck()).toBe(false);
+      expect(await service.migrationCheck(newContext())).toBe(false);
     });
 
     it('should not migrate if correct base subscription exists', async () => {
@@ -80,7 +81,7 @@ describe('TokensService', () => {
       eventStream.getSubscriptions.mockReturnValueOnce([
         { name: 'fft:0x123:base:TokenPoolCreation' },
       ]);
-      expect(await service.migrationCheck()).toBe(false);
+      expect(await service.migrationCheck(newContext())).toBe(false);
     });
 
     it('should migrate if any event subscriptions are missing', async () => {
@@ -90,7 +91,7 @@ describe('TokensService', () => {
       eventStream.getSubscriptions.mockReturnValueOnce([
         { name: 'fft:0x123:p1:TokenPoolCreation' },
       ]);
-      expect(await service.migrationCheck()).toBe(true);
+      expect(await service.migrationCheck(newContext())).toBe(true);
     });
 
     it('should not migrate if all event subscriptions exist', async () => {
@@ -103,7 +104,7 @@ describe('TokensService', () => {
         { name: 'fft:0x123:p1:TransferBatch:ns1' },
         { name: 'fft:0x123:p1:ApprovalForAll:ns1' },
       ]);
-      expect(await service.migrationCheck()).toBe(false);
+      expect(await service.migrationCheck(newContext())).toBe(false);
     });
   });
 });

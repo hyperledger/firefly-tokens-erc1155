@@ -26,6 +26,8 @@ import {
 import { lastValueFrom } from 'rxjs';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { basicAuth } from '../utils';
+import { Context } from '../request-context/request-context.decorator';
+import { FFRequestIDHeader } from '../request-context/constants';
 import {
   ContractInfoResponse,
   EthConnectAsyncResponse,
@@ -43,17 +45,29 @@ export class BlockchainConnectorService {
   baseUrl: string;
   username: string;
   password: string;
+  passthroughHeaders: string[];
 
   constructor(private http: HttpService) {}
 
-  configure(baseUrl: string, username: string, password: string) {
+  configure(baseUrl: string, username: string, password: string, passthroughHeaders: string[]) {
     this.baseUrl = baseUrl;
     this.username = username;
     this.password = password;
+    this.passthroughHeaders = passthroughHeaders;
   }
 
-  private requestOptions(): AxiosRequestConfig {
-    return basicAuth(this.username, this.password);
+  private requestOptions(ctx: Context): AxiosRequestConfig {
+    const headers = {};
+    for (const key of this.passthroughHeaders) {
+      const value = ctx.headers[key];
+      if (value !== undefined) {
+        headers[key] = value;
+      }
+    }
+    headers[FFRequestIDHeader] = ctx.requestId;
+    const config = basicAuth(this.username, this.password);
+    config.headers = headers;
+    return config;
   }
 
   private async wrapError<T>(response: Promise<AxiosResponse<T>>) {
@@ -71,20 +85,20 @@ export class BlockchainConnectorService {
     });
   }
 
-  async getContractInfo(url: string) {
+  async getContractInfo(ctx: Context, url: string) {
     const response = await this.wrapError(
-      lastValueFrom(this.http.get<ContractInfoResponse>(url, this.requestOptions())),
+      lastValueFrom(this.http.get<ContractInfoResponse>(url, this.requestOptions(ctx))),
     );
     return response.data;
   }
 
-  async query(to: string, method?: IAbiMethod, params?: any[]) {
+  async query(ctx: Context, to: string, method?: IAbiMethod, params?: any[]) {
     const response = await this.wrapError(
       lastValueFrom(
         this.http.post<EthConnectReturn>(
           this.baseUrl,
           { headers: { type: queryHeader }, to, method, params },
-          this.requestOptions(),
+          this.requestOptions(ctx),
         ),
       ),
     );
@@ -92,6 +106,7 @@ export class BlockchainConnectorService {
   }
 
   async sendTransaction(
+    ctx: Context,
     from: string,
     to: string,
     id?: string,
@@ -109,19 +124,19 @@ export class BlockchainConnectorService {
             method,
             params,
           },
-          this.requestOptions(),
+          this.requestOptions(ctx),
         ),
       ),
     );
     return response.data;
   }
 
-  async getReceipt(id: string): Promise<EventStreamReply> {
+  async getReceipt(ctx: Context, id: string): Promise<EventStreamReply> {
     const response = await this.wrapError(
       lastValueFrom(
         this.http.get<EventStreamReply>(new URL(`/reply/${id}`, this.baseUrl).href, {
           validateStatus: status => status < 300 || status === 404,
-          ...basicAuth(this.username, this.password),
+          ...this.requestOptions(ctx),
         }),
       ),
     );

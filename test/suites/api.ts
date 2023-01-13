@@ -15,12 +15,23 @@ import {
 } from '../../src/tokens/tokens.interfaces';
 import { TestContext, FakeObservable, BASE_URL, CONTRACT_ADDRESS } from '../app.e2e-context';
 import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
+import { newContext } from '../../src/request-context/request-context.decorator';
 
 const queryHeader = 'Query';
 const sendTransactionHeader = 'SendTransaction';
 const requestId = 'default:6f2f0aaf-be21-4977-b34a-8853b602d69d';
 
 const IDENTITY = '0x1';
+const OPTIONS = {
+  headers: {
+    'x-firefly-request-id': expect.any(String),
+  },
+};
+
+const CTX = {
+  headers: expect.any(Object),
+  requestId: expect.any(String),
+};
 
 export default (context: TestContext) => {
   it('Create fungible pool', async () => {
@@ -52,7 +63,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
         params: [true, '0x747831'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -84,7 +95,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
         params: [false, '0x00'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -120,10 +131,11 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'create'),
         params: [false, '0x00'],
       },
-      {},
+      OPTIONS,
     );
 
     expect(context.eventstream.getOrCreateSubscription).toHaveBeenCalledWith(
+      CTX,
       `${BASE_URL}`,
       ERC1155MixedFungibleAbi.find(m => m.name === 'TokenPoolCreation'),
       undefined,
@@ -181,7 +193,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
         params: ['340282366920938463463374607431768211456', ['1'], ['2'], '0x74657374'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -216,7 +228,7 @@ export default (context: TestContext) => {
           '0x00',
         ],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -254,7 +266,7 @@ export default (context: TestContext) => {
           '0x747831',
         ],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -286,7 +298,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
         params: ['1', '2', '340282366920938463463374607431768211456', '2', '0x00'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -317,7 +329,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'setApprovalForAllWithData'),
         params: ['2', true, '0x00'],
       },
-      {},
+      OPTIONS,
     );
   });
 
@@ -352,7 +364,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
         params: ['1', '340282366920938463463374607431768211456'],
       },
-      {},
+      OPTIONS,
     );
   });
 
