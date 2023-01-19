@@ -266,7 +266,7 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
           for (let i = 0; i < amount; i++) {
             to.push(dto.to);
           }
-          return [packTokenId(poolLocator.poolId), to, encodeHex(dto.data ?? ''), dto.uri];
+          return [packTokenId(poolLocator.poolId), to, encodeHex(dto.data ?? ''), dto.uri ?? ''];
         }
         return undefined;
       },
