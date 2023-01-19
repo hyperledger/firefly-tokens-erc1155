@@ -86,7 +86,7 @@ async function bootstrap() {
     passthroughHeaders.push(h.toLowerCase());
   }
 
-  app.get(EventStreamService).configure(ethConnectUrl, username, password);
+  app.get(EventStreamService).configure(ethConnectUrl, username, password, passthroughHeaders);
   app.get(TokensService).configure(ethConnectUrl, instancePath, topic, contractAddress);
   app
     .get(BlockchainConnectorService)

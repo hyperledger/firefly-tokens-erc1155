@@ -157,10 +157,11 @@ export class EventStreamService {
 
   constructor(private http: HttpService) {}
 
-  configure(baseUrl: string, username: string, password: string) {
+  configure(baseUrl: string, username: string, password: string, passthroughHeaders: string[]) {
     this.baseUrl = baseUrl;
     this.username = username;
     this.password = password;
+    this.passthroughHeaders = passthroughHeaders;
   }
 
   private requestOptions(ctx: Context): AxiosRequestConfig {
