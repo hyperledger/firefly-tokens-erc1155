@@ -293,7 +293,7 @@ export class TokenTransfer {
   interface?: TokenInterface;
 }
 
-export class TokenMint extends OmitType(TokenTransfer, ['tokenIndex', 'from']) {
+export class TokenMint extends OmitType(TokenTransfer, ['from']) {
   @ApiProperty()
   @IsOptional()
   uri?: string;
