@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BadRequestException } from '@nestjs/common';
 import {
   MethodSignature,
   TokenOperation,
@@ -261,6 +262,7 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
           // In the case of a non-fungible token:
           // - We parse the value as a whole integer count of NFTs to mint
           // - We require the number to be small enough to express as a JS number (we're packing into an array)
+          verifyNoIndex(dto);
           const to: string[] = [];
           const amount = parseInt(dto.amount);
           for (let i = 0; i < amount; i++) {
@@ -280,6 +282,7 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
           // In the case of a non-fungible token:
           // - We parse the value as a whole integer count of NFTs to mint
           // - We require the number to be small enough to express as a JS number (we're packing into an array)
+          verifyNoIndex(dto);
           const to: string[] = [];
           const amount = parseInt(dto.amount);
           for (let i = 0; i < amount; i++) {
@@ -315,3 +318,9 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
     },
   ],
 };
+
+function verifyNoIndex(dto: TokenMint) {
+  if (dto.tokenIndex !== undefined) {
+    throw new BadRequestException('Setting token index is not supported by this contract');
+  }
+}
