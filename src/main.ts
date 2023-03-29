@@ -32,7 +32,7 @@ import {
   TokenTransferEvent,
 } from './tokens/tokens.interfaces';
 import { EventStreamService } from './event-stream/event-stream.service';
-import { BlockchainConnectorService } from './tokens/blockchain.service';
+import { BlockchainConnectorService, RetryConfiguration } from './tokens/blockchain.service';
 import { requestIDMiddleware } from './request-context/request-id.middleware';
 import { newContext } from './request-context/request-context.decorator';
 
@@ -81,6 +81,15 @@ async function bootstrap() {
   const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
   const passthroughHeaderString = config.get<string>('PASSTHROUGH_HEADERS', '');
 
+  // Configuration for blockchain call retries
+  const blockchainRetryCfg: RetryConfiguration = {
+    retryBackOffFactor: config.get<number>('RETRY_BACKOFF_FACTOR', 2),
+    retryBackOffLimit: config.get<number>('RETRY_BACKOFF_LIMIT_MS', 10000),
+    retryBackOffInitial: config.get<number>('RETRY_BACKOFF_INITIAL_MS', 100),
+    retryCondition: config.get<string>('RETRY_CONDITION', '.*ECONN.*'),
+    retriesMax: config.get<number>('RETRY_MAX_ATTEMPTS', 15),
+  };
+
   const passthroughHeaders: string[] = [];
   for (const h of passthroughHeaderString.split(',')) {
     passthroughHeaders.push(h.toLowerCase());
@@ -90,7 +99,7 @@ async function bootstrap() {
   app.get(TokensService).configure(ethConnectUrl, instancePath, topic, contractAddress);
   app
     .get(BlockchainConnectorService)
-    .configure(ethConnectUrl, username, password, passthroughHeaders);
+    .configure(ethConnectUrl, username, password, passthroughHeaders, blockchainRetryCfg);
 
   if (autoInit.toLowerCase() !== 'false') {
     await app.get(TokensService).init(newContext());

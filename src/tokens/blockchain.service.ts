@@ -38,6 +38,14 @@ import {
 const sendTransactionHeader = 'SendTransaction';
 const queryHeader = 'Query';
 
+export interface RetryConfiguration {
+  retryBackOffFactor: number;
+  retryBackOffLimit: number;
+  retryBackOffInitial: number;
+  retryCondition: string;
+  retriesMax: number;
+}
+
 @Injectable()
 export class BlockchainConnectorService {
   private readonly logger = new Logger(BlockchainConnectorService.name);
@@ -47,13 +55,22 @@ export class BlockchainConnectorService {
   password: string;
   passthroughHeaders: string[];
 
+  retryConfiguration: RetryConfiguration;
+
   constructor(private http: HttpService) {}
 
-  configure(baseUrl: string, username: string, password: string, passthroughHeaders: string[]) {
+  configure(
+    baseUrl: string,
+    username: string,
+    password: string,
+    passthroughHeaders: string[],
+    retryConfiguration: RetryConfiguration,
+  ) {
     this.baseUrl = baseUrl;
     this.username = username;
     this.password = password;
     this.passthroughHeaders = passthroughHeaders;
+    this.retryConfiguration = retryConfiguration;
   }
 
   private requestOptions(ctx: Context): AxiosRequestConfig {
@@ -85,22 +102,77 @@ export class BlockchainConnectorService {
     });
   }
 
+  // Check if retry condition matches the err that's been hit
+  private matchesRetryCondition(err: any): boolean {
+    return (
+      this.retryConfiguration.retryCondition != '' &&
+      `${err}`.match(this.retryConfiguration.retryCondition) !== null
+    );
+  }
+
+  // Delay by the appropriate amount of time given the iteration the caller is in
+  private async backoffDelay(iteration: number) {
+    const delay = Math.min(
+      this.retryConfiguration.retryBackOffInitial *
+        Math.pow(this.retryConfiguration.retryBackOffFactor, iteration),
+      this.retryConfiguration.retryBackOffLimit,
+    );
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  // Generic helper function that makes a given blockchain function retryable
+  // by using synchronous back-off delays for cases where the function returns
+  // an error which matches the configured retry condition
+  private async retryableCall<T = any>(
+    blockchainFunction: () => Promise<AxiosResponse<T>>,
+  ): Promise<AxiosResponse<T>> {
+    let retries = 0;
+    for (
+      ;
+      this.retryConfiguration.retriesMax == -1 || retries <= this.retryConfiguration.retriesMax;
+      this.retryConfiguration.retriesMax == -1 || retries++ // Don't inc 'retries' if 'retriesMax' if set to -1 (infinite retries)
+    ) {
+      try {
+        return await blockchainFunction();
+      } catch (e) {
+        if (this.matchesRetryCondition(e)) {
+          this.logger.debug(`Retry condition matched for error ${e}`);
+          // Wait for a backed-off delay before trying again
+          await this.backoffDelay(retries);
+        } else {
+          // Whatever the error was it's not one we will retry for
+          throw e;
+        }
+      }
+    }
+
+    throw new InternalServerErrorException(
+      `Call to blockchain connector failed after ${retries} attempts`,
+    );
+  }
+
   async getContractInfo(ctx: Context, url: string) {
     const response = await this.wrapError(
-      lastValueFrom(this.http.get<ContractInfoResponse>(url, this.requestOptions(ctx))),
+      this.retryableCall<ContractInfoResponse>(
+        async (): Promise<AxiosResponse<ContractInfoResponse>> => {
+          return lastValueFrom(this.http.get<ContractInfoResponse>(url, this.requestOptions(ctx)));
+        },
+      ),
     );
     return response.data;
   }
 
   async query(ctx: Context, to: string, method?: IAbiMethod, params?: any[]) {
     const response = await this.wrapError(
-      lastValueFrom(
-        this.http.post<EthConnectReturn>(
-          this.baseUrl,
-          { headers: { type: queryHeader }, to, method, params },
-          this.requestOptions(ctx),
-        ),
-      ),
+      this.retryableCall<EthConnectReturn>(async (): Promise<AxiosResponse<EthConnectReturn>> => {
+        return lastValueFrom(
+          this.http.post<EthConnectReturn>(
+            this.baseUrl,
+            { headers: { type: queryHeader }, to, method, params },
+            this.requestOptions(ctx),
+          ),
+        );
+      }),
     );
     return response.data;
   }
@@ -114,18 +186,22 @@ export class BlockchainConnectorService {
     params?: any[],
   ) {
     const response = await this.wrapError(
-      lastValueFrom(
-        this.http.post<EthConnectAsyncResponse>(
-          this.baseUrl,
-          {
-            headers: { id, type: sendTransactionHeader },
-            from,
-            to,
-            method,
-            params,
-          },
-          this.requestOptions(ctx),
-        ),
+      this.retryableCall<EthConnectAsyncResponse>(
+        async (): Promise<AxiosResponse<EthConnectAsyncResponse>> => {
+          return lastValueFrom(
+            this.http.post<EthConnectAsyncResponse>(
+              this.baseUrl,
+              {
+                headers: { id, type: sendTransactionHeader },
+                from,
+                to,
+                method,
+                params,
+              },
+              this.requestOptions(ctx),
+            ),
+          );
+        },
       ),
     );
     return response.data;
@@ -133,12 +209,14 @@ export class BlockchainConnectorService {
 
   async getReceipt(ctx: Context, id: string): Promise<EventStreamReply> {
     const response = await this.wrapError(
-      lastValueFrom(
-        this.http.get<EventStreamReply>(new URL(`/reply/${id}`, this.baseUrl).href, {
-          validateStatus: status => status < 300 || status === 404,
-          ...this.requestOptions(ctx),
-        }),
-      ),
+      this.retryableCall<EventStreamReply>(async (): Promise<AxiosResponse<EventStreamReply>> => {
+        return lastValueFrom(
+          this.http.get<EventStreamReply>(new URL(`/reply/${id}`, this.baseUrl).href, {
+            validateStatus: status => status < 300 || status === 404,
+            ...this.requestOptions(ctx),
+          }),
+        );
+      }),
     );
     if (response.status === 404) {
       throw new NotFoundException();
