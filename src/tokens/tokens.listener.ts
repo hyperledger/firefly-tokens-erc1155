@@ -336,6 +336,7 @@ export class TokenListener implements EventListener {
       }
       return output;
     } catch (err) {
+      this.logger.log(`Could not query token URI: ${err}`);
       return '';
     }
   }
