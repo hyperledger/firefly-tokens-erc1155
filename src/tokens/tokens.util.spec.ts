@@ -90,6 +90,9 @@ describe('Util', () => {
 
   it('packSubscriptionName', () => {
     expect(packSubscriptionName('0x123', 'F1', 'create', 'ns1')).toEqual('fft:0x123:F1:create:ns1');
+    expect(packSubscriptionName('0x123', 'F1', 'create', 'ns1:test')).toEqual(
+      'fft:0x123:F1:create:ns1%3Atest',
+    );
   });
 
   it('unpackSubscriptionName', () => {
@@ -104,6 +107,12 @@ describe('Util', () => {
       poolLocator: 'F1',
       event: 'create',
       poolData: undefined,
+    });
+    expect(unpackSubscriptionName('fft:0x123:F1:create:ns1%3Atest')).toEqual({
+      instancePath: '0x123',
+      poolLocator: 'F1',
+      event: 'create',
+      poolData: 'ns1:test',
     });
   });
 });
