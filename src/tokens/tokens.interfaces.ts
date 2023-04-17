@@ -374,6 +374,9 @@ export class TokenPoolEvent extends tokenEventBase {
   symbol?: string;
 
   @ApiProperty()
+  poolData?: string;
+
+  @ApiProperty()
   info: TokenPoolEventInfo;
 }
 

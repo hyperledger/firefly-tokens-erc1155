@@ -145,6 +145,7 @@ export class TokenListener implements EventListener {
       data: <TokenPoolEvent>{
         standard: TOKEN_STANDARD,
         interfaceFormat: InterfaceFormat.ABI,
+        poolData: unpackedSub.poolData,
         poolLocator: packedPoolLocator,
         type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
