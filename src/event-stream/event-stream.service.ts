@@ -20,7 +20,7 @@ import { AxiosRequestConfig } from 'axios';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
 import { IAbiMethod } from '../tokens/tokens.interfaces';
-import { basicAuth } from '../utils';
+import { getHttpRequestOptions } from '../utils';
 import { Context } from '../request-context/request-context.decorator';
 import { FFRequestIDHeader } from '../request-context/constants';
 import {
@@ -173,7 +173,7 @@ export class EventStreamService {
       }
     }
     headers[FFRequestIDHeader] = ctx.requestId;
-    const config = basicAuth(this.username, this.password);
+    const config = getHttpRequestOptions(this.username, this.password);
     config.headers = headers;
     return config;
   }
@@ -181,7 +181,7 @@ export class EventStreamService {
   async getStreams(): Promise<EventStream[]> {
     const response = await lastValueFrom(
       this.http.get<EventStream[]>(new URL('/eventstreams', this.baseUrl).href, {
-        ...basicAuth(this.username, this.password),
+        ...getHttpRequestOptions(this.username, this.password),
       }),
     );
     return response.data;
