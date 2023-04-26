@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ShutdownSignal, ValidationPipe } from '@nestjs/common';
+import { NestApplicationOptions, ShutdownSignal, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -35,6 +35,7 @@ import { EventStreamService } from './event-stream/event-stream.service';
 import { BlockchainConnectorService, RetryConfiguration } from './tokens/blockchain.service';
 import { requestIDMiddleware } from './request-context/request-id.middleware';
 import { newContext } from './request-context/request-context.decorator';
+import { getNestOptions } from './utils';
 
 const API_DESCRIPTION = `
 <p>All POST APIs are asynchronous. Listen for websocket notifications on <code>/api/ws</code>.
@@ -49,7 +50,8 @@ export function getApiConfig() {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, getNestOptions());
+
   app.setGlobalPrefix('api/v1');
   app.useWebSocketAdapter(new WsAdapter(app));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
