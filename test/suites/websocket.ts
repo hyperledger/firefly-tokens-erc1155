@@ -87,6 +87,7 @@ export default (context: TestContext) => {
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
             interfaceFormat: 'abi',
+            poolData: 'default',
             poolLocator: 'F1',
             type: 'fungible',
             signer: 'bob',
@@ -122,7 +123,7 @@ export default (context: TestContext) => {
 
   it('Token pool event from base subscription', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('0x123', 'base', '', 'default'),
+      name: packSubscriptionName('0x123', 'base', ''),
     });
 
     return context.server
@@ -227,6 +228,7 @@ export default (context: TestContext) => {
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
             interfaceFormat: 'abi',
+            poolData: 'default',
             poolLocator: 'address=0x00001&id=F1&block=1',
             type: 'fungible',
             signer: 'bob',

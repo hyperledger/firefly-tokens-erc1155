@@ -124,7 +124,13 @@ export function packSubscriptionName(
   poolData?: string,
 ) {
   if (poolData !== undefined) {
-    return [SUBSCRIPTION_PREFIX, instancePath, poolLocator, event, poolData].join(':');
+    return [
+      SUBSCRIPTION_PREFIX,
+      instancePath,
+      poolLocator,
+      event,
+      encodeURIComponent(poolData),
+    ].join(':');
   }
   return [SUBSCRIPTION_PREFIX, instancePath, poolLocator, event].join(':');
 }
@@ -136,7 +142,7 @@ export function unpackSubscriptionName(data: string) {
       instancePath: parts[1],
       poolLocator: parts[2],
       event: parts[3],
-      poolData: parts[4],
+      poolData: decodeURIComponent(parts[4]),
     };
   } else if (parts.length === 4) {
     return {
