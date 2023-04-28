@@ -59,23 +59,20 @@ export class TokenListener implements EventListener {
 
   constructor(private blockchain: BlockchainConnectorService) {}
 
-  async onEvent(subName: string, event: Event, process: EventProcessor) {
+  async onEvent(subName: string, event: Event) {
     switch (this.trimEventSignature(event.signature)) {
       case tokenCreateEventSignatureOld:
       case tokenCreateEventSignature:
-        process(this.transformTokenPoolCreationEvent(subName, event));
-        break;
+        return this.transformTokenPoolCreationEvent(subName, event);
       case transferSingleEventSignature:
-        process(await this.transformTransferSingleEvent(newContext(), subName, event));
-        break;
+        return this.transformTransferSingleEvent(newContext(), subName, event);
       case approvalForAllEventSignature:
-        process(this.transformApprovalForAllEvent(subName, event));
-        break;
+        return this.transformApprovalForAllEvent(subName, event);
       case transferBatchEventSignature:
-        for (const msg of await this.transformTransferBatchEvent(newContext(), subName, event)) {
-          process(msg);
-        }
-        break;
+        return this.transformTransferBatchEvent(newContext(), subName, event)[0];
+      // for (const msg of await this.transformTransferBatchEvent(newContext(), subName, event)) {
+      //   process(msg);
+      // }
       default:
         this.logger.error(`Unknown event signature: ${event.signature}`);
         return undefined;
