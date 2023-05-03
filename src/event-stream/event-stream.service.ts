@@ -20,7 +20,7 @@ import { AxiosRequestConfig } from 'axios';
 import { lastValueFrom } from 'rxjs';
 import * as WebSocket from 'ws';
 import { IAbiMethod } from '../tokens/tokens.interfaces';
-import { getHttpRequestOptions } from '../utils';
+import { getHttpRequestOptions, getWebsocketOptions } from '../utils';
 import { Context } from '../request-context/request-context.decorator';
 import { FFRequestIDHeader } from '../request-context/constants';
 import {
@@ -58,9 +58,7 @@ export class EventStreamSocket {
     this.disconnectDetected = false;
     this.closeRequested = false;
 
-    const auth =
-      this.username && this.password ? { auth: `${this.username}:${this.password}` } : undefined;
-    this.ws = new WebSocket(this.url, auth);
+    this.ws = new WebSocket(this.url, getWebsocketOptions(this.username, this.password));
     this.ws
       .on('open', () => {
         if (this.disconnectDetected) {
