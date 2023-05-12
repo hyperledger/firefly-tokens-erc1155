@@ -38,7 +38,7 @@ import {
 import {
   packStreamName,
   packSubscriptionName,
-  packTokenId,
+  computeTokenId,
   unpackPoolLocator,
   unpackSubscriptionName,
 } from './tokens.util';
@@ -407,7 +407,7 @@ export class TokensService {
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
     const response = await this.blockchain.query(ctx, address, BalanceOf, [
       dto.account,
-      packTokenId(poolLocator.poolId, dto.tokenIndex),
+      computeTokenId(poolLocator, dto.tokenIndex),
     ]);
     return { balance: response.output };
   }

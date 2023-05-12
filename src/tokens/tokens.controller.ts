@@ -17,6 +17,7 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
+import { RequestContext } from '../request-context/request-context.decorator';
 import { BlockchainConnectorService } from './blockchain.service';
 import {
   AsyncResponse,
@@ -31,7 +32,6 @@ import {
   TokenTransfer,
 } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
-import { RequestContext } from '../request-context/request-context.decorator';
 
 @Controller()
 export class TokensController {

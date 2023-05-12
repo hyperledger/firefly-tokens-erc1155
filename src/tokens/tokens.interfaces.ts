@@ -21,9 +21,15 @@ import { Event } from '../event-stream/event-stream.interfaces';
 // Internal types
 
 export interface PoolLocator {
-  poolId: string;
+  isFungible: boolean;
+  startId: string;
+  endId: string;
   blockNumber?: string;
   address?: string;
+}
+
+export interface TokenLocator extends Pick<PoolLocator, 'isFungible' | 'startId' | 'endId'> {
+  tokenIndex?: string;
 }
 
 // Ethconnect interfaces

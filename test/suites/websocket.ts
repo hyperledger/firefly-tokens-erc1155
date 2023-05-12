@@ -158,7 +158,8 @@ export default (context: TestContext) => {
           data: <TokenPoolEvent>{
             standard: 'ERC1155',
             interfaceFormat: 'abi',
-            poolLocator: 'address=0x00001&id=F1&block=1',
+            poolLocator:
+              'address=0x00001&type=fungible&startId=0x100000000000000000000000000000000&endId=0x100000000000000000000000000000000&block=1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -229,7 +230,8 @@ export default (context: TestContext) => {
             standard: 'ERC1155',
             interfaceFormat: 'abi',
             poolData: 'default',
-            poolLocator: 'address=0x00001&id=F1&block=1',
+            poolLocator:
+              'address=0x00001&type=fungible&startId=0x100000000000000000000000000000000&endId=0x100000000000000000000000000000000&block=1',
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -706,7 +708,7 @@ export default (context: TestContext) => {
         expect(message.data.events[0]).toEqual(<WebSocketMessage>{
           event: 'token-approval',
           data: <TokenApprovalEvent>{
-            id: '000000000001/000000/000001/N1',
+            id: '000000000001/000000/000001/0x8000000000000000000000000000000100000000000000000000000000000000',
             poolData: 'default',
             subject: 'A:B',
             signer: 'A',

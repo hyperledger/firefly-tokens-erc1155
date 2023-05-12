@@ -18,6 +18,7 @@ import { Logger } from '@nestjs/common';
 import { Event } from '../event-stream/event-stream.interfaces';
 import { EventListener, EventProcessor } from '../eventstream-proxy/eventstream-proxy.interfaces';
 import { WebSocketMessage } from '../websocket-events/websocket-events.base';
+import { Context, newContext } from '../request-context/request-context.decorator';
 import {
   ApprovalForAllEvent,
   TokenApprovalEvent,
@@ -33,17 +34,18 @@ import {
   InterfaceFormat,
 } from './tokens.interfaces';
 import {
+  computeTokenIndex,
   decodeHex,
   encodeHexIDForURI,
   packPoolLocator,
+  poolContainsId,
   unpackPoolLocator,
   unpackSubscriptionName,
-  unpackTokenId,
+  unpackTypeId,
 } from './tokens.util';
 import { BASE_SUBSCRIPTION_NAME } from './tokens.service';
 import { BlockchainConnectorService } from './blockchain.service';
 import { URI } from './erc1155';
-import { Context, newContext } from '../request-context/request-context.decorator';
 
 const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -114,7 +116,6 @@ export class TokenListener implements EventListener {
     event: TokenPoolCreationEvent,
   ): WebSocketMessage | undefined {
     const { data: output } = event;
-    const unpackedId = unpackTokenId(output.type_id);
     const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(output.data ?? '');
 
@@ -124,15 +125,24 @@ export class TokenListener implements EventListener {
     }
 
     let packedPoolLocator = unpackedSub.poolLocator;
-    const poolLocator = unpackPoolLocator(packedPoolLocator);
-    if (poolLocator.poolId === BASE_SUBSCRIPTION_NAME) {
+    let isFungible: boolean;
+    if (packedPoolLocator === BASE_SUBSCRIPTION_NAME) {
+      const unpackedId = unpackTypeId(output.type_id);
+      isFungible = unpackedId.isFungible;
       packedPoolLocator = packPoolLocator(
         event.address.toLowerCase(),
-        unpackedId.poolId,
+        isFungible,
+        unpackedId.startId,
+        unpackedId.endId,
         event.blockNumber,
       );
-    } else if (poolLocator.poolId !== unpackedId.poolId) {
-      return undefined;
+    } else {
+      const poolLocator = unpackPoolLocator(packedPoolLocator);
+      if (!poolContainsId(poolLocator, output.type_id)) {
+        // this is a pool-specific subscription, and this event is not from the subscribed pool
+        return undefined;
+      }
+      isFungible = poolLocator.isFungible;
     }
 
     const eventInfo: TokenPoolEventInfo = {
@@ -147,7 +157,7 @@ export class TokenListener implements EventListener {
         interfaceFormat: InterfaceFormat.ABI,
         poolData: unpackedSub.poolData,
         poolLocator: packedPoolLocator,
-        type: unpackedId.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+        type: isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,
         info: eventInfo,
@@ -178,7 +188,6 @@ export class TokenListener implements EventListener {
     eventIndex?: number,
   ): Promise<WebSocketMessage | undefined> {
     const { data: output } = event;
-    const unpackedId = unpackTokenId(output.id);
     const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(event.inputArgs?.data ?? '');
 
@@ -188,7 +197,7 @@ export class TokenListener implements EventListener {
     }
 
     const poolLocator = unpackPoolLocator(unpackedSub.poolLocator);
-    if (poolLocator.poolId !== unpackedId.poolId) {
+    if (!poolContainsId(poolLocator, output.id)) {
       // this transfer is not from the subscribed pool
       return undefined;
     }
@@ -197,7 +206,10 @@ export class TokenListener implements EventListener {
       return undefined;
     }
 
-    const uri = unpackedId.isFungible
+    const tokenIndex = poolLocator.isFungible
+      ? undefined
+      : computeTokenIndex(poolLocator, output.id);
+    const uri = poolLocator.isFungible
       ? undefined
       : await this.getTokenUri(ctx, event.address, output.id);
     const eventId = this.formatBlockchainEventId(event);
@@ -208,7 +220,7 @@ export class TokenListener implements EventListener {
       id: transferId,
       poolData: unpackedSub.poolData,
       poolLocator: unpackedSub.poolLocator,
-      tokenIndex: unpackedId.tokenIndex,
+      tokenIndex,
       uri,
       amount: output.value,
       signer: output.operator,
@@ -293,9 +305,9 @@ export class TokenListener implements EventListener {
     const poolLocator = unpackPoolLocator(unpackedSub.poolLocator);
 
     // One event may apply across multiple pools
-    // Include the poolId to generate a unique approvalId per pool
+    // Include the pool startId to generate a unique approvalId per pool
     const eventId = this.formatBlockchainEventId(event);
-    const approvalId = eventId + '/' + poolLocator.poolId;
+    const approvalId = eventId + '/' + poolLocator.startId;
 
     return {
       event: 'token-approval',

@@ -18,10 +18,10 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as LRUCache from 'lru-cache';
 import { abi as ERC1155MixedFungibleAbi } from '../abi/ERC1155MixedFungible.json';
 import { abi as ERC1155MixedFungibleOldAbi } from '../abi/ERC1155MixedFungibleOld.json';
+import { Context } from '../request-context/request-context.decorator';
 import { BlockchainConnectorService } from './blockchain.service';
 import { SupportsInterface } from './erc165';
 import { DynamicMethods } from './erc1155';
-import { Context } from '../request-context/request-context.decorator';
 import {
   IAbiMethod,
   MethodSignature,
