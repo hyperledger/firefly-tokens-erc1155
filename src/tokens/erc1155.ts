@@ -288,6 +288,24 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
         return undefined;
       },
     },
+    {
+      // Source: OpenZeppelin extension
+      name: 'mint',
+      inputs: [{ type: 'address' }, { type: 'uint256' }, { type: 'uint256' }, { type: 'bytes' }],
+      map: (poolLocator: PoolLocator, dto: TokenMint) => {
+        if (poolLocator.isFungible) {
+          return [dto.to, computeTokenId(poolLocator), dto.amount, encodeHex(dto.data ?? '')];
+        } else {
+          verifyHasIndex(dto);
+          return [
+            dto.to,
+            computeTokenId(poolLocator, dto.tokenIndex),
+            dto.amount,
+            encodeHex(dto.data ?? ''),
+          ];
+        }
+      },
+    },
   ],
 
   transfer: [
@@ -313,6 +331,12 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
     },
   ],
 };
+
+function verifyHasIndex(dto: TokenMint) {
+  if (dto.tokenIndex === undefined) {
+    throw new BadRequestException('Setting token index is required by this contract');
+  }
+}
 
 function verifyNoIndex(dto: TokenMint) {
   if (dto.tokenIndex !== undefined) {
