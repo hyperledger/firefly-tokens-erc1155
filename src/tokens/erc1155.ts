@@ -254,13 +254,11 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
       inputs: [{ type: 'uint256' }, { type: 'address[]' }, { type: 'bytes' }, { type: 'string' }],
       map: (poolLocator: PoolLocator, dto: TokenMint) => {
         if (!poolLocator.isFungible) {
-          // In the case of a non-fungible token:
-          // - We parse the value as a whole integer count of NFTs to mint
-          // - We require the number to be small enough to express as a JS number (we're packing into an array)
+          // In the case of a non-fungible token, we parse the value as a whole integer count of NFTs to mint
           verifyNoIndex(dto);
           const to: string[] = [];
-          const amount = parseInt(dto.amount);
-          for (let i = 0; i < amount; i++) {
+          const amount = BigInt(dto.amount);
+          for (let i = BigInt(0); i < amount; i++) {
             to.push(dto.to);
           }
           return [computeTokenId(poolLocator), to, encodeHex(dto.data ?? ''), dto.uri ?? ''];
@@ -274,13 +272,11 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
       inputs: [{ type: 'uint256' }, { type: 'address[]' }, { type: 'bytes' }],
       map: (poolLocator: PoolLocator, dto: TokenMint) => {
         if (!poolLocator.isFungible) {
-          // In the case of a non-fungible token:
-          // - We parse the value as a whole integer count of NFTs to mint
-          // - We require the number to be small enough to express as a JS number (we're packing into an array)
+          // In the case of a non-fungible token, we parse the value as a whole integer count of NFTs to mint
           verifyNoIndex(dto);
           const to: string[] = [];
-          const amount = parseInt(dto.amount);
-          for (let i = 0; i < amount; i++) {
+          const amount = BigInt(dto.amount);
+          for (let i = BigInt(0); i < amount; i++) {
             to.push(dto.to);
           }
           return [computeTokenId(poolLocator), to, encodeHex(dto.data ?? '')];
