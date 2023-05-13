@@ -14,7 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStream, EventStreamSubscription } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
@@ -97,7 +102,10 @@ export class TokensService {
    * One-time initialization of event stream and base subscription.
    */
   async init(ctx: Context) {
-    await this.createPoolSubscription(ctx, await this.getContractAddress(ctx));
+    const defaultContract = await this.getContractAddress(ctx);
+    if (defaultContract) {
+      await this.createPoolSubscription(ctx, defaultContract);
+    }
   }
 
   private async createPoolSubscription(ctx: Context, address: string, blockNumber?: string) {
@@ -120,8 +128,11 @@ export class TokensService {
 
   private async getContractAddress(ctx: Context) {
     if (!this.contractAddress) {
+      if (!this.instanceUrl) {
+        return undefined;
+      }
       this.logger.debug(
-        `CONTRACT_ADDRESS is not set, fetching the address using instance url: ${this.instanceUrl}`,
+        `CONTRACT_ADDRESS is not set - fetching the address using instance url: ${this.instanceUrl}`,
       );
       const data = await this.blockchain.getContractInfo(ctx, this.instanceUrl);
       this.contractAddress = '0x' + data.address.toLowerCase();
@@ -221,11 +232,19 @@ export class TokensService {
   }
 
   async createPool(ctx: Context, dto: TokenPool): Promise<AsyncResponse> {
-    if (dto.config?.address !== undefined && dto.config.address !== '') {
+    if (dto.config?.address) {
       await this.createPoolSubscription(ctx, dto.config.address, dto.config.blockNumber);
       return this.createWithAddress(ctx, dto.config.address, dto);
     }
-    return this.createWithAddress(ctx, await this.getContractAddress(ctx), dto);
+
+    const defaultContract = await this.getContractAddress(ctx);
+    if (defaultContract !== undefined) {
+      return this.createWithAddress(ctx, defaultContract, dto);
+    }
+
+    throw new BadRequestException(
+      'config.address was unspecified, and no default contract address is configured!',
+    );
   }
 
   async createWithAddress(ctx: Context, address: string, dto: TokenPool) {
@@ -246,6 +265,10 @@ export class TokensService {
     const stream = await this.getStream(ctx);
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    if (!address) {
+      throw new InternalServerErrorException(`No contract address configured`);
+    }
+
     const abi = await this.mapper.getAbi(ctx, address);
     const tokenCreateEvent = this.mapper.getCreateEvent();
     const tokenCreateMethod = this.mapper.getCreateMethod();
@@ -341,6 +364,10 @@ export class TokensService {
   async mint(ctx: Context, dto: TokenMint): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    if (!address) {
+      throw new InternalServerErrorException(`No contract address configured`);
+    }
+
     const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'mint', dto);
     const response = await this.blockchain.sendTransaction(
@@ -357,6 +384,10 @@ export class TokensService {
   async transfer(ctx: Context, dto: TokenTransfer): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    if (!address) {
+      throw new InternalServerErrorException(`No contract address configured`);
+    }
+
     const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'transfer', dto);
     const response = await this.blockchain.sendTransaction(
@@ -373,6 +404,10 @@ export class TokensService {
   async burn(ctx: Context, dto: TokenBurn): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    if (!address) {
+      throw new InternalServerErrorException(`No contract address configured`);
+    }
+
     const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'burn', dto);
     const response = await this.blockchain.sendTransaction(
@@ -389,6 +424,10 @@ export class TokensService {
   async approval(ctx: Context, dto: TokenApproval): Promise<AsyncResponse> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    if (!address) {
+      throw new InternalServerErrorException(`No contract address configured`);
+    }
+
     const abi = dto.interface?.methods || (await this.mapper.getAbi(ctx, address));
     const { method, params } = this.mapper.getMethodAndParams(abi, poolLocator, 'approval', dto);
     const response = await this.blockchain.sendTransaction(
@@ -405,6 +444,10 @@ export class TokensService {
   async balance(ctx: Context, dto: TokenBalanceQuery): Promise<TokenBalance> {
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
+    if (!address) {
+      throw new InternalServerErrorException(`No contract address configured`);
+    }
+
     const response = await this.blockchain.query(ctx, address, BalanceOf, [
       dto.account,
       computeTokenId(poolLocator, dto.tokenIndex),
