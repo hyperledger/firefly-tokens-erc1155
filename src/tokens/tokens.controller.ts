@@ -14,8 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Response } from 'express';
 import { EventStreamReply } from '../event-stream/event-stream.interfaces';
 import { RequestContext } from '../request-context/request-context.decorator';
 import { BlockchainConnectorService } from './blockchain.service';
@@ -29,6 +40,7 @@ import {
   TokenMint,
   TokenPool,
   TokenPoolActivate,
+  TokenPoolEvent,
   TokenTransfer,
 } from './tokens.interfaces';
 import { TokensService } from './tokens.service';
@@ -52,9 +64,20 @@ export class TokensController {
       'Will be followed by a websocket notification with event=token-pool and data=TokenPoolEvent',
   })
   @ApiBody({ type: TokenPool })
+  @ApiResponse({ status: 200, type: TokenPoolEvent })
   @ApiResponse({ status: 202, type: AsyncResponse })
-  createPool(@RequestContext() ctx, @Body() dto: TokenPool) {
-    return this.service.createPool(ctx, dto);
+  async createPool(
+    @RequestContext() ctx,
+    @Body() dto: TokenPool,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const pool = await this.service.createPool(ctx, dto);
+    if ('poolLocator' in pool) {
+      res.status(HttpStatus.OK);
+    } else {
+      res.status(HttpStatus.ACCEPTED);
+    }
+    return pool;
   }
 
   @Post('activatepool')

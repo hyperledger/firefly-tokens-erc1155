@@ -162,6 +162,39 @@ export default (context: TestContext) => {
     await context.server.post('/createpool').send(request).expect(202).expect({ id: requestId });
   });
 
+  it('Create pool - existing contract', async () => {
+    const request: TokenPool = {
+      type: TokenType.NONFUNGIBLE,
+      requestId,
+      data: 'tx1',
+      signer: IDENTITY,
+      config: {
+        address: '0x12345678',
+        startId: '0x0000',
+        endId: '0xffff',
+      },
+    };
+
+    await context.server
+      .post('/createpool')
+      .send(request)
+      .expect(200)
+      .expect({
+        type: 'nonfungible',
+        data: 'tx1',
+        poolLocator: 'address=0x12345678&type=nonfungible&startId=0x0000&endId=0xffff',
+        standard: 'ERC1155',
+        interfaceFormat: 'abi',
+        info: {
+          address: '0x12345678',
+          startId: '0x0000',
+          endId: '0xffff',
+        },
+      });
+
+    expect(context.http.post).toHaveBeenCalledTimes(0);
+  });
+
   it('Mint fungible token', async () => {
     const request: TokenMint = {
       poolLocator: 'F1',

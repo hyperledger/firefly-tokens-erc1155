@@ -118,6 +118,14 @@ export class TokenPoolConfig {
   @ApiProperty()
   @IsOptional()
   blockNumber?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  startId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  endId?: string;
 }
 
 export class TokenPool {
@@ -362,7 +370,10 @@ export class TokenPoolEventInfo {
   address: string;
 
   @ApiProperty()
-  typeId: string;
+  startId: string;
+
+  @ApiProperty()
+  endId: string;
 }
 
 export class TokenPoolEvent extends tokenEventBase {

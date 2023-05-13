@@ -38,7 +38,9 @@ import {
   TokenMint,
   TokenPool,
   TokenPoolActivate,
+  TokenPoolEvent,
   TokenTransfer,
+  TokenType,
 } from './tokens.interfaces';
 import {
   packStreamName,
@@ -46,8 +48,9 @@ import {
   computeTokenId,
   unpackPoolLocator,
   unpackSubscriptionName,
+  packPoolLocator,
 } from './tokens.util';
-import { TokenListener } from './tokens.listener';
+import { TOKEN_STANDARD, TokenListener } from './tokens.listener';
 import { BlockchainConnectorService } from './blockchain.service';
 import { AbiMapperService } from './abimapper.service';
 import {
@@ -231,8 +234,16 @@ export class TokensService {
     return false;
   }
 
-  async createPool(ctx: Context, dto: TokenPool): Promise<AsyncResponse> {
+  async createPool(ctx: Context, dto: TokenPool): Promise<TokenPoolEvent | AsyncResponse> {
     if (dto.config?.address) {
+      if (dto.config.startId !== undefined && dto.config.endId !== undefined) {
+        return this.createFromExisting(
+          dto.config.address,
+          dto.config.startId,
+          dto.config.endId,
+          dto,
+        );
+      }
       await this.createPoolSubscription(ctx, dto.config.address, dto.config.blockNumber);
       return this.createWithAddress(ctx, dto.config.address, dto);
     }
@@ -245,6 +256,18 @@ export class TokensService {
     throw new BadRequestException(
       'config.address was unspecified, and no default contract address is configured!',
     );
+  }
+
+  private createFromExisting(address: string, startId: string, endId: string, dto: TokenPool) {
+    const isFungible = dto.type === TokenType.FUNGIBLE;
+    return <TokenPoolEvent>{
+      data: dto.data,
+      poolLocator: packPoolLocator(address, isFungible, startId, endId, dto.config?.blockNumber),
+      standard: TOKEN_STANDARD,
+      interfaceFormat: InterfaceFormat.ABI,
+      type: dto.type,
+      info: { address, startId, endId },
+    };
   }
 
   async createWithAddress(ctx: Context, address: string, dto: TokenPool) {

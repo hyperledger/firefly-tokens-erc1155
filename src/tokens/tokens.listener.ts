@@ -30,8 +30,8 @@ import {
   TokenType,
   TransferBatchEvent,
   TransferSingleEvent,
-  TokenPoolEventInfo,
   InterfaceFormat,
+  PoolLocator,
 } from './tokens.interfaces';
 import {
   computeTokenIndex,
@@ -47,7 +47,8 @@ import { BASE_SUBSCRIPTION_NAME } from './tokens.service';
 import { BlockchainConnectorService } from './blockchain.service';
 import { URI } from './erc1155';
 
-const TOKEN_STANDARD = 'ERC1155';
+export const TOKEN_STANDARD = 'ERC1155';
+
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
@@ -124,31 +125,31 @@ export class TokenListener implements EventListener {
       return undefined;
     }
 
+    let poolLocator: PoolLocator;
     let packedPoolLocator = unpackedSub.poolLocator;
-    let isFungible: boolean;
     if (packedPoolLocator === BASE_SUBSCRIPTION_NAME) {
       const unpackedId = unpackTypeId(output.type_id);
-      isFungible = unpackedId.isFungible;
+      poolLocator = {
+        address: event.address.toLowerCase(),
+        isFungible: unpackedId.isFungible,
+        startId: unpackedId.startId,
+        endId: unpackedId.endId,
+        blockNumber: event.blockNumber,
+      };
       packedPoolLocator = packPoolLocator(
         event.address.toLowerCase(),
-        isFungible,
+        unpackedId.isFungible,
         unpackedId.startId,
         unpackedId.endId,
         event.blockNumber,
       );
     } else {
-      const poolLocator = unpackPoolLocator(packedPoolLocator);
+      poolLocator = unpackPoolLocator(packedPoolLocator);
       if (!poolContainsId(poolLocator, output.type_id)) {
         // this is a pool-specific subscription, and this event is not from the subscribed pool
         return undefined;
       }
-      isFungible = poolLocator.isFungible;
     }
-
-    const eventInfo: TokenPoolEventInfo = {
-      address: event.address,
-      typeId: '0x' + encodeHexIDForURI(output.type_id),
-    };
 
     return {
       event: 'token-pool',
@@ -157,10 +158,14 @@ export class TokenListener implements EventListener {
         interfaceFormat: InterfaceFormat.ABI,
         poolData: unpackedSub.poolData,
         poolLocator: packedPoolLocator,
-        type: isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+        type: poolLocator.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,
-        info: eventInfo,
+        info: {
+          address: event.address,
+          startId: poolLocator.startId,
+          endId: poolLocator.endId,
+        },
         blockchain: {
           id: this.formatBlockchainEventId(event),
           name: this.stripParamsFromSignature(this.trimEventSignature(event.signature)),
