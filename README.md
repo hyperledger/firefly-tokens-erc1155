@@ -12,18 +12,13 @@ calls, and maps blockchain events to outgoing websocket events.
 ## Smart Contracts
 
 This connector is designed to interact with ERC1155 smart contracts on an Ethereum
-blockchain which conform to a specific pattern. The repository includes a sample
-[Solidity contract](samples/solidity/) that may be used to get up and running with
-simple token support, and may provide a starting point for developing
-production contracts that can be used with this connector.
+blockchain which conform to a few different patterns. The repository includes sample
+[Solidity contracts](samples/solidity/) that conform to some of the ABIs expected.
 
-To be usable by this connector, an ERC1155 contract should do all of the following:
+At the very minimum, _all_ contracts must implement the events and methods defined in the
+ERC1155 standard, including the optional `uri()` method.
 
-1. Conform to [IERC1155MixedFungible](samples/solidity/contracts/IERC1155MixedFungible.sol).
-2. Group tokens into clear fungible and non-fungible pools by partitioning the token ID space via the split bit implementation detailed in the comments in [ERC1155MixedFungible](samples/solidity/contracts/ERC1155MixedFungible.sol).
-
-This connector may also be used as a starting point to build a custom connector
-that interacts with ERC1155 contracts conforming to some other pattern.
+Beyond this, there are a few methods for creating a contract that the connector can utilize.
 
 ### FireFly Interface Parsing
 
@@ -42,17 +37,15 @@ This will cause FireFly to parse the interface and provide ABI details
 to this connector, so it can determine the best methods from the ABI to be used for each operation.
 When this procedure is followed, the connector can find and call any variant of mint/burn/transfer/approval
 that is listed in the source code for [erc1155.ts](src/tokens/erc1155.ts).
-Due to strong assumptions in the source code, these are mostly the signatures from
-[IERC1155MixedFungible](samples/solidity/contracts/IERC1155MixedFungible.sol), with a few other
-variants for some methods from the [OpenZeppelin Wizard](https://wizard.openzeppelin.com).
+This list includes methods in the base standards, methods in the [IERC1155MixedFungible](samples/solidity/contracts/IERC1155MixedFungible.sol)
+interface defined in this repository, and common method variants from the
+[OpenZeppelin Wizard](https://wizard.openzeppelin.com). Additional variants can be added to the list
+by building a custom version of this connector or by proposing them via pull request.
 
-### Solidity Interface Support
+### Fallback Functionality (not recommended)
 
-In the absence of being provided with ABI details, the token connector will attempt to guess the contract
-ABI in use. It does this by using ERC165 `supportsInterface()` to query the contract's support for
-`IERC1155MixedFungible`, as defined in this repository. If the query succeeds, the connector will leverage
-the methods on that interface to perform token operations. Therefore it is possible to use these
-contracts without the extra step of teaching FireFly about the contract interface first.
+In the absence of being provided with ABI details, the token connector will assume that the contract
+conforms to the `IERC1155MixedFungible` interface defined in this repository.
 
 ## API Extensions
 
@@ -64,8 +57,13 @@ top of the fftokens standard.
 
 ### `/createpool`
 
-If `config.address` is specified, the connector will invoke the `create()` method of the ERC1155 token
-contract at the specified address.
+If `config.address`, `config.startId`, and `config.endId` are all specified, the connector will assume
+that a token pool has already been created on the specified contract, using the specified subset of
+token IDs (inclusive). Note: Because ERC1155 defines the token ID as uint256, the range of possible IDs
+is `0x0` to `0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff`.
+
+If `config.address` is specified, the connector will invoke the `create()` method (as defined in the
+`IERC1155MixedFungible` interface) of the ERC1155 token contract at the specified address.
 
 If `config.address` is not specified, and `CONTRACT_ADDRESS` is set in the connector's
 environment, the `create()` method of that contract will be invoked.
@@ -76,9 +74,11 @@ Any `name` and `symbol` provided from FireFly are ignored by this connector.
 
 For fungible token pools, `tokenIndex` and `uri` will be ignored.
 
-For non-fungible token pools, `tokenIndex` will be ignored, as an index will be auto-generated.
-`amount` may be any integer that can be represented by a JavaScript `number`, and will cause that
-amount of unique tokens to be minted.
+For non-fungible token pools, `tokenIndex` and `amount` will be handled differently depending on the
+underlying ABI. The sample contract in this repository uses auto-indexing, so `tokenIndex` must be
+omitted and `amount` may be 1 or greater (to mint 1 or more unique NFTs). The samples generated by
+OpenZeppelin generally use manual indexing, so `tokenIndex` must be specified (as an offset from
+the pool's `startId`) and `amount` must be 1.
 
 ### `/burn`
 
