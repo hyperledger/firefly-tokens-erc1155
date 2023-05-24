@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStream, EventStreamSubscription } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
@@ -33,6 +33,7 @@ import {
   TokenMint,
   TokenPool,
   TokenPoolActivate,
+  TokenPoolDeactivate,
   TokenTransfer,
 } from './tokens.interfaces';
 import {
@@ -323,6 +324,67 @@ export class TokensService {
       ],
     );
     await Promise.all(promises);
+  }
+
+  async deactivatePool(ctx: Context, dto: TokenPoolDeactivate) {
+    const tokenCreateEvent = this.mapper.getCreateEvent();
+    const stream = await this.getStream(ctx);
+
+    const promises: Promise<boolean>[] = [];
+    if (tokenCreateEvent?.name !== undefined) {
+      promises.push(
+        this.eventstream.deleteSubscriptionByName(
+          ctx,
+          stream.id,
+          packSubscriptionName(
+            this.instancePath,
+            dto.poolLocator,
+            tokenCreateEvent.name,
+            dto.poolData,
+          ),
+        ),
+      );
+    }
+
+    promises.push(
+      ...[
+        this.eventstream.deleteSubscriptionByName(
+          ctx,
+          stream.id,
+          packSubscriptionName(
+            this.instancePath,
+            dto.poolLocator,
+            TransferSingle.name,
+            dto.poolData,
+          ),
+        ),
+        this.eventstream.deleteSubscriptionByName(
+          ctx,
+          stream.id,
+          packSubscriptionName(
+            this.instancePath,
+            dto.poolLocator,
+            TransferBatch.name,
+            dto.poolData,
+          ),
+        ),
+        this.eventstream.deleteSubscriptionByName(
+          ctx,
+          stream.id,
+          packSubscriptionName(
+            this.instancePath,
+            dto.poolLocator,
+            ApprovalForAll.name,
+            dto.poolData,
+          ),
+        ),
+      ],
+    );
+
+    const results = await Promise.all(promises);
+    if (results.every(deleted => !deleted)) {
+      throw new NotFoundException('No listeners found');
+    }
   }
 
   checkInterface(dto: CheckInterfaceRequest): CheckInterfaceResponse {
