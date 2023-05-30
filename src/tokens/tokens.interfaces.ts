@@ -201,11 +201,17 @@ export class TokenPoolActivate {
 
   @ApiProperty()
   @IsOptional()
-  config?: any;
+  config?: TokenPoolConfig;
 
-  @ApiProperty({ description: requestIdDescription })
+  @ApiProperty()
   @IsOptional()
-  requestId?: string;
+  poolData?: string;
+}
+
+export class TokenPoolDeactivate {
+  @ApiProperty()
+  @IsNotEmpty()
+  poolLocator: string;
 
   @ApiProperty()
   @IsOptional()
