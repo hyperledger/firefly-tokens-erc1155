@@ -90,7 +90,7 @@ export class TokensService {
   configure(baseUrl: string, instancePath: string, topic: string, contractAddress: string) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
-    this.instanceUrl = new URL(this.instancePath, this.baseUrl).href;
+    this.instanceUrl = this.instancePath ? new URL(this.instancePath, this.baseUrl).href : '';
     this.topic = topic;
     this.contractAddress = contractAddress.toLowerCase();
     this.proxy.addConnectionListener(this);
