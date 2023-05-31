@@ -16,14 +16,14 @@
 
 import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EventStreamService } from '../event-stream/event-stream.service';
-import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { AxiosResponse } from '@nestjs/terminus/dist/health-indicator/http/axios.interfaces';
 import { Observer } from 'rxjs';
+import { EventStreamService } from '../event-stream/event-stream.service';
+import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
+import { newContext } from '../request-context/request-context.decorator';
 import { AbiMapperService } from './abimapper.service';
 import { BlockchainConnectorService, RetryConfiguration } from './blockchain.service';
 import { TokensService } from './tokens.service';
-import { newContext } from '../request-context/request-context.decorator';
 import { EthConnectReturn } from './tokens.interfaces';
 
 const BASE_URL = 'http://eth';

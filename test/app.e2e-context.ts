@@ -72,7 +72,7 @@ export class TestContext {
     this.app.use(requestIDMiddleware);
     await this.app.init();
 
-    let blockchainRetryCfg: RetryConfiguration = {
+    const blockchainRetryCfg: RetryConfiguration = {
       retryBackOffFactor: 2,
       retryBackOffLimit: 500,
       retryBackOffInitial: 50,

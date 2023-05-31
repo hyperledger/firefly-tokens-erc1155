@@ -15,7 +15,6 @@ import {
 } from '../../src/tokens/tokens.interfaces';
 import { TestContext, FakeObservable, BASE_URL, CONTRACT_ADDRESS } from '../app.e2e-context';
 import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
-import { newContext } from '../../src/request-context/request-context.decorator';
 
 const queryHeader = 'Query';
 const sendTransactionHeader = 'SendTransaction';
@@ -163,6 +162,39 @@ export default (context: TestContext) => {
     await context.server.post('/createpool').send(request).expect(202).expect({ id: requestId });
   });
 
+  it('Create pool - existing contract', async () => {
+    const request: TokenPool = {
+      type: TokenType.NONFUNGIBLE,
+      requestId,
+      data: 'tx1',
+      signer: IDENTITY,
+      config: {
+        address: '0x12345678',
+        startId: '0x0000',
+        endId: '0xffff',
+      },
+    };
+
+    await context.server
+      .post('/createpool')
+      .send(request)
+      .expect(200)
+      .expect({
+        type: 'nonfungible',
+        data: 'tx1',
+        poolLocator: 'address=0x12345678&type=nonfungible&startId=0x0000&endId=0xffff',
+        standard: 'ERC1155',
+        interfaceFormat: 'abi',
+        info: {
+          address: '0x12345678',
+          startId: '0x0000',
+          endId: '0xffff',
+        },
+      });
+
+    expect(context.http.post).toHaveBeenCalledTimes(0);
+  });
+
   it('Mint fungible token', async () => {
     const request: TokenMint = {
       poolLocator: 'F1',
@@ -191,7 +223,7 @@ export default (context: TestContext) => {
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
-        params: ['340282366920938463463374607431768211456', ['1'], ['2'], '0x74657374'],
+        params: ['0x100000000000000000000000000000000', ['1'], ['2'], '0x74657374'],
       },
       OPTIONS,
     );
@@ -223,7 +255,7 @@ export default (context: TestContext) => {
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
         params: [
-          '57896044618658097711785492504343953926975274699741220483192166611388333031424',
+          '0x8000000000000000000000000000000100000000000000000000000000000000',
           ['1', '1'],
           '0x00',
         ],
@@ -261,7 +293,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
         params: [
           'A',
-          '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+          '0x8000000000000000000000000000000100000000000000000000000000000001',
           '1',
           '0x747831',
         ],
@@ -296,7 +328,7 @@ export default (context: TestContext) => {
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
-        params: ['1', '2', '340282366920938463463374607431768211456', '2', '0x00'],
+        params: ['1', '2', '0x100000000000000000000000000000000', '2', '0x00'],
       },
       OPTIONS,
     );
@@ -362,7 +394,7 @@ export default (context: TestContext) => {
         },
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
-        params: ['1', '340282366920938463463374607431768211456'],
+        params: ['1', '0x100000000000000000000000000000000'],
       },
       OPTIONS,
     );
