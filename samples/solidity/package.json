@@ -6,8 +6,7 @@
 		"test": "hardhat test --network hardhat"
 	},
 	"dependencies": {
-		"@openzeppelin/contracts": "^4.5.0",
-		"truffle": "^5.1.61"
+		"@openzeppelin/contracts": "^4.5.0"
 	},
 	"devDependencies": {
 		"@nomiclabs/hardhat-ethers": "^2.0.6",
