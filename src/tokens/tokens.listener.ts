@@ -52,7 +52,8 @@ export const TOKEN_STANDARD = 'ERC1155';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const tokenCreateEventSignatureOld = 'TokenCreate(address,uint256,bytes)';
-const tokenCreateEventSignature = 'TokenPoolCreation(address,uint256,bytes)';
+const tokenCreateEventSignatureV1 = 'TokenPoolCreation(address,uint256,bytes)';
+const tokenCreateEventSignatureV2 = 'TokenPoolCreation(address,bool,uint256,uint256,bytes)';
 const transferSingleEventSignature = 'TransferSingle(address,address,address,uint256,uint256)';
 const transferBatchEventSignature = 'TransferBatch(address,address,address,uint256[],uint256[])';
 const approvalForAllEventSignature = 'ApprovalForAll(address,address,bool)';
@@ -65,7 +66,8 @@ export class TokenListener implements EventListener {
   async onEvent(subName: string, event: Event, process: EventProcessor) {
     switch (this.trimEventSignature(event.signature)) {
       case tokenCreateEventSignatureOld:
-      case tokenCreateEventSignature:
+      case tokenCreateEventSignatureV1:
+      case tokenCreateEventSignatureV2:
         process(this.transformTokenPoolCreationEvent(subName, event));
         break;
       case transferSingleEventSignature:
@@ -128,25 +130,51 @@ export class TokenListener implements EventListener {
     let poolLocator: PoolLocator;
     let packedPoolLocator = unpackedSub.poolLocator;
     if (packedPoolLocator === BASE_SUBSCRIPTION_NAME) {
-      const unpackedId = unpackTypeId(output.type_id);
-      poolLocator = {
-        address: event.address.toLowerCase(),
-        isFungible: unpackedId.isFungible,
-        startId: unpackedId.startId,
-        endId: unpackedId.endId,
-        blockNumber: event.blockNumber,
-      };
-      packedPoolLocator = packPoolLocator(
-        event.address.toLowerCase(),
-        unpackedId.isFungible,
-        unpackedId.startId,
-        unpackedId.endId,
-        event.blockNumber,
-      );
+      if ('type_id' in output) {
+        // Older creation event - must interpret the "type_id" parameter
+        const unpackedId = unpackTypeId(output.type_id);
+        poolLocator = {
+          address: event.address.toLowerCase(),
+          isFungible: unpackedId.isFungible,
+          startId: unpackedId.startId,
+          endId: unpackedId.endId,
+          blockNumber: event.blockNumber,
+        };
+        packedPoolLocator = packPoolLocator(
+          event.address.toLowerCase(),
+          unpackedId.isFungible,
+          unpackedId.startId,
+          unpackedId.endId,
+          event.blockNumber,
+        );
+      } else {
+        // Newer creation event - all needed params are in the event
+        poolLocator = {
+          address: event.address.toLowerCase(),
+          isFungible: output.is_fungible,
+          startId: output.start_id,
+          endId: output.end_id,
+          blockNumber: event.blockNumber,
+        };
+        packedPoolLocator = packPoolLocator(
+          event.address.toLowerCase(),
+          output.is_fungible,
+          output.start_id,
+          output.end_id,
+          event.blockNumber,
+        );
+      }
     } else {
       poolLocator = unpackPoolLocator(packedPoolLocator);
-      if (!poolContainsId(poolLocator, output.type_id)) {
-        // this is a pool-specific subscription, and this event is not from the subscribed pool
+      if (
+        ('type_id' in output && BigInt(poolLocator.startId) !== BigInt(output.type_id)) ||
+        (!('type_id' in output) &&
+          !(
+            BigInt(poolLocator.startId) === BigInt(output.start_id) &&
+            BigInt(poolLocator.endId) === BigInt(output.end_id)
+          ))
+      ) {
+        // This is a pool-specific subscription, and this event is not from the subscribed pool
         return undefined;
       }
     }

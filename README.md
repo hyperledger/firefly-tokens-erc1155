@@ -63,7 +63,8 @@ token IDs (inclusive). Note: Because ERC1155 defines the token ID as uint256, th
 is `0x0` to `0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff`.
 
 If `config.address` is specified, the connector will invoke the `create()` method (as defined in the
-`IERC1155MixedFungible` interface) of the ERC1155 token contract at the specified address.
+[IERC1155Factory](samples/solidity/contracts/IERC1155Factory.sol) interface) of the ERC1155 token
+contract at the specified address.
 
 If `config.address` is not specified, and `CONTRACT_ADDRESS` is set in the connector's
 environment, the `create()` method of that contract will be invoked.

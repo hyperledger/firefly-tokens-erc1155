@@ -169,35 +169,31 @@ export function packStreamName(prefix: string, instancePath: string) {
 }
 
 export function packSubscriptionName(
-  instancePath: string,
+  address: string,
   poolLocator: string,
   event: string,
   poolData?: string,
 ) {
   if (poolData !== undefined) {
-    return [
-      SUBSCRIPTION_PREFIX,
-      instancePath,
-      poolLocator,
-      event,
-      encodeURIComponent(poolData),
-    ].join(':');
+    return [SUBSCRIPTION_PREFIX, address, poolLocator, event, encodeURIComponent(poolData)].join(
+      ':',
+    );
   }
-  return [SUBSCRIPTION_PREFIX, instancePath, poolLocator, event].join(':');
+  return [SUBSCRIPTION_PREFIX, address, poolLocator, event].join(':');
 }
 
 export function unpackSubscriptionName(data: string) {
   const parts = data.split(':');
   if (parts.length === 5 && parts[0] === SUBSCRIPTION_PREFIX) {
     return {
-      instancePath: parts[1],
+      address: parts[1],
       poolLocator: parts[2],
       event: parts[3],
       poolData: decodeURIComponent(parts[4]),
     };
   } else if (parts.length === 4) {
     return {
-      instancePath: parts[1],
+      address: parts[1],
       poolLocator: parts[2],
       event: parts[3],
       poolData: undefined,

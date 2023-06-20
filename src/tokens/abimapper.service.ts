@@ -16,8 +16,9 @@
 
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as LRUCache from 'lru-cache';
-import { abi as ERC1155MixedFungibleAbi } from '../abi/ERC1155MixedFungible.json';
-import { abi as ERC1155MixedFungibleOldAbi } from '../abi/ERC1155MixedFungibleOld.json';
+import { abi as ERC1155MixedFungibleAbiV2 } from '../abi/ERC1155MixedFungible.json';
+import { abi as ERC1155MixedFungibleAbiV1 } from '../abi/ERC1155MixedFungibleV1.json';
+import { abi as ERC1155MixedFungibleAbiOld } from '../abi/ERC1155MixedFungibleOld.json';
 import { Context } from '../request-context/request-context.decorator';
 import { BlockchainConnectorService } from './blockchain.service';
 import { SupportsInterface } from './erc165';
@@ -35,7 +36,7 @@ import { encodeHex } from './tokens.util';
 const CUSTOM_URI_IID = '0xa1d87d57';
 
 const tokenCreateFunctionName = 'create';
-const tokenCreateEvent = 'TokenPoolCreation';
+export const tokenCreateEvent = 'TokenPoolCreation';
 
 @Injectable()
 export class AbiMapperService {
@@ -58,7 +59,7 @@ export class AbiMapperService {
 
   async getAbi(ctx: Context, address: string) {
     const uriSupport = await this.supportsInterface(ctx, address, CUSTOM_URI_IID);
-    return uriSupport ? ERC1155MixedFungibleAbi : ERC1155MixedFungibleOldAbi;
+    return uriSupport ? ERC1155MixedFungibleAbiV2 : ERC1155MixedFungibleAbiOld;
   }
 
   private signatureMatch(method: IAbiMethod, signature: MethodSignature) {
@@ -106,11 +107,15 @@ export class AbiMapperService {
   }
 
   getCreateMethod() {
-    return ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateFunctionName);
+    return ERC1155MixedFungibleAbiV2.find(m => m.name === tokenCreateFunctionName);
   }
 
-  getCreateEvent() {
-    return ERC1155MixedFungibleAbi.find(m => m.name === tokenCreateEvent);
+  getCreateEventV1() {
+    return ERC1155MixedFungibleAbiV1.find(m => m.name === tokenCreateEvent);
+  }
+
+  getCreateEventV2() {
+    return ERC1155MixedFungibleAbiV2.find(m => m.name === tokenCreateEvent);
   }
 
   getCreateMethodAndParams(dto: TokenPool) {
