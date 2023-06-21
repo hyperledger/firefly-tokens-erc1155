@@ -54,7 +54,7 @@ import {
 } from './tokens.util';
 import { TOKEN_STANDARD, TokenListener } from './tokens.listener';
 import { BlockchainConnectorService } from './blockchain.service';
-import { AbiMapperService } from './abimapper.service';
+import { AbiMapperService, tokenCreateEvent } from './abimapper.service';
 import {
   AllEvents,
   ApprovalForAll,
@@ -66,8 +66,11 @@ import {
 
 export const BASE_SUBSCRIPTION_NAME = 'base';
 
-const tokenCreateEvent = 'TokenPoolCreation';
-const ALL_SUBSCRIBED_EVENTS = [tokenCreateEvent, ...AllEvents.map(e => e.name)];
+const ALL_SUBSCRIBED_EVENTS = [
+  tokenCreateEvent,
+  tokenCreateEvent + 'V2',
+  ...AllEvents.map(e => e.name),
+];
 
 @Injectable()
 export class TokensService {
@@ -76,7 +79,6 @@ export class TokensService {
 
   baseUrl: string;
   instancePath: string;
-  instanceUrl: string;
   topic: string;
   stream: EventStream | undefined;
 
@@ -90,7 +92,6 @@ export class TokensService {
   configure(baseUrl: string, instancePath: string, topic: string, contractAddress: string) {
     this.baseUrl = baseUrl;
     this.instancePath = instancePath;
-    this.instanceUrl = this.instancePath ? new URL(this.instancePath, this.baseUrl).href : '';
     this.topic = topic;
     this.contractAddress = contractAddress.toLowerCase();
     this.proxy.addConnectionListener(this);
@@ -109,37 +110,63 @@ export class TokensService {
   async init(ctx: Context) {
     const defaultContract = await this.getContractAddress(ctx);
     if (defaultContract) {
-      await this.createPoolSubscription(ctx, defaultContract);
+      await this.createPoolSubscription(ctx, defaultContract, BASE_SUBSCRIPTION_NAME);
     }
   }
 
-  private async createPoolSubscription(ctx: Context, address: string, blockNumber?: string) {
+  private async createPoolSubscription(
+    ctx: Context,
+    address: string,
+    poolLocator: string,
+    blockNumber?: string,
+    poolData?: string,
+  ) {
     const stream = await this.getStream(ctx);
-    const eventABI = this.mapper.getCreateEvent();
+    const eventABIV1 = this.mapper.getCreateEventV1();
+    const eventABIV2 = this.mapper.getCreateEventV2();
     const methodABI = this.mapper.getCreateMethod();
-    if (eventABI !== undefined && methodABI !== undefined) {
-      await this.eventstream.getOrCreateSubscription(
-        ctx,
-        this.baseUrl,
-        eventABI,
-        stream.id,
-        packSubscriptionName(address, BASE_SUBSCRIPTION_NAME, tokenCreateEvent),
-        address,
-        [methodABI],
-        blockNumber ?? '0',
+    const promises: Promise<EventStreamSubscription>[] = [];
+    if (eventABIV1 !== undefined && methodABI !== undefined) {
+      promises.push(
+        this.eventstream.getOrCreateSubscription(
+          ctx,
+          this.baseUrl,
+          eventABIV1,
+          stream.id,
+          packSubscriptionName(address, poolLocator, tokenCreateEvent, poolData),
+          address,
+          [methodABI],
+          blockNumber ?? '0',
+        ),
       );
     }
+    if (eventABIV2 !== undefined && methodABI !== undefined) {
+      promises.push(
+        this.eventstream.getOrCreateSubscription(
+          ctx,
+          this.baseUrl,
+          eventABIV2,
+          stream.id,
+          packSubscriptionName(address, poolLocator, tokenCreateEvent + 'V2', poolData),
+          address,
+          [methodABI],
+          blockNumber ?? '0',
+        ),
+      );
+    }
+    return Promise.all(promises);
   }
 
   private async getContractAddress(ctx: Context) {
     if (!this.contractAddress) {
-      if (!this.instanceUrl) {
+      if (!this.instancePath) {
         return undefined;
       }
+      const instanceUrl = new URL(this.instancePath, this.baseUrl).href;
       this.logger.debug(
-        `CONTRACT_ADDRESS is not set - fetching the address using instance url: ${this.instanceUrl}`,
+        `CONTRACT_ADDRESS is not set - fetching the address using instance url: ${instanceUrl}`,
       );
-      const data = await this.blockchain.getContractInfo(ctx, this.instanceUrl);
+      const data = await this.blockchain.getContractInfo(ctx, instanceUrl);
       this.contractAddress = '0x' + data.address.toLowerCase();
       this.logger.debug(`Contract address: ${this.contractAddress}`);
     }
@@ -151,9 +178,9 @@ export class TokensService {
     if (stream !== undefined) {
       return stream;
     }
-    await this.migrationCheck(ctx);
-    const name = this.stream?.name ?? packStreamName(this.topic, this.instancePath);
-    this.logger.log('Creating stream with name ' + name);
+    await this.migrationCheck(ctx); // note: may update this.stream
+    const name = this.stream?.name ?? packStreamName(this.topic, this.contractAddress);
+    this.logger.log('Using event stream with name ' + name);
     this.stream = await this.eventstream.createOrUpdateStream(ctx, name, name);
     return this.stream;
   }
@@ -166,19 +193,25 @@ export class TokensService {
    * subscriptions manually and reactivate the pool directly.
    */
   async migrationCheck(ctx: Context) {
-    const name = packStreamName(this.topic, this.instancePath);
+    const currentName = packStreamName(this.topic, this.contractAddress);
+    const oldName1 = packStreamName(this.topic, this.instancePath);
+    const oldName2 = this.topic;
+
     const streams = await this.eventstream.getStreams();
-    let existingStream = streams.find(s => s.name === name);
+    let existingStream = streams.find(s => s.name === currentName);
     if (existingStream === undefined) {
-      // Look for the old stream name (topic alone)
-      existingStream = streams.find(s => s.name === this.topic);
+      // Look for the old stream names
+      existingStream = streams.find(s => s.name === oldName1);
       if (existingStream === undefined) {
-        return false;
+        existingStream = streams.find(s => s.name === oldName2);
+        if (existingStream === undefined) {
+          return false;
+        }
       }
       this.logger.warn(
         `Old event stream found with name ${existingStream.name}. ` +
           `The connector will continue to use this stream, but it is recommended ` +
-          `to create a new stream with the name ${name}.`,
+          `to create a new stream with the name ${currentName}.`,
       );
     }
     this.stream = existingStream;
@@ -190,18 +223,12 @@ export class TokensService {
       return false;
     }
 
-    const baseSubscription = packSubscriptionName(
-      this.instancePath,
-      BASE_SUBSCRIPTION_NAME,
-      tokenCreateEvent,
-    );
-
     const foundEvents = new Map<string, string[]>();
     for (const sub of subscriptions) {
-      if (sub.name === baseSubscription) {
+      const parts = unpackSubscriptionName(sub.name);
+      if (parts.poolLocator === BASE_SUBSCRIPTION_NAME) {
         continue;
       }
-      const parts = unpackSubscriptionName(sub.name);
       if (parts.poolLocator === undefined || parts.event === undefined) {
         this.logger.warn(
           `Non-parseable subscription name '${sub.name}' found in event stream '${existingStream.name}'.` +
@@ -209,7 +236,7 @@ export class TokensService {
         );
         return true;
       }
-      const key = packSubscriptionName(parts.instancePath, parts.poolLocator, '', parts.poolData);
+      const key = packSubscriptionName(parts.address, parts.poolLocator, '', parts.poolData);
       const existing = foundEvents.get(key);
       if (existing !== undefined) {
         existing.push(parts.event);
@@ -246,7 +273,12 @@ export class TokensService {
           dto,
         );
       }
-      await this.createPoolSubscription(ctx, dto.config.address, dto.config.blockNumber);
+      await this.createPoolSubscription(
+        ctx,
+        dto.config.address,
+        BASE_SUBSCRIPTION_NAME,
+        dto.config.blockNumber,
+      );
       return this.createWithAddress(ctx, dto.config.address, dto);
     }
 
@@ -295,140 +327,76 @@ export class TokensService {
     }
 
     const abi = await this.mapper.getAbi(ctx, address);
-    const tokenCreateEvent = this.mapper.getCreateEvent();
-    const tokenCreateMethod = this.mapper.getCreateMethod();
     const possibleMethods = this.mapper.allInvokeMethods(abi);
 
-    const promises: Promise<EventStreamSubscription>[] = [];
-    if (tokenCreateEvent?.name !== undefined && tokenCreateMethod !== undefined) {
-      promises.push(
-        this.eventstream.getOrCreateSubscription(
-          ctx,
-          this.baseUrl,
-          tokenCreateEvent,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            tokenCreateEvent.name,
-            dto.poolData,
-          ),
-          address,
-          [tokenCreateMethod],
-          poolLocator.blockNumber ?? '0',
-        ),
-      );
-    }
-    promises.push(
-      ...[
-        this.eventstream.getOrCreateSubscription(
-          ctx,
-          this.baseUrl,
-          TransferSingle,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            TransferSingle.name,
-            dto.poolData,
-          ),
-          address,
-          possibleMethods,
-          poolLocator.blockNumber ?? '0',
-        ),
-        this.eventstream.getOrCreateSubscription(
-          ctx,
-          this.baseUrl,
-          TransferBatch,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            TransferBatch.name,
-            dto.poolData,
-          ),
-          address,
-          possibleMethods,
-          poolLocator.blockNumber ?? '0',
-        ),
-        this.eventstream.getOrCreateSubscription(
-          ctx,
-          this.baseUrl,
-          ApprovalForAll,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            ApprovalForAll.name,
-            dto.poolData,
-          ),
-          address,
-          possibleMethods,
-          // Block number is 0 because it is important to receive all approval events,
-          // so existing approvals will be reflected in the newly created pool
-          '0',
-        ),
-      ],
-    );
+    const promises: Promise<EventStreamSubscription | EventStreamSubscription[]>[] = [
+      this.createPoolSubscription(
+        ctx,
+        address,
+        dto.poolLocator,
+        poolLocator.blockNumber,
+        dto.poolData,
+      ),
+      this.eventstream.getOrCreateSubscription(
+        ctx,
+        this.baseUrl,
+        TransferSingle,
+        stream.id,
+        packSubscriptionName(address, dto.poolLocator, TransferSingle.name, dto.poolData),
+        address,
+        possibleMethods,
+        poolLocator.blockNumber ?? '0',
+      ),
+      this.eventstream.getOrCreateSubscription(
+        ctx,
+        this.baseUrl,
+        TransferBatch,
+        stream.id,
+        packSubscriptionName(address, dto.poolLocator, TransferBatch.name, dto.poolData),
+        address,
+        possibleMethods,
+        poolLocator.blockNumber ?? '0',
+      ),
+      this.eventstream.getOrCreateSubscription(
+        ctx,
+        this.baseUrl,
+        ApprovalForAll,
+        stream.id,
+        packSubscriptionName(address, dto.poolLocator, ApprovalForAll.name, dto.poolData),
+        address,
+        possibleMethods,
+        // Block number is 0 because it is important to receive all approval events,
+        // so existing approvals will be reflected in the newly created pool
+        '0',
+      ),
+    ];
     await Promise.all(promises);
   }
 
   async deactivatePool(ctx: Context, dto: TokenPoolDeactivate) {
-    const tokenCreateEvent = this.mapper.getCreateEvent();
+    const poolLocator = unpackPoolLocator(dto.poolLocator);
+    const address = poolLocator.address ?? '';
+    const subscriptionNames = [
+      // current subscription names
+      packSubscriptionName(address, dto.poolLocator, tokenCreateEvent, dto.poolData),
+      packSubscriptionName(address, dto.poolLocator, tokenCreateEvent + 'V2', dto.poolData),
+      packSubscriptionName(address, dto.poolLocator, TransferSingle.name, dto.poolData),
+      packSubscriptionName(address, dto.poolLocator, TransferBatch.name, dto.poolData),
+      packSubscriptionName(address, dto.poolLocator, ApprovalForAll.name, dto.poolData),
+      // older name format
+      packSubscriptionName(this.instancePath, dto.poolLocator, tokenCreateEvent, dto.poolData),
+      packSubscriptionName(this.instancePath, dto.poolLocator, TransferSingle.name, dto.poolData),
+      packSubscriptionName(this.instancePath, dto.poolLocator, TransferBatch.name, dto.poolData),
+      packSubscriptionName(this.instancePath, dto.poolLocator, ApprovalForAll.name, dto.poolData),
+    ];
+
     const stream = await this.getStream(ctx);
-
-    const promises: Promise<boolean>[] = [];
-    if (tokenCreateEvent?.name !== undefined) {
-      promises.push(
-        this.eventstream.deleteSubscriptionByName(
-          ctx,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            tokenCreateEvent.name,
-            dto.poolData,
-          ),
-        ),
-      );
-    }
-
-    promises.push(
-      ...[
-        this.eventstream.deleteSubscriptionByName(
-          ctx,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            TransferSingle.name,
-            dto.poolData,
-          ),
-        ),
-        this.eventstream.deleteSubscriptionByName(
-          ctx,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            TransferBatch.name,
-            dto.poolData,
-          ),
-        ),
-        this.eventstream.deleteSubscriptionByName(
-          ctx,
-          stream.id,
-          packSubscriptionName(
-            this.instancePath,
-            dto.poolLocator,
-            ApprovalForAll.name,
-            dto.poolData,
-          ),
-        ),
-      ],
+    const results = await Promise.all(
+      subscriptionNames.map(name =>
+        this.eventstream.deleteSubscriptionByName(ctx, stream.id, name),
+      ),
     );
 
-    const results = await Promise.all(promises);
     if (results.every(deleted => !deleted)) {
       throw new NotFoundException('No listeners found');
     }

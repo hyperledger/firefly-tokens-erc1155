@@ -148,6 +148,7 @@ describe('TokensService', () => {
       eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
       eventStream.getSubscriptions.mockReturnValueOnce([
         { name: 'fft:0x123:p1:TokenPoolCreation:ns1' },
+        { name: 'fft:0x123:p1:TokenPoolCreationV2:ns1' },
         { name: 'fft:0x123:p1:TransferSingle:ns1' },
         { name: 'fft:0x123:p1:TransferBatch:ns1' },
         { name: 'fft:0x123:p1:ApprovalForAll:ns1' },

@@ -115,19 +115,19 @@ describe('Util', () => {
 
   it('unpackSubscriptionName', () => {
     expect(unpackSubscriptionName('fft:0x123:F1:create:ns1')).toEqual({
-      instancePath: '0x123',
+      address: '0x123',
       poolLocator: 'F1',
       event: 'create',
       poolData: 'ns1',
     });
     expect(unpackSubscriptionName('token:0x123:F1:create')).toEqual({
-      instancePath: '0x123',
+      address: '0x123',
       poolLocator: 'F1',
       event: 'create',
       poolData: undefined,
     });
     expect(unpackSubscriptionName('fft:0x123:F1:create:ns1%3Atest')).toEqual({
-      instancePath: '0x123',
+      address: '0x123',
       poolLocator: 'F1',
       event: 'create',
       poolData: 'ns1:test',

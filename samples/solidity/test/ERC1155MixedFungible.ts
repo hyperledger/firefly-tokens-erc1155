@@ -5,17 +5,17 @@ import { ERC1155MixedFungible, InterfaceCheck } from '../typechain';
 
 describe('ERC1155MixedFungible - Unit Tests', () => {
   const baseUri = 'https://firefly/{id}';
-  const fungibleTokenTypeId = BigInt('340282366920938463463374607431768211456');
+  const fungibleTokenTypeId = BigInt('0x100000000000000000000000000000000');
   const nonFungibleTokenTypeId = BigInt(
-    '57896044618658097711785492504343953926975274699741220483192166611388333031424',
+    '0x8000000000000000000000000000000100000000000000000000000000000000',
   );
   const nonFungibleTokenId = BigInt(
-    '57896044618658097711785492504343953926975274699741220483192166611388333031425',
+    '0x8000000000000000000000000000000100000000000000000000000000000001',
   );
+  const nftPoolSize = (BigInt(1) << BigInt(128)) - BigInt(1);
 
   const ONE_ADDRESS = '0x1111111111111111111111111111111111111111';
 
-  let Factory;
   let deployedERC1155: ERC1155MixedFungible;
   let deployerSignerA: SignerWithAddress;
   let signerB: SignerWithAddress;
@@ -24,7 +24,7 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
   beforeEach(async () => {
     [deployerSignerA, signerB, signerC] = await ethers.getSigners();
 
-    Factory = await ethers.getContractFactory('ERC1155MixedFungible');
+    const Factory = await ethers.getContractFactory('ERC1155MixedFungible');
     deployedERC1155 = await Factory.connect(deployerSignerA).deploy(baseUri);
     await deployedERC1155.deployed();
   });
@@ -41,15 +41,26 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
 
   context('Create function', () => {
     it('should support deployment of a new fungible token pool without data', async () => {
-      await expect(deployedERC1155.connect(deployerSignerA).create(true, '0x00')).to.emit(
-        deployedERC1155,
-        'TokenPoolCreation',
-      );
+      await expect(deployedERC1155.connect(deployerSignerA).create(true, '0x00'))
+        .to.emit(deployedERC1155, 'TokenPoolCreation')
+        .withArgs(
+          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+          true,
+          fungibleTokenTypeId,
+          fungibleTokenTypeId,
+          '0x00',
+        );
     });
     it('should support deployment of a new non-fungible token pool without data', async () => {
       await expect(deployedERC1155.connect(deployerSignerA).create(false, '0x00'))
         .to.emit(deployedERC1155, 'TokenPoolCreation')
-        .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', nonFungibleTokenTypeId, '0x00');
+        .withArgs(
+          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+          false,
+          nonFungibleTokenTypeId,
+          nonFungibleTokenTypeId + nftPoolSize,
+          '0x00',
+        );
     });
   });
 
@@ -58,7 +69,13 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
       beforeEach(async () => {
         await expect(deployedERC1155.connect(deployerSignerA).create(false, '0x00'))
           .to.emit(deployedERC1155, 'TokenPoolCreation')
-          .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', nonFungibleTokenTypeId, '0x00');
+          .withArgs(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+            false,
+            nonFungibleTokenTypeId,
+            nonFungibleTokenTypeId + nftPoolSize,
+            '0x00',
+          );
       });
       it('signer should be able to mint their own tokens', async () => {
         await expect(
@@ -86,7 +103,13 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
       beforeEach(async () => {
         await expect(deployedERC1155.connect(deployerSignerA).create(true, '0x00'))
           .to.emit(deployedERC1155, 'TokenPoolCreation')
-          .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', fungibleTokenTypeId, '0x00');
+          .withArgs(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+            true,
+            fungibleTokenTypeId,
+            fungibleTokenTypeId,
+            '0x00',
+          );
       });
       it('signer should be able to mint their own tokens', async () => {
         await expect(
@@ -132,7 +155,13 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
       beforeEach(async () => {
         await expect(deployedERC1155.connect(deployerSignerA).create(false, '0x00'))
           .to.emit(deployedERC1155, 'TokenPoolCreation')
-          .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', nonFungibleTokenTypeId, '0x00');
+          .withArgs(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+            false,
+            nonFungibleTokenTypeId,
+            nonFungibleTokenTypeId + nftPoolSize,
+            '0x00',
+          );
         await expect(
           deployedERC1155
             .connect(deployerSignerA)
@@ -246,7 +275,13 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
       beforeEach(async () => {
         await expect(deployedERC1155.connect(deployerSignerA).create(true, '0x00'))
           .to.emit(deployedERC1155, 'TokenPoolCreation')
-          .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', fungibleTokenTypeId, '0x00');
+          .withArgs(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+            true,
+            fungibleTokenTypeId,
+            fungibleTokenTypeId,
+            '0x00',
+          );
         await expect(
           deployedERC1155
             .connect(deployerSignerA)
@@ -372,7 +407,13 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
       beforeEach(async () => {
         await expect(deployedERC1155.connect(deployerSignerA).create(false, '0x00'))
           .to.emit(deployedERC1155, 'TokenPoolCreation')
-          .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', nonFungibleTokenTypeId, '0x00');
+          .withArgs(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+            false,
+            nonFungibleTokenTypeId,
+            nonFungibleTokenTypeId + nftPoolSize,
+            '0x00',
+          );
       });
       it('signer should be able to burn their own tokens', async () => {
         await expect(
@@ -427,7 +468,13 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
       beforeEach(async () => {
         await expect(deployedERC1155.connect(deployerSignerA).create(true, '0x00'))
           .to.emit(deployedERC1155, 'TokenPoolCreation')
-          .withArgs('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', fungibleTokenTypeId, '0x00');
+          .withArgs(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+            true,
+            fungibleTokenTypeId,
+            fungibleTokenTypeId,
+            '0x00',
+          );
       });
       it('signer should be able to burn their own tokens', async () => {
         await expect(

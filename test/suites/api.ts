@@ -14,7 +14,7 @@ import {
   CheckInterfaceResponse,
 } from '../../src/tokens/tokens.interfaces';
 import { TestContext, FakeObservable, BASE_URL, CONTRACT_ADDRESS } from '../app.e2e-context';
-import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungible.json';
+import { abi as ERC1155MixedFungibleAbi } from '../../src/abi/ERC1155MixedFungibleV1.json';
 
 const queryHeader = 'Query';
 const sendTransactionHeader = 'SendTransaction';
