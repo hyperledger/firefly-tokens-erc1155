@@ -82,14 +82,25 @@ export class TokensController {
   }
 
   @Post('activatepool')
-  @HttpCode(204)
+  @ApiResponse({ status: 200, type: TokenPoolEvent })
+  @ApiResponse({ status: 204 })
   @ApiOperation({
     summary: 'Activate a token pool to begin receiving transfer and approval events',
     description: 'Will retrigger the token-pool event for this pool as a side-effect',
   })
   @ApiBody({ type: TokenPoolActivate })
-  async activatePool(@RequestContext() ctx: Context, @Body() dto: TokenPoolActivate) {
-    await this.service.activatePool(ctx, dto);
+  async activatePool(
+    @RequestContext() ctx: Context,
+    @Body() dto: TokenPoolActivate,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const pool = await this.service.activatePool(ctx, dto);
+    if (pool !== undefined) {
+      res.status(HttpStatus.OK);
+    } else {
+      res.status(HttpStatus.NO_CONTENT);
+    }
+    return pool;
   }
 
   @Post('deactivatepool')
