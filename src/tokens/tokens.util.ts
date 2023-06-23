@@ -54,7 +54,7 @@ export function encodeHexIDForURI(id: string) {
  * Given a pool locator and optional token index, compute the full token ID.
  */
 export function computeTokenId(pool: PoolLocator, tokenIndex = '0') {
-  return '0x' + (BigInt(pool.startId) | BigInt(tokenIndex)).toString(16);
+  return (BigInt(pool.startId) | BigInt(tokenIndex)).toString(10);
 }
 
 /**
