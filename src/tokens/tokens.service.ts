@@ -371,6 +371,23 @@ export class TokensService {
       ),
     ];
     await Promise.all(promises);
+
+    if (
+      dto.config?.address !== undefined &&
+      dto.config?.startId !== undefined &&
+      dto.config?.endId !== undefined
+    ) {
+      return <TokenPoolEvent>{
+        poolData: dto.poolData,
+        poolLocator: dto.poolLocator,
+        standard: TOKEN_STANDARD,
+        interfaceFormat: InterfaceFormat.ABI,
+        type: poolLocator.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
+        info: { address, startId: dto.config.startId, endId: dto.config.endId },
+      };
+    }
+
+    return undefined;
   }
 
   async deactivatePool(ctx: Context, dto: TokenPoolDeactivate) {
