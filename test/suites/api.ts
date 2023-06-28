@@ -223,7 +223,7 @@ export default (context: TestContext) => {
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintFungible'),
-        params: ['0x100000000000000000000000000000000', ['1'], ['2'], '0x74657374'],
+        params: ['340282366920938463463374607431768211456', ['1'], ['2'], '0x74657374'],
       },
       OPTIONS,
     );
@@ -255,7 +255,7 @@ export default (context: TestContext) => {
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'mintNonFungible'),
         params: [
-          '0x8000000000000000000000000000000100000000000000000000000000000000',
+          '57896044618658097711785492504343953926975274699741220483192166611388333031424',
           ['1', '1'],
           '0x00',
         ],
@@ -293,7 +293,7 @@ export default (context: TestContext) => {
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'burn'),
         params: [
           'A',
-          '0x8000000000000000000000000000000100000000000000000000000000000001',
+          '57896044618658097711785492504343953926975274699741220483192166611388333031425',
           '1',
           '0x747831',
         ],
@@ -328,7 +328,7 @@ export default (context: TestContext) => {
         from: IDENTITY,
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'safeTransferFrom'),
-        params: ['1', '2', '0x100000000000000000000000000000000', '2', '0x00'],
+        params: ['1', '2', '340282366920938463463374607431768211456', '2', '0x00'],
       },
       OPTIONS,
     );
@@ -394,7 +394,7 @@ export default (context: TestContext) => {
         },
         to: CONTRACT_ADDRESS,
         method: ERC1155MixedFungibleAbi.find(m => m.name === 'balanceOf'),
-        params: ['1', '0x100000000000000000000000000000000'],
+        params: ['1', '340282366920938463463374607431768211456'],
       },
       OPTIONS,
     );

@@ -54,7 +54,7 @@ describe('Util', () => {
       startId: '0x100000000000000000000000000000000',
       endId: '0x1ffffffffffffffffffffffffffffffff',
     };
-    expect(computeTokenId(pool, '1')).toEqual('0x100000000000000000000000000000001');
+    expect(computeTokenId(pool, '1')).toEqual('340282366920938463463374607431768211457');
   });
 
   it('unpackTokenId', () => {
