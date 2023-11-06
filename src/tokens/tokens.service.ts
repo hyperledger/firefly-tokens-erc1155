@@ -197,7 +197,7 @@ export class TokensService {
     const oldName1 = packStreamName(this.topic, this.instancePath);
     const oldName2 = this.topic;
 
-    const streams = await this.eventstream.getStreams();
+    const streams = await this.eventstream.getStreams(ctx);
     let existingStream = streams.find(s => s.name === currentName);
     if (existingStream === undefined) {
       // Look for the old stream names

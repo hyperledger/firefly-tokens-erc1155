@@ -139,6 +139,10 @@ export class TokenPoolConfig {
 }
 
 export class TokenPool {
+  @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
+
   @ApiProperty({ enum: TokenType })
   @IsDefined()
   type: TokenType;
@@ -207,6 +211,10 @@ export class BlockchainEvent {
 export class TokenPoolActivate {
   @ApiProperty()
   @IsNotEmpty()
+  namespace: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   poolLocator: string;
 
   @ApiProperty()
@@ -229,6 +237,10 @@ export class TokenPoolDeactivate {
 }
 
 export class TokenBalanceQuery {
+  @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
+
   @ApiProperty()
   @IsNotEmpty()
   poolLocator: string;
@@ -367,6 +379,10 @@ export class TokenApproval {
 // Websocket notifications
 
 class tokenEventBase {
+  @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
+
   @ApiProperty()
   poolLocator: string;
 

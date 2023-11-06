@@ -35,6 +35,7 @@ const CTX = {
 export default (context: TestContext) => {
   it('Create fungible pool', async () => {
     const request: TokenPool = {
+      namespace: 'ns1',
       type: TokenType.FUNGIBLE,
       requestId,
       data: 'tx1',
@@ -68,6 +69,7 @@ export default (context: TestContext) => {
 
   it('Create non-fungible pool', async () => {
     const request: TokenPool = {
+      namespace: 'ns1',
       type: TokenType.NONFUNGIBLE,
       signer: IDENTITY,
       requestId,
@@ -100,6 +102,7 @@ export default (context: TestContext) => {
 
   it('Create non-fungible pool - non-default address', async () => {
     const request: TokenPool = {
+      namespace: 'ns1',
       type: TokenType.NONFUNGIBLE,
       signer: IDENTITY,
       requestId,
@@ -147,6 +150,7 @@ export default (context: TestContext) => {
 
   it('Create pool - unrecognized fields', async () => {
     const request = {
+      namespace: 'ns1',
       type: TokenType.FUNGIBLE,
       signer: IDENTITY,
       isBestPool: true, // will be stripped but will not cause an error
@@ -164,6 +168,7 @@ export default (context: TestContext) => {
 
   it('Create pool - existing contract', async () => {
     const request: TokenPool = {
+      namespace: 'ns1',
       type: TokenType.NONFUNGIBLE,
       requestId,
       data: 'tx1',
@@ -367,6 +372,7 @@ export default (context: TestContext) => {
 
   it('Query balance', async () => {
     const request: TokenBalanceQuery = {
+      namespace: 'ns1',
       account: '1',
       poolLocator: 'F1',
       tokenIndex: '0',

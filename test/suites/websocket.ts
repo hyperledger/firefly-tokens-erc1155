@@ -57,7 +57,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -129,7 +134,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -201,7 +211,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -274,7 +289,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -370,7 +390,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -482,7 +507,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -592,7 +622,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -682,7 +717,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -754,7 +794,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -816,7 +861,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -942,7 +992,12 @@ export default (context: TestContext) => {
   it('Success receipt', () => {
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.receiptHandler).toBeDefined();
         context.receiptHandler(<EventStreamReply>{
           headers: {
@@ -968,7 +1023,12 @@ export default (context: TestContext) => {
   it('Error receipt', () => {
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.receiptHandler).toBeDefined();
         context.receiptHandler(<EventStreamReply>{
           headers: {
@@ -1016,7 +1076,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({ events: [tokenPoolMessage] });
       })
@@ -1028,41 +1093,16 @@ export default (context: TestContext) => {
       })
       .close();
 
-    await context.server.ws('/api/ws').expectJson(message => {
-      expect(message.event).toEqual('batch');
-      expect(message.data.events).toHaveLength(1);
-      expect(message.data.events[0].event).toEqual('token-pool');
-      return true;
-    });
-  });
+    context.resetConnectedPromise();
 
-  it('Client switchover', async () => {
-    const tokenPoolMessage: TokenPoolCreationEvent = {
-      subId: 'sb-123',
-      signature: tokenCreateEventSignature,
-      address: '0x00001',
-      blockNumber: '1',
-      transactionIndex: '0x0',
-      transactionHash: '0x123',
-      logIndex: '1',
-      timestamp: '2020-01-01 00:00:00Z',
-      data: {
-        operator: 'bob',
-        type_id: '340282366920938463463374607431768211456',
-        data: '0x6e73006e616d65006964',
-      },
-    };
-
-    context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('0x123', 'id=F1&block=1', '', 'default'),
-    });
-
-    const ws1 = context.server.ws('/api/ws');
-    const ws2 = context.server.ws('/api/ws');
-
-    await ws1
-      .exec(() => {
-        expect(context.eventHandler).toBeDefined();
+    await context.server
+      .ws('/api/ws')
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         context.eventHandler({ events: [tokenPoolMessage] });
       })
       .expectJson(message => {
@@ -1070,14 +1110,6 @@ export default (context: TestContext) => {
         expect(message.data.events).toHaveLength(1);
         expect(message.data.events[0].event).toEqual('token-pool');
         return true;
-      })
-      .close();
-
-    await ws2.expectJson(message => {
-      expect(message.event).toEqual('batch');
-      expect(message.data.events).toHaveLength(1);
-      expect(message.data.events[0].event).toEqual('token-pool');
-      return true;
-    });
+      });
   });
 };

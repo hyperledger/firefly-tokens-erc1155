@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,14 @@ export interface WebSocketEx extends WebSocket {
 export interface WebSocketMessage {
   event: string;
   data: any;
+}
+
+export interface WebSocketActionBase {
+  type: 'start' | 'ack' | 'nack' | 'protocol_error';
+}
+
+export interface WebSocketStart extends WebSocketActionBase {
+  namespace: string;
 }
 
 /**
