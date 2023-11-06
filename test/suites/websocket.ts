@@ -1095,10 +1095,6 @@ export default (context: TestContext) => {
 
     context.resetConnectedPromise();
 
-    await new Promise(resolve => {
-      setTimeout(resolve, 500);
-    });
-
     await context.server
       .ws('/api/ws')
       .sendJson({
