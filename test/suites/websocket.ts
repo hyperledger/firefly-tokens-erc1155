@@ -84,6 +84,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.id).toBeDefined();
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -161,6 +165,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.id).toBeDefined();
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -236,6 +244,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -327,6 +339,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -428,6 +444,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -546,6 +566,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.id).toBeDefined();
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -652,6 +676,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.id).toBeDefined();
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -743,6 +771,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -837,6 +869,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         // Only the second transfer should have been processed
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -892,6 +928,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -1086,6 +1126,10 @@ export default (context: TestContext) => {
         context.eventHandler({ events: [tokenPoolMessage] });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
         expect(message.data.events[0].event).toEqual('token-pool');
@@ -1104,6 +1148,10 @@ export default (context: TestContext) => {
       .exec(async () => {
         await context.connected;
         context.eventHandler({ events: [tokenPoolMessage] });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.event).toEqual('batch');
