@@ -245,6 +245,7 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
       let i = 0;
       for (let client of clients.keys()) {
         if (i++ == selected) {
+          this.logger.debug(`WS <= ${payload}`);
           client.send(payload);
           return;
         }

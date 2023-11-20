@@ -103,10 +103,6 @@ async function bootstrap() {
     .get(BlockchainConnectorService)
     .configure(ethConnectUrl, username, password, passthroughHeaders, blockchainRetryCfg);
 
-  if (autoInit.toLowerCase() !== 'false') {
-    await app.get(TokensService).init(newContext());
-  }
-
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);
   await app.listen(port);

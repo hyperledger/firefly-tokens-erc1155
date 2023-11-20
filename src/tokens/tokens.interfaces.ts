@@ -229,6 +229,10 @@ export class TokenPoolActivate {
 export class TokenPoolDeactivate {
   @ApiProperty()
   @IsNotEmpty()
+  namespace: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   poolLocator: string;
 
   @ApiProperty()
