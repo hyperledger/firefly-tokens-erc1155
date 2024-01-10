@@ -1,5 +1,5 @@
 FROM node:16-alpine3.15 as solidity-builder
-RUN apk add python3 alpine-sdk
+RUN apk add python3=3.9.18-r0 alpine-sdk=1.0-r1
 USER node
 WORKDIR /home/node
 ADD --chown=node:node ./samples/solidity/package*.json ./
@@ -15,7 +15,7 @@ ADD . .
 RUN npm run build
 
 FROM node:16-alpine3.15 
-RUN apk add curl
+RUN apk add curl=8.5.0-r0
 WORKDIR /app
 ADD package*.json ./
 RUN npm install --production
