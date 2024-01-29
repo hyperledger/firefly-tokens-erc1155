@@ -231,7 +231,7 @@ export class EventStreamService {
           this.requestOptions(ctx),
         ),
       );
-      this.logger.log(`Event stream for ${topic}: ${stream.id}`);
+      this.logger.log(`Event stream for ${name}: ${stream.id}`);
       return patchedStreamRes.data;
     }
     const newStreamRes = await lastValueFrom(
@@ -243,7 +243,7 @@ export class EventStreamService {
         this.requestOptions(ctx),
       ),
     );
-    this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
+    this.logger.log(`Event stream for ${name}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
   }
 
