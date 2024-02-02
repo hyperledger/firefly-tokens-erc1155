@@ -98,6 +98,7 @@ export default (context: TestContext) => {
             interfaceFormat: 'abi',
             poolData: 'default',
             poolLocator: 'F1',
+            alternateLocators: <string[]>[],
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -179,6 +180,7 @@ export default (context: TestContext) => {
             interfaceFormat: 'abi',
             poolLocator:
               'address=0x00001&type=fungible&startId=0x100000000000000000000000000000000&endId=0x100000000000000000000000000000000&block=1',
+            alternateLocators: ['address=0x00001&id=F1&block=1'],
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -261,6 +263,7 @@ export default (context: TestContext) => {
             poolData: 'default',
             poolLocator:
               'address=0x00001&type=fungible&startId=0x100000000000000000000000000000000&endId=0x100000000000000000000000000000000&block=1',
+            alternateLocators: ['address=0x00001&id=F1&block=1'],
             type: 'fungible',
             signer: 'bob',
             data: '',
