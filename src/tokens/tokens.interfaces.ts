@@ -414,6 +414,9 @@ export class TokenPoolEventInfo {
 
 export class TokenPoolEvent extends tokenEventBase {
   @ApiProperty()
+  alternateLocators: string[];
+
+  @ApiProperty()
   type: TokenType;
 
   @ApiProperty()

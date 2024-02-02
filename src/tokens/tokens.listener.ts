@@ -38,10 +38,12 @@ import {
   decodeHex,
   encodeHexIDForURI,
   packPoolLocator,
+  packOldPoolLocator,
   poolContainsId,
   unpackPoolLocator,
   unpackSubscriptionName,
   unpackTypeId,
+  unpackOldTypeId,
 } from './tokens.util';
 import { BASE_SUBSCRIPTION_NAME } from './tokens.service';
 import { BlockchainConnectorService } from './blockchain.service';
@@ -118,6 +120,7 @@ export class TokenListener implements EventListener {
     subName: string,
     event: TokenPoolCreationEvent,
   ): WebSocketMessage | undefined {
+    let oldLocator: string | undefined = undefined;
     const { data: output } = event;
     const unpackedSub = unpackSubscriptionName(subName);
     const decodedData = decodeHex(output.data ?? '');
@@ -133,6 +136,7 @@ export class TokenListener implements EventListener {
       if ('type_id' in output) {
         // Older creation event - must interpret the "type_id" parameter
         const unpackedId = unpackTypeId(output.type_id);
+        const oldUnpackedId = unpackOldTypeId(output.type_id);
         poolLocator = {
           address: event.address.toLowerCase(),
           isFungible: unpackedId.isFungible,
@@ -145,6 +149,11 @@ export class TokenListener implements EventListener {
           unpackedId.isFungible,
           unpackedId.startId,
           unpackedId.endId,
+          event.blockNumber,
+        );
+        oldLocator = packOldPoolLocator(
+          event.address.toLowerCase(),
+          oldUnpackedId.poolId,
           event.blockNumber,
         );
       } else {
@@ -186,6 +195,7 @@ export class TokenListener implements EventListener {
         interfaceFormat: InterfaceFormat.ABI,
         poolData: unpackedSub.poolData,
         poolLocator: packedPoolLocator,
+        alternateLocators: oldLocator ? [oldLocator] : [],
         type: poolLocator.isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE,
         signer: output.operator,
         data: decodedData,

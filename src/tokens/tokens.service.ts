@@ -25,6 +25,7 @@ import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStream, EventStreamSubscription } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
 import { Context, newContext } from '../request-context/request-context.decorator';
+import { lastValueFrom } from 'rxjs';
 import {
   AsyncResponse,
   CheckInterfaceRequest,
@@ -180,70 +181,18 @@ export class TokensService {
     const oldName1 = packStreamName(this.topic, this.instancePath);
     const oldName2 = this.topic;
 
-    const streams = await this.eventstream.getStreams(ctx);
-    let existingStream = streams.find(s => s.name === currentName);
-    if (existingStream === undefined) {
-      // Look for the old stream names
-      existingStream = streams.find(s => s.name === oldName1);
-      if (existingStream === undefined) {
-        existingStream = streams.find(s => s.name === oldName2);
-        if (existingStream === undefined) {
-          return false;
-        }
-      }
-      this.logger.warn(
-        `Old event stream found with name ${existingStream.name}. ` +
-          `The connector will continue to use this stream, but it is recommended ` +
-          `to create a new stream with the name ${currentName}.`,
-      );
+    const existingStreams = await this.eventstream.getStreams(ctx);
+    // Check to see if there is a deprecated stream that we should remove
+    this.logger.debug(
+      `Checking for deprecated event steams named '${currentName}' or '${oldName1}' or '${oldName2}'`,
+    );
+    const deprecatedStreams = existingStreams.filter(
+      s => s.name === currentName || s.name === oldName1 || s.name === oldName2,
+    );
+    for (const deprecatedStream of deprecatedStreams) {
+      this.logger.debug(`Purging deprecated eventstream '${deprecatedStream.id}'`);
+      await this.eventstream.deleteStream(ctx, deprecatedStream.id);
     }
-    this.stream = existingStream;
-    const streamId = existingStream.id;
-
-    const allSubscriptions = await this.eventstream.getSubscriptions(ctx);
-    const subscriptions = allSubscriptions.filter(s => s.stream === streamId);
-    if (subscriptions.length === 0) {
-      return false;
-    }
-
-    const foundEvents = new Map<string, string[]>();
-    for (const sub of subscriptions) {
-      const parts = unpackSubscriptionName(sub.name);
-      if (parts.poolLocator === BASE_SUBSCRIPTION_NAME) {
-        continue;
-      }
-      if (parts.poolLocator === undefined || parts.event === undefined) {
-        this.logger.warn(
-          `Non-parseable subscription name '${sub.name}' found in event stream '${existingStream.name}'.` +
-            `It is recommended to delete all subscriptions and activate all pools again.`,
-        );
-        return true;
-      }
-      const key = packSubscriptionName(parts.address, parts.poolLocator, '', parts.poolData);
-      const existing = foundEvents.get(key);
-      if (existing !== undefined) {
-        existing.push(parts.event);
-      } else {
-        foundEvents.set(key, [parts.event]);
-      }
-    }
-
-    // Expect to have found subscriptions for each of the events.
-    for (const [key, events] of foundEvents) {
-      const parts = unpackSubscriptionName(key);
-      if (
-        ALL_SUBSCRIBED_EVENTS.length !== events.length ||
-        !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
-      ) {
-        this.logger.warn(
-          `Event stream subscriptions for pool ${parts.poolLocator} do not include all expected events ` +
-            `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
-            `It is recommended to delete its subscriptions and activate the pool again.`,
-        );
-        return true;
-      }
-    }
-    return false;
   }
 
   async createPool(ctx: Context, dto: TokenPool): Promise<TokenPoolEvent | AsyncResponse> {

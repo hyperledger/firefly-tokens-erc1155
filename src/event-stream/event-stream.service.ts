@@ -207,19 +207,6 @@ export class EventStreamService {
 
     const existingStreams = await this.getStreams(ctx);
 
-    // Check to see if there is a deprecated stream that we should remove
-    this.logger.debug(`Checking for deprecated event steam with topic '${topic}'`);
-    const deprecatedStream = existingStreams.find(s => s.name === topic);
-    if (deprecatedStream) {
-      this.logger.debug(`Purging deprecated eventstream '${deprecatedStream.id}'`);
-      await lastValueFrom(
-        this.http.delete(
-          new URL(`/eventstreams/${deprecatedStream.id}`, this.baseUrl).href,
-          this.requestOptions(ctx),
-        ),
-      );
-    }
-
     const stream = existingStreams.find(s => s.name === streamDetails.name);
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
