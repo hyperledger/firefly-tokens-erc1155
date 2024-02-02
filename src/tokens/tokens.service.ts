@@ -179,15 +179,17 @@ export class TokensService {
   async migrationCheck(ctx: Context) {
     const currentName = packStreamName(this.topic, this.contractAddress);
     const oldName1 = packStreamName(this.topic, this.instancePath);
-    const oldName2 = this.topic;
+    const oldName2 = packStreamName(this.topic, '');
+    const oldName3 = this.topic;
 
     const existingStreams = await this.eventstream.getStreams(ctx);
     // Check to see if there is a deprecated stream that we should remove
     this.logger.debug(
-      `Checking for deprecated event steams named '${currentName}' or '${oldName1}' or '${oldName2}'`,
+      `Checking for deprecated event steams named '${currentName}' or '${oldName1}' or '${oldName2}' or '${oldName3}'`,
     );
     const deprecatedStreams = existingStreams.filter(
-      s => s.name === currentName || s.name === oldName1 || s.name === oldName2,
+      s =>
+        s.name === currentName || s.name === oldName1 || s.name === oldName2 || s.name === oldName3,
     );
     for (const deprecatedStream of deprecatedStreams) {
       this.logger.debug(`Purging deprecated eventstream '${deprecatedStream.id}'`);

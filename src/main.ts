@@ -77,7 +77,6 @@ async function bootstrap() {
   const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
   const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
-  const autoInit = config.get<string>('AUTO_INIT', 'true');
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
   const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
