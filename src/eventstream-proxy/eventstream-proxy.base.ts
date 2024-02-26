@@ -69,6 +69,11 @@ export abstract class EventStreamProxyBase extends WebSocketEventsBase {
 
   handleConnection(client: WebSocketEx) {
     super.handleConnection(client);
+
+    if (!this.awaitingAck.get(client.id)) {
+      this.awaitingAck.set(client.id, []);
+    }
+
     client.on('message', async (message: string) => {
       const action = JSON.parse(message) as WebSocketActionBase;
       switch (action.type) {
