@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,8 +24,7 @@ import {
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStream, EventStreamSubscription } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
-import { Context, newContext } from '../request-context/request-context.decorator';
-import { lastValueFrom } from 'rxjs';
+import { Context } from '../request-context/request-context.decorator';
 import {
   AsyncResponse,
   CheckInterfaceRequest,
@@ -50,7 +49,6 @@ import {
   packSubscriptionName,
   computeTokenId,
   unpackPoolLocator,
-  unpackSubscriptionName,
   packPoolLocator,
 } from './tokens.util';
 import { TOKEN_STANDARD, TokenListener } from './tokens.listener';
@@ -64,6 +62,7 @@ import {
   TransferBatch,
   TransferSingle,
 } from './erc1155';
+import { eventStreamName } from '../utils';
 
 export const BASE_SUBSCRIPTION_NAME = 'base';
 
@@ -81,7 +80,7 @@ export class TokensService {
   baseUrl: string;
   instancePath: string;
   topic: string;
-  stream: EventStream | undefined;
+  streamCache: Map<string, EventStream> = new Map();
 
   constructor(
     private eventstream: EventStreamService,
@@ -164,9 +163,19 @@ export class TokensService {
   }
 
   private async getStream(ctx: Context, namespace: string) {
+    let stream = this.streamCache.get(namespace);
+    if (stream !== undefined) {
+      return stream;
+    }
     await this.migrationCheck(ctx);
-    this.logger.log('Creating stream with name ' + `${this.topic}/${namespace}`);
-    return this.eventstream.createOrUpdateStream(ctx, `${this.topic}/${namespace}`, this.topic);
+    this.logger.log('Creating stream with name ' + eventStreamName(this.topic, namespace));
+    stream = await this.eventstream.createOrUpdateStream(
+      ctx,
+      `${eventStreamName(this.topic, namespace)}`,
+      this.topic,
+    );
+    this.streamCache.set(namespace, stream);
+    return stream;
   }
 
   /**
@@ -192,7 +201,7 @@ export class TokensService {
         s.name === currentName || s.name === oldName1 || s.name === oldName2 || s.name === oldName3,
     );
     for (const deprecatedStream of deprecatedStreams) {
-      this.logger.debug(`Purging deprecated eventstream '${deprecatedStream.id}'`);
+      this.logger.log(`Purging deprecated eventstream '${deprecatedStream.id}'`);
       await this.eventstream.deleteStream(ctx, deprecatedStream.id);
     }
   }
