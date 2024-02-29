@@ -94,13 +94,10 @@ export class TokensService {
     this.instancePath = instancePath;
     this.topic = topic;
     this.contractAddress = contractAddress.toLowerCase();
-    this.proxy.addConnectionListener(this);
     this.proxy.addEventListener(new TokenListener(this.blockchain));
     const wsUrl = new URL('/ws', this.baseUrl.replace('http', 'ws')).href;
     this.proxy.configure(wsUrl, this.topic);
   }
-
-  async onConnect() {}
 
   private async createPoolSubscription(
     ctx: Context,
