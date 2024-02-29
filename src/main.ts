@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -77,7 +77,6 @@ async function bootstrap() {
   const ethConnectUrl = config.get<string>('ETHCONNECT_URL', '');
   const instancePath = config.get<string>('ETHCONNECT_INSTANCE', '');
   const topic = config.get<string>('ETHCONNECT_TOPIC', 'token');
-  const autoInit = config.get<string>('AUTO_INIT', 'true');
   const username = config.get<string>('ETHCONNECT_USERNAME', '');
   const password = config.get<string>('ETHCONNECT_PASSWORD', '');
   const contractAddress = config.get<string>('CONTRACT_ADDRESS', '');
@@ -102,10 +101,6 @@ async function bootstrap() {
   app
     .get(BlockchainConnectorService)
     .configure(ethConnectUrl, username, password, passthroughHeaders, blockchainRetryCfg);
-
-  if (autoInit.toLowerCase() !== 'false') {
-    await app.get(TokensService).init(newContext());
-  }
 
   const port = config.get<number>('PORT', 3000);
   console.log(`Listening on port ${port}`);

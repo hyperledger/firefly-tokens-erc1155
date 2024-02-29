@@ -38,11 +38,12 @@ export class HealthController {
   readiness() {
     return this.health.check([
       () =>
-        this.http.pingCheck(
-          'ethconnect',
-          `${this.blockchain.baseUrl}/status`,
-          getHttpRequestOptions(this.blockchain.username, this.blockchain.password),
-        ),
+        this.http.pingCheck('ethconnect', `${this.blockchain.baseUrl}/status`, {
+          auth: {
+            username: this.blockchain.username,
+            password: this.blockchain.password,
+          },
+        }),
     ]);
   }
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -139,6 +139,10 @@ export class TokenPoolConfig {
 }
 
 export class TokenPool {
+  @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
+
   @ApiProperty({ enum: TokenType })
   @IsDefined()
   type: TokenType;
@@ -207,6 +211,10 @@ export class BlockchainEvent {
 export class TokenPoolActivate {
   @ApiProperty()
   @IsNotEmpty()
+  namespace: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   poolLocator: string;
 
   @ApiProperty()
@@ -221,6 +229,10 @@ export class TokenPoolActivate {
 export class TokenPoolDeactivate {
   @ApiProperty()
   @IsNotEmpty()
+  namespace: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
   poolLocator: string;
 
   @ApiProperty()
@@ -229,6 +241,10 @@ export class TokenPoolDeactivate {
 }
 
 export class TokenBalanceQuery {
+  @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
+
   @ApiProperty()
   @IsNotEmpty()
   poolLocator: string;
@@ -368,6 +384,10 @@ export class TokenApproval {
 
 class tokenEventBase {
   @ApiProperty()
+  @IsNotEmpty()
+  namespace: string;
+
+  @ApiProperty()
   poolLocator: string;
 
   @ApiProperty()
@@ -393,6 +413,9 @@ export class TokenPoolEventInfo {
 }
 
 export class TokenPoolEvent extends tokenEventBase {
+  @ApiProperty()
+  alternateLocators: string[];
+
   @ApiProperty()
   type: TokenType;
 

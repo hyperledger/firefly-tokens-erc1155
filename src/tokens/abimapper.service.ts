@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import * as LRUCache from 'lru-cache';
+import LRUCache from 'lru-cache';
 import { abi as ERC1155MixedFungibleAbiV2 } from '../abi/ERC1155MixedFungible.json';
 import { abi as ERC1155MixedFungibleAbiV1 } from '../abi/ERC1155MixedFungibleV1.json';
 import { abi as ERC1155MixedFungibleAbiOld } from '../abi/ERC1155MixedFungibleOld.json';
