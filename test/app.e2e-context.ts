@@ -1,6 +1,6 @@
 import { Server } from 'http';
 import { Observer } from 'rxjs';
-import { AxiosHeaders, AxiosResponse } from 'axios';
+import { AxiosResponse } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import request from 'superwstest';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
@@ -115,7 +115,7 @@ export class FakeObservable<T> {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: new AxiosHeaders() },
+        config: {},
         data: this.data,
       });
     observer?.complete && observer?.complete();
