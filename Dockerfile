@@ -1,5 +1,5 @@
 FROM node:20-alpine3.17 as solidity-build
-RUN apk add python3 alpine-sdk
+RUN apk add python3=3.10.13-r0 alpine-sdk=1.0-r1
 USER node
 WORKDIR /home/node
 ADD --chown=node:node ./samples/solidity/package*.json ./
@@ -15,7 +15,7 @@ ADD . .
 RUN npm run build
 
 FROM node:20-alpine3.17 
-RUN apk add curl
+RUN apk add curl=8.5.0-r0
 # We also need to keep copying it to the old location to maintain compatibility with the FireFly CLI
 COPY --from=solidity-build --chown=1001:0 /home/node/artifacts/contracts/ERC1155MixedFungible.sol/ERC1155MixedFungible.json /root/contracts/
 WORKDIR /app
