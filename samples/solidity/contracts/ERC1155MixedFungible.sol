@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import './IERC1155MixedFungible.sol';
 
 /**
@@ -114,7 +113,7 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
 
         // Indexes are 1-based.
         uint256 index = maxIndex[type_id] + 1;
-        maxIndex[type_id] = SafeMath.add(to.length, maxIndex[type_id]);
+        maxIndex[type_id] = to.length + maxIndex[type_id];
 
         for (uint256 i = 0; i < to.length; ++i) {
             _mint(to[i], type_id | (index + i), 1, data);
@@ -134,7 +133,7 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
 
         // Indexes are 1-based.
         uint256 index = maxIndex[type_id] + 1;
-        maxIndex[type_id] = SafeMath.add(to.length, maxIndex[type_id]);
+        maxIndex[type_id] = to.length + maxIndex[type_id];
 
         for (uint256 i = 0; i < to.length; ++i) {
             uint256 id = type_id | (index + i);
