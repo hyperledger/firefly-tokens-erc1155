@@ -241,7 +241,7 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
               1,
               '0x00',
             ),
-        ).to.be.revertedWith('ERC1155: caller is not token owner or approved');
+        ).to.be.revertedWithCustomError(deployedERC1155, 'ERC1155MissingApprovalForAll');
         expect(
           await deployedERC1155
             .connect(deployerSignerA)
@@ -371,7 +371,7 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
               1,
               '0x00',
             ),
-        ).to.be.revertedWith('ERC1155: caller is not token owner or approved');
+        ).to.be.revertedWithCustomError(deployedERC1155, 'ERC1155MissingApprovalForAll');
         expect(
           await deployedERC1155
             .connect(deployerSignerA)
