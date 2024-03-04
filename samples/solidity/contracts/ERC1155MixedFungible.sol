@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import '@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import './IERC1155MixedFungible.sol';
 
@@ -27,7 +27,7 @@ import './IERC1155MixedFungible.sol';
  * Remember to always consult best practices from other communities and examples (such as OpenZeppelin)
  * when crafting your token logic, rather than relying on the FireFly community alone. Happy minting!
  */
-contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
+contract ERC1155MixedFungible is Context, ERC1155URIStorage, IERC1155MixedFungible {
     // Use a split bit implementation:
     //   - Bit 255: type flag (0 = fungible, 1 = non-fungible)
     //   - Bits 255-128: type id
@@ -43,10 +43,6 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
 
     // inherited ERC1155 `_uri` is private, so need our own within this contract
     string private _baseTokenURI;
-
-    // mapping from type ID | index => custom token URIs for non-fungible tokens
-    // fallback behavior if missing is to use the default base URI
-    mapping(uint256 => string) private _nfTokenURIs;
 
     function isFungible(uint256 id) internal pure returns (bool) {
         return id & TYPE_NF_BIT == 0;
@@ -89,18 +85,6 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
         );
     }
 
-    function _setNonFungibleURI(
-        uint256 type_id,
-        uint256 id,
-        string memory _uri
-    ) private creatorOnly(type_id) {
-        require(
-            isNonFungible(type_id),
-            'ERC1155MixedFungible: id does not represent a non-fungible type'
-        );
-        _nfTokenURIs[id] = _uri;
-    }
-
     function mintNonFungible(
         uint256 type_id,
         address[] calldata to,
@@ -138,7 +122,7 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
         for (uint256 i = 0; i < to.length; ++i) {
             uint256 id = type_id | (index + i);
             _mint(to[i], id, 1, data);
-            _setNonFungibleURI(type_id, id, _uri);
+            _setURI(id, _uri);
         }
     }
 
@@ -185,15 +169,22 @@ contract ERC1155MixedFungible is Context, ERC1155, IERC1155MixedFungible {
 
     function uri(
         uint256 id
-    ) public view virtual override(IERC1155MixedFungible, ERC1155) returns (string memory) {
-        string memory _tokenUri = _nfTokenURIs[id];
-        bytes memory tempURITest = bytes(_tokenUri);
+    )
+        public
+        view
+        virtual
+        override(IERC1155MixedFungible, ERC1155URIStorage)
+        returns (string memory)
+    {
+        return super.uri(id);
+    }
 
-        if (tempURITest.length == 0) {
-            return _baseTokenURI;
-        } else {
-            return _tokenUri;
-        }
+    function _setURI(uint256 id, string memory tokenURI) internal virtual override {
+        require(
+            isNonFungible(id),
+            'ERC1155MixedFungible: id does not represent a non-fungible type'
+        );
+        super._setURI(id, tokenURI);
     }
 
     function baseTokenUri() public view virtual override returns (string memory) {
