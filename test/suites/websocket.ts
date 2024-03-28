@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,7 +57,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -77,6 +82,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -89,6 +98,7 @@ export default (context: TestContext) => {
             interfaceFormat: 'abi',
             poolData: 'default',
             poolLocator: 'F1',
+            alternateLocators: <string[]>[],
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -119,7 +129,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token pool event from base subscription', () => {
@@ -129,7 +140,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -151,6 +167,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.id).toBeDefined();
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -161,6 +181,7 @@ export default (context: TestContext) => {
             interfaceFormat: 'abi',
             poolLocator:
               'address=0x00001&type=fungible&startId=0x100000000000000000000000000000000&endId=0x100000000000000000000000000000000&block=1',
+            alternateLocators: ['address=0x00001&id=F1&block=1'],
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -191,7 +212,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token pool event with old signature', () => {
@@ -201,7 +223,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -223,6 +250,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         expect(message.id).toBeDefined();
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -234,6 +265,7 @@ export default (context: TestContext) => {
             poolData: 'default',
             poolLocator:
               'address=0x00001&type=fungible&startId=0x100000000000000000000000000000000&endId=0x100000000000000000000000000000000&block=1',
+            alternateLocators: ['address=0x00001&id=F1&block=1'],
             type: 'fungible',
             signer: 'bob',
             data: '',
@@ -264,7 +296,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token mint event', async () => {
@@ -274,7 +307,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -307,6 +345,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -353,7 +395,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token mint event with old pool ID', async () => {
@@ -370,7 +413,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -403,6 +451,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -451,7 +503,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -482,7 +535,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -514,6 +572,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -561,7 +623,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -592,7 +655,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -615,6 +683,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -658,7 +730,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -682,7 +755,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -703,6 +781,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -743,7 +825,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token transfer event from wrong pool', () => {
@@ -754,7 +837,12 @@ export default (context: TestContext) => {
 
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -792,6 +880,10 @@ export default (context: TestContext) => {
         });
       })
       .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
+      })
+      .expectJson(message => {
         // Only the second transfer should have been processed
         expect(message.event).toEqual('batch');
         expect(message.data.events).toHaveLength(1);
@@ -799,7 +891,8 @@ export default (context: TestContext) => {
         expect(message.data.events[0].data.poolLocator).toEqual('id=N1&block=1');
         expect(message.data.events[0].data.blockchain.info.blockNumber).toEqual('2');
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token batch transfer', async () => {
@@ -816,7 +909,12 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({
           events: [
@@ -842,6 +940,10 @@ export default (context: TestContext) => {
             },
           ],
         });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.id).toBeDefined();
@@ -922,7 +1024,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(2);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -942,7 +1045,12 @@ export default (context: TestContext) => {
   it('Success receipt', () => {
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.receiptHandler).toBeDefined();
         context.receiptHandler(<EventStreamReply>{
           headers: {
@@ -962,13 +1070,19 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Error receipt', () => {
     return context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.receiptHandler).toBeDefined();
         context.receiptHandler(<EventStreamReply>{
           headers: {
@@ -990,7 +1104,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Disconnect and reconnect', async () => {
@@ -1016,9 +1131,18 @@ export default (context: TestContext) => {
 
     await context.server
       .ws('/api/ws')
-      .exec(() => {
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         expect(context.eventHandler).toBeDefined();
         context.eventHandler({ events: [tokenPoolMessage] });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.event).toEqual('batch');
@@ -1028,42 +1152,21 @@ export default (context: TestContext) => {
       })
       .close();
 
-    await context.server.ws('/api/ws').expectJson(message => {
-      expect(message.event).toEqual('batch');
-      expect(message.data.events).toHaveLength(1);
-      expect(message.data.events[0].event).toEqual('token-pool');
-      return true;
-    });
-  });
+    context.resetConnectedPromise();
 
-  it('Client switchover', async () => {
-    const tokenPoolMessage: TokenPoolCreationEvent = {
-      subId: 'sb-123',
-      signature: tokenCreateEventSignature,
-      address: '0x00001',
-      blockNumber: '1',
-      transactionIndex: '0x0',
-      transactionHash: '0x123',
-      logIndex: '1',
-      timestamp: '2020-01-01 00:00:00Z',
-      data: {
-        operator: 'bob',
-        type_id: '340282366920938463463374607431768211456',
-        data: '0x6e73006e616d65006964',
-      },
-    };
-
-    context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
-      name: packSubscriptionName('0x123', 'id=F1&block=1', '', 'default'),
-    });
-
-    const ws1 = context.server.ws('/api/ws');
-    const ws2 = context.server.ws('/api/ws');
-
-    await ws1
-      .exec(() => {
-        expect(context.eventHandler).toBeDefined();
+    await context.server
+      .ws('/api/ws')
+      .sendJson({
+        type: 'start',
+        namespace: 'ns1',
+      })
+      .exec(async () => {
+        await context.connected;
         context.eventHandler({ events: [tokenPoolMessage] });
+      })
+      .expectJson(message => {
+        expect(message.event).toEqual('started');
+        expect(message.data.namespace).toEqual('ns1');
       })
       .expectJson(message => {
         expect(message.event).toEqual('batch');
@@ -1072,12 +1175,5 @@ export default (context: TestContext) => {
         return true;
       })
       .close();
-
-    await ws2.expectJson(message => {
-      expect(message.event).toEqual('batch');
-      expect(message.data.events).toHaveLength(1);
-      expect(message.data.events[0].event).toEqual('token-pool');
-      return true;
-    });
   });
 };

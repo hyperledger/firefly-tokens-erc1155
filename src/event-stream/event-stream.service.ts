@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,11 +18,11 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { AxiosRequestConfig } from 'axios';
 import { lastValueFrom } from 'rxjs';
-import * as WebSocket from 'ws';
-import { IAbiMethod } from '../tokens/tokens.interfaces';
-import { getHttpRequestOptions, getWebsocketOptions } from '../utils';
-import { Context } from '../request-context/request-context.decorator';
+import WebSocket from 'ws';
 import { FFRequestIDHeader } from '../request-context/constants';
+import { Context, newContext } from '../request-context/request-context.decorator';
+import { IAbiMethod } from '../tokens/tokens.interfaces';
+import { eventStreamName, getHttpRequestOptions, getWebsocketOptions } from '../utils';
 import {
   Event,
   EventBatch,
@@ -46,6 +46,7 @@ export class EventStreamSocket {
   constructor(
     private url: string,
     private topic: string,
+    private namespace: string,
     private username: string,
     private password: string,
     private handleEvents: (events: EventBatch) => void,
@@ -67,7 +68,7 @@ export class EventStreamSocket {
         } else {
           this.logger.log('Event stream websocket connected');
         }
-        this.produce({ type: 'listen', topic: this.topic });
+        this.produce({ type: 'listen', topic: `${eventStreamName(this.topic, this.namespace)}` });
         this.produce({ type: 'listenreplies' });
         this.ping();
       })
@@ -83,6 +84,7 @@ export class EventStreamSocket {
         }
       })
       .on('message', (message: string) => {
+        this.logger.verbose(`WS => ${message}`);
         this.handleMessage(JSON.parse(message));
       })
       .on('pong', () => {
@@ -109,7 +111,19 @@ export class EventStreamSocket {
   }
 
   ack(batchNumber: number | undefined) {
-    this.produce({ type: 'ack', topic: this.topic, batchNumber });
+    this.produce({
+      type: 'ack',
+      topic: `${eventStreamName(this.topic, this.namespace)}`,
+      batchNumber,
+    });
+  }
+
+  nack(batchNumber: number | undefined) {
+    this.produce({
+      type: 'nack',
+      topic: `${eventStreamName(this.topic, this.namespace)}`,
+      batchNumber,
+    });
   }
 
   close() {
@@ -176,11 +190,12 @@ export class EventStreamService {
     return config;
   }
 
-  async getStreams(): Promise<EventStream[]> {
+  async getStreams(ctx: Context): Promise<EventStream[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStream[]>(new URL('/eventstreams', this.baseUrl).href, {
-        ...getHttpRequestOptions(this.username, this.password),
-      }),
+      this.http.get<EventStream[]>(
+        new URL('/eventstreams', this.baseUrl).href,
+        this.requestOptions(ctx),
+      ),
     );
     return response.data;
   }
@@ -192,13 +207,14 @@ export class EventStreamService {
       batchSize: 50,
       batchTimeoutMS: 500,
       type: 'websocket',
-      websocket: { topic },
+      websocket: { topic: name },
       blockedReryDelaySec: 30, // intentional due to spelling error in ethconnect
       inputs: true,
       timestamps: true,
     };
 
-    const existingStreams = await this.getStreams();
+    const existingStreams = await this.getStreams(ctx);
+
     const stream = existingStreams.find(s => s.name === streamDetails.name);
     if (stream) {
       const patchedStreamRes = await lastValueFrom(
@@ -207,12 +223,10 @@ export class EventStreamService {
           {
             ...streamDetails,
           },
-          {
-            ...this.requestOptions(ctx),
-          },
+          this.requestOptions(ctx),
         ),
       );
-      this.logger.log(`Event stream for ${topic}: ${stream.id}`);
+      this.logger.log(`Event stream for ${name}: ${stream.id}`);
       return patchedStreamRes.data;
     }
     const newStreamRes = await lastValueFrom(
@@ -221,28 +235,25 @@ export class EventStreamService {
         {
           ...streamDetails,
         },
-        {
-          ...this.requestOptions(ctx),
-        },
+        this.requestOptions(ctx),
       ),
     );
-    this.logger.log(`Event stream for ${topic}: ${newStreamRes.data.id}`);
+    this.logger.log(`Event stream for ${name}: ${newStreamRes.data.id}`);
     return newStreamRes.data;
   }
 
   async deleteStream(ctx: Context, id: string) {
     await lastValueFrom(
-      this.http.delete(new URL(`/eventstreams/${id}`, this.baseUrl).href, {
-        ...this.requestOptions(ctx),
-      }),
+      this.http.delete(new URL(`/eventstreams/${id}`, this.baseUrl).href, this.requestOptions(ctx)),
     );
   }
 
   async getSubscriptions(ctx: Context): Promise<EventStreamSubscription[]> {
     const response = await lastValueFrom(
-      this.http.get<EventStreamSubscription[]>(new URL('/subscriptions', this.baseUrl).href, {
-        ...this.requestOptions(ctx),
-      }),
+      this.http.get<EventStreamSubscription[]>(
+        new URL('/subscriptions', this.baseUrl).href,
+        this.requestOptions(ctx),
+      ),
     );
     return response.data;
   }
@@ -275,7 +286,7 @@ export class EventStreamService {
   ): Promise<EventStreamSubscription> {
     const response = await lastValueFrom(
       this.http.post<EventStreamSubscription>(
-        new URL(`/subscriptions`, instancePath).href,
+        `${instancePath}/subscriptions`,
         {
           name,
           stream: streamId,
@@ -284,9 +295,7 @@ export class EventStreamService {
           address,
           methods,
         },
-        {
-          ...this.requestOptions(ctx),
-        },
+        this.requestOptions(ctx),
       ),
     );
     this.logger.log(`Created subscription ${name}: ${response.data.id}`);
@@ -337,15 +346,20 @@ export class EventStreamService {
     return true;
   }
 
-  connect(
+  async connect(
     url: string,
     topic: string,
+    namespace: string,
     handleEvents: (events: EventBatch) => void,
     handleReceipt: (receipt: EventStreamReply) => void,
   ) {
+    const name = eventStreamName(topic, namespace);
+    await this.createOrUpdateStream(newContext(), name, topic);
+
     return new EventStreamSocket(
       url,
       topic,
+      namespace,
       this.username,
       this.password,
       handleEvents,

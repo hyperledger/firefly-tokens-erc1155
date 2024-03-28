@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE -2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ import {
 import { EventStreamService } from '../event-stream/event-stream.service';
 import { EventStream, EventStreamSubscription } from '../event-stream/event-stream.interfaces';
 import { EventStreamProxyGateway } from '../eventstream-proxy/eventstream-proxy.gateway';
-import { Context, newContext } from '../request-context/request-context.decorator';
+import { Context } from '../request-context/request-context.decorator';
 import {
   AsyncResponse,
   CheckInterfaceRequest,
@@ -49,7 +49,6 @@ import {
   packSubscriptionName,
   computeTokenId,
   unpackPoolLocator,
-  unpackSubscriptionName,
   packPoolLocator,
 } from './tokens.util';
 import { TOKEN_STANDARD, TokenListener } from './tokens.listener';
@@ -63,6 +62,7 @@ import {
   TransferBatch,
   TransferSingle,
 } from './erc1155';
+import { eventStreamName } from '../utils';
 
 export const BASE_SUBSCRIPTION_NAME = 'base';
 
@@ -80,7 +80,7 @@ export class TokensService {
   baseUrl: string;
   instancePath: string;
   topic: string;
-  stream: EventStream | undefined;
+  streamCache: Map<string, EventStream> = new Map();
 
   constructor(
     private eventstream: EventStreamService,
@@ -94,34 +94,20 @@ export class TokensService {
     this.instancePath = instancePath;
     this.topic = topic;
     this.contractAddress = contractAddress.toLowerCase();
-    this.proxy.addConnectionListener(this);
     this.proxy.addEventListener(new TokenListener(this.blockchain));
-  }
-
-  async onConnect() {
     const wsUrl = new URL('/ws', this.baseUrl.replace('http', 'ws')).href;
-    const stream = await this.getStream(newContext());
-    this.proxy.configure(wsUrl, stream.name);
-  }
-
-  /**
-   * One-time initialization of event stream and base subscription.
-   */
-  async init(ctx: Context) {
-    const defaultContract = await this.getContractAddress(ctx);
-    if (defaultContract) {
-      await this.createPoolSubscription(ctx, defaultContract, BASE_SUBSCRIPTION_NAME);
-    }
+    this.proxy.configure(wsUrl, this.topic);
   }
 
   private async createPoolSubscription(
     ctx: Context,
+    namespace: string,
     address: string,
     poolLocator: string,
     blockNumber?: string,
     poolData?: string,
   ) {
-    const stream = await this.getStream(ctx);
+    const stream = await this.getStream(ctx, namespace);
     const eventABIV1 = this.mapper.getCreateEventV1();
     const eventABIV2 = this.mapper.getCreateEventV2();
     const methodABI = this.mapper.getCreateMethod();
@@ -173,16 +159,20 @@ export class TokensService {
     return this.contractAddress;
   }
 
-  private async getStream(ctx: Context) {
-    const stream = this.stream;
+  private async getStream(ctx: Context, namespace: string) {
+    let stream = this.streamCache.get(namespace);
     if (stream !== undefined) {
       return stream;
     }
-    await this.migrationCheck(ctx); // note: may update this.stream
-    const name = this.stream?.name ?? packStreamName(this.topic, this.contractAddress);
-    this.logger.log('Using event stream with name ' + name);
-    this.stream = await this.eventstream.createOrUpdateStream(ctx, name, name);
-    return this.stream;
+    await this.migrationCheck(ctx);
+    this.logger.log('Creating stream with name ' + eventStreamName(this.topic, namespace));
+    stream = await this.eventstream.createOrUpdateStream(
+      ctx,
+      `${eventStreamName(this.topic, namespace)}`,
+      this.topic,
+    );
+    this.streamCache.set(namespace, stream);
+    return stream;
   }
 
   /**
@@ -195,72 +185,22 @@ export class TokensService {
   async migrationCheck(ctx: Context) {
     const currentName = packStreamName(this.topic, this.contractAddress);
     const oldName1 = packStreamName(this.topic, this.instancePath);
-    const oldName2 = this.topic;
+    const oldName2 = packStreamName(this.topic, '');
+    const oldName3 = this.topic;
 
-    const streams = await this.eventstream.getStreams();
-    let existingStream = streams.find(s => s.name === currentName);
-    if (existingStream === undefined) {
-      // Look for the old stream names
-      existingStream = streams.find(s => s.name === oldName1);
-      if (existingStream === undefined) {
-        existingStream = streams.find(s => s.name === oldName2);
-        if (existingStream === undefined) {
-          return false;
-        }
-      }
-      this.logger.warn(
-        `Old event stream found with name ${existingStream.name}. ` +
-          `The connector will continue to use this stream, but it is recommended ` +
-          `to create a new stream with the name ${currentName}.`,
-      );
+    const existingStreams = await this.eventstream.getStreams(ctx);
+    // Check to see if there is a deprecated stream that we should remove
+    this.logger.debug(
+      `Checking for deprecated event steams named '${currentName}' or '${oldName1}' or '${oldName2}' or '${oldName3}'`,
+    );
+    const deprecatedStreams = existingStreams.filter(
+      s =>
+        s.name === currentName || s.name === oldName1 || s.name === oldName2 || s.name === oldName3,
+    );
+    for (const deprecatedStream of deprecatedStreams) {
+      this.logger.log(`Purging deprecated eventstream '${deprecatedStream.id}'`);
+      await this.eventstream.deleteStream(ctx, deprecatedStream.id);
     }
-    this.stream = existingStream;
-    const streamId = existingStream.id;
-
-    const allSubscriptions = await this.eventstream.getSubscriptions(ctx);
-    const subscriptions = allSubscriptions.filter(s => s.stream === streamId);
-    if (subscriptions.length === 0) {
-      return false;
-    }
-
-    const foundEvents = new Map<string, string[]>();
-    for (const sub of subscriptions) {
-      const parts = unpackSubscriptionName(sub.name);
-      if (parts.poolLocator === BASE_SUBSCRIPTION_NAME) {
-        continue;
-      }
-      if (parts.poolLocator === undefined || parts.event === undefined) {
-        this.logger.warn(
-          `Non-parseable subscription name '${sub.name}' found in event stream '${existingStream.name}'.` +
-            `It is recommended to delete all subscriptions and activate all pools again.`,
-        );
-        return true;
-      }
-      const key = packSubscriptionName(parts.address, parts.poolLocator, '', parts.poolData);
-      const existing = foundEvents.get(key);
-      if (existing !== undefined) {
-        existing.push(parts.event);
-      } else {
-        foundEvents.set(key, [parts.event]);
-      }
-    }
-
-    // Expect to have found subscriptions for each of the events.
-    for (const [key, events] of foundEvents) {
-      const parts = unpackSubscriptionName(key);
-      if (
-        ALL_SUBSCRIBED_EVENTS.length !== events.length ||
-        !ALL_SUBSCRIBED_EVENTS.every(event => events.includes(event))
-      ) {
-        this.logger.warn(
-          `Event stream subscriptions for pool ${parts.poolLocator} do not include all expected events ` +
-            `(${ALL_SUBSCRIBED_EVENTS}). Events may not be properly delivered to this pool. ` +
-            `It is recommended to delete its subscriptions and activate the pool again.`,
-        );
-        return true;
-      }
-    }
-    return false;
   }
 
   async createPool(ctx: Context, dto: TokenPool): Promise<TokenPoolEvent | AsyncResponse> {
@@ -275,6 +215,7 @@ export class TokensService {
       }
       await this.createPoolSubscription(
         ctx,
+        dto.namespace,
         dto.config.address,
         BASE_SUBSCRIPTION_NAME,
         dto.config.blockNumber,
@@ -284,6 +225,14 @@ export class TokensService {
 
     const defaultContract = await this.getContractAddress(ctx);
     if (defaultContract !== undefined) {
+      await this.createPoolSubscription(
+        ctx,
+        dto.namespace,
+        defaultContract,
+        BASE_SUBSCRIPTION_NAME,
+        dto.config?.blockNumber,
+      );
+
       return this.createWithAddress(ctx, defaultContract, dto);
     }
 
@@ -319,7 +268,7 @@ export class TokensService {
   }
 
   async activatePool(ctx: Context, dto: TokenPoolActivate) {
-    const stream = await this.getStream(ctx);
+    const stream = await this.getStream(ctx, dto.namespace);
     const poolLocator = unpackPoolLocator(dto.poolLocator);
     const address = poolLocator.address ?? (await this.getContractAddress(ctx));
     if (!address) {
@@ -332,6 +281,7 @@ export class TokensService {
     const promises: Promise<EventStreamSubscription | EventStreamSubscription[]>[] = [
       this.createPoolSubscription(
         ctx,
+        dto.namespace,
         address,
         dto.poolLocator,
         poolLocator.blockNumber,
@@ -407,7 +357,7 @@ export class TokensService {
       packSubscriptionName(this.instancePath, dto.poolLocator, ApprovalForAll.name, dto.poolData),
     ];
 
-    const stream = await this.getStream(ctx);
+    const stream = await this.getStream(ctx, dto.namespace);
     const results = await Promise.all(
       subscriptionNames.map(name =>
         this.eventstream.deleteSubscriptionByName(ctx, stream.id, name),

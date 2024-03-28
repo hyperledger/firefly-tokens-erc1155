@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -79,6 +79,19 @@ export function unpackTypeId(id: string): TokenLocator {
 }
 
 /**
+ * Given a token ID from the underlying contract, split it into its meaningful parts.
+ */
+export function unpackOldTypeId(id: string) {
+  const val = BigInt(id);
+  const isFungible = val >> BigInt(255) === BigInt(0);
+  return {
+    isFungible: isFungible,
+    poolId: (isFungible ? 'F' : 'N') + (BigInt.asUintN(255, val) >> BigInt(128)),
+    tokenIndex: isFungible ? undefined : BigInt.asUintN(128, val).toString(),
+  };
+}
+
+/**
  * Given individual pool parameters, create a packed string to be used as a pool locator.
  *
  * This should only be called once when the pool is first created! You should
@@ -97,6 +110,24 @@ export function packPoolLocator(
   encoded.set('type', isFungible ? TokenType.FUNGIBLE : TokenType.NONFUNGIBLE);
   encoded.set('startId', poolStartId);
   encoded.set('endId', poolEndId);
+  if (blockNumber !== undefined) {
+    encoded.set('block', blockNumber);
+  }
+  return encoded.toString();
+}
+
+/**
+ * Given a pool ID (in format 'F1') and optional block number, create a packed
+ * string to be used as a pool locator.
+ *
+ * This should only be called once when the pool is first created! You should
+ * never re-pack a locator during event or request processing (always send
+ * back the one provided as input or unpacked from the subscription).
+ */
+export function packOldPoolLocator(address: string, poolId: string, blockNumber?: string) {
+  const encoded = new URLSearchParams();
+  encoded.set('address', address);
+  encoded.set('id', poolId);
   if (blockNumber !== undefined) {
     encoded.set('block', blockNumber);
   }

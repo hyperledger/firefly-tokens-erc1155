@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -111,50 +111,6 @@ describe('TokensService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
-  });
-
-  describe('Subscription migration', () => {
-    it('should not migrate if no subscriptions exists', async () => {
-      service.topic = 'tokens';
-      service.instancePath = '0x123';
-      eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([]);
-      expect(await service.migrationCheck(newContext())).toBe(false);
-    });
-
-    it('should not migrate if correct base subscription exists', async () => {
-      service.topic = 'tokens';
-      service.instancePath = '0x123';
-      eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'fft:0x123:base:TokenPoolCreation' },
-      ]);
-      expect(await service.migrationCheck(newContext())).toBe(false);
-    });
-
-    it('should migrate if any event subscriptions are missing', async () => {
-      service.topic = 'tokens';
-      service.instancePath = '0x123';
-      eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'fft:0x123:p1:TokenPoolCreation' },
-      ]);
-      expect(await service.migrationCheck(newContext())).toBe(true);
-    });
-
-    it('should not migrate if all event subscriptions exist', async () => {
-      service.topic = 'tokens';
-      service.instancePath = '0x123';
-      eventStream.getStreams.mockReturnValueOnce([{ name: 'tokens:0x123' }]);
-      eventStream.getSubscriptions.mockReturnValueOnce([
-        { name: 'fft:0x123:p1:TokenPoolCreation:ns1' },
-        { name: 'fft:0x123:p1:TokenPoolCreationV2:ns1' },
-        { name: 'fft:0x123:p1:TransferSingle:ns1' },
-        { name: 'fft:0x123:p1:TransferBatch:ns1' },
-        { name: 'fft:0x123:p1:ApprovalForAll:ns1' },
-      ]);
-      expect(await service.migrationCheck(newContext())).toBe(false);
-    });
   });
 
   describe('Query token URI', () => {
