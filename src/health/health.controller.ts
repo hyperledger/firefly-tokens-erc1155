@@ -44,7 +44,7 @@ export class HealthController {
         );
         return this.http.pingCheck('ethconnect', `${this.blockchain.baseUrl}/status`, {
           auth: httpOptions.auth,
-          httpAgent: httpOptions.httpAgent,
+          httpsAgent: httpOptions.httpAgent,
         });
       },
     ]);
