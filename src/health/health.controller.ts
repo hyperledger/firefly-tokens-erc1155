@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -37,12 +37,16 @@ export class HealthController {
   @HealthCheck()
   readiness() {
     return this.health.check([
-      () =>
-        this.http.pingCheck(
-          'ethconnect',
-          `${this.blockchain.baseUrl}/status`,
-          getHttpRequestOptions(this.blockchain.username, this.blockchain.password),
-        ),
+      () => {
+        const httpOptions = getHttpRequestOptions(
+          this.blockchain.username,
+          this.blockchain.password,
+        );
+        return this.http.pingCheck('ethconnect', `${this.blockchain.baseUrl}/status`, {
+          auth: httpOptions.auth,
+          httpsAgent: httpOptions.httpsAgent,
+        });
+      },
     ]);
   }
 }

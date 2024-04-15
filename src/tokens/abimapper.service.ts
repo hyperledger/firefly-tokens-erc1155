@@ -15,7 +15,7 @@
 // limitations under the License.
 
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import * as LRUCache from 'lru-cache';
+import LRUCache from 'lru-cache';
 import { abi as ERC1155MixedFungibleAbi } from '../abi/ERC1155MixedFungible.json';
 import { abi as ERC1155MixedFungibleOldAbi } from '../abi/ERC1155MixedFungibleOld.json';
 import { BlockchainConnectorService } from './blockchain.service';

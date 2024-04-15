@@ -118,7 +118,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token pool event from base subscription', () => {
@@ -188,8 +189,9 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
-  });
+      })
+      .close();
+    });
 
   it('Token pool event with old signature', () => {
     context.eventstream.getSubscription.mockReturnValueOnce(<EventStreamSubscription>{
@@ -259,7 +261,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token mint event', async () => {
@@ -348,7 +351,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token mint event with old pool ID', async () => {
@@ -446,7 +450,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -556,7 +561,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -653,7 +659,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(1);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -738,7 +745,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token transfer event from wrong pool', () => {
@@ -794,7 +802,8 @@ export default (context: TestContext) => {
         expect(message.data.events[0].data.poolLocator).toEqual('id=N1&block=1');
         expect(message.data.events[0].data.blockchain.info.blockNumber).toEqual('2');
         return true;
-      });
+      })
+      .close();
   });
 
   it('Token batch transfer', async () => {
@@ -917,7 +926,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
 
     expect(context.http.post).toHaveBeenCalledTimes(2);
     expect(context.http.post).toHaveBeenCalledWith(
@@ -957,7 +967,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Error receipt', () => {
@@ -985,7 +996,8 @@ export default (context: TestContext) => {
           },
         });
         return true;
-      });
+      })
+      .close();
   });
 
   it('Disconnect and reconnect', async () => {
@@ -1028,7 +1040,8 @@ export default (context: TestContext) => {
       expect(message.data.events).toHaveLength(1);
       expect(message.data.events[0].event).toEqual('token-pool');
       return true;
-    });
+    })
+    .close();
   });
 
   it('Client switchover', async () => {
@@ -1073,6 +1086,7 @@ export default (context: TestContext) => {
       expect(message.data.events).toHaveLength(1);
       expect(message.data.events[0].event).toEqual('token-pool');
       return true;
-    });
+    })
+    .close();
   });
 };
