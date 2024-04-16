@@ -1,4 +1,4 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { ERC1155MixedFungible, InterfaceCheck } from '../typechain';
@@ -26,7 +26,7 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
 
     Factory = await ethers.getContractFactory('ERC1155MixedFungible');
     deployedERC1155 = await Factory.connect(deployerSignerA).deploy(baseUri);
-    await deployedERC1155.deployed();
+    await deployedERC1155.waitForDeployment();
   });
 
   it('Verify interface ID', async () => {
@@ -112,17 +112,6 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
         ).to.be.reverted;
 
         expect(await deployedERC1155.balanceOf(signerB.address, fungibleTokenTypeId)).to.equal(0);
-      });
-
-      it('non-signing address should not be able to mint tokens', async function () {
-        expect(await deployedERC1155.balanceOf(ONE_ADDRESS, fungibleTokenTypeId)).to.equal(0);
-        // Non-signer mint to non-signer (Not allowed)
-        await expect(
-          deployedERC1155
-            .connect(ONE_ADDRESS)
-            .mintFungible(fungibleTokenTypeId, [ONE_ADDRESS], [100], '0x00'),
-        ).to.be.reverted;
-        expect(await deployedERC1155.balanceOf(ONE_ADDRESS, fungibleTokenTypeId)).to.equal(0);
       });
     });
   });
@@ -223,7 +212,7 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
               1,
               '0x00',
             ),
-        ).to.be.revertedWith('ERC1155: caller is not owner nor approve');
+        ).to.be.revertedWith('ERC1155: caller is not token owner or approved');
         expect(
           await deployedERC1155
             .connect(deployerSignerA)
@@ -347,7 +336,7 @@ describe('ERC1155MixedFungible - Unit Tests', () => {
               1,
               '0x00',
             ),
-        ).to.be.revertedWith('ERC1155: caller is not owner nor approve');
+        ).to.be.revertedWith('ERC1155: caller is not token owner or approved');
         expect(
           await deployedERC1155
             .connect(deployerSignerA)

@@ -18,7 +18,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { AxiosRequestConfig } from 'axios';
 import { lastValueFrom } from 'rxjs';
-import * as WebSocket from 'ws';
+import WebSocket from 'ws';
 import { IAbiMethod } from '../tokens/tokens.interfaces';
 import { getHttpRequestOptions, getWebsocketOptions } from '../utils';
 import { Context } from '../request-context/request-context.decorator';
