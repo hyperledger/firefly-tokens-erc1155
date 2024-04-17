@@ -18,6 +18,8 @@ import { ClientRequest } from 'http';
 import { HttpService } from '@nestjs/axios';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import {
+  ConflictException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -96,7 +98,13 @@ export class BlockchainConnectorService {
         this.logger.warn(
           `${request?.path} <-- HTTP ${response?.status} ${response?.statusText}: ${errorMessage}`,
         );
-        throw new InternalServerErrorException(errorMessage);
+        if (response?.status === HttpStatus.CONFLICT) {
+          // Pass a 409 through
+          throw new ConflictException(errorMessage);
+        } else {
+          // Otherwise always return a 500 if the blockchain connector request wasn't successful
+          throw new InternalServerErrorException(errorMessage);
+        }
       }
       throw err;
     });
@@ -105,7 +113,7 @@ export class BlockchainConnectorService {
   // Check if retry condition matches the err that's been hit
   private matchesRetryCondition(err: any): boolean {
     return (
-      this.retryConfiguration.retryCondition != '' &&
+      this.retryConfiguration.retryCondition !== '' &&
       `${err}`.match(this.retryConfiguration.retryCondition) !== null
     );
   }
@@ -129,8 +137,8 @@ export class BlockchainConnectorService {
     let retries = 0;
     for (
       ;
-      this.retryConfiguration.retriesMax == -1 || retries <= this.retryConfiguration.retriesMax;
-      this.retryConfiguration.retriesMax == -1 || retries++ // Don't inc 'retries' if 'retriesMax' if set to -1 (infinite retries)
+      this.retryConfiguration.retriesMax === -1 || retries <= this.retryConfiguration.retriesMax;
+      this.retryConfiguration.retriesMax === -1 || retries++ // Don't inc 'retries' if 'retriesMax' if set to -1 (infinite retries)
     ) {
       try {
         return await blockchainFunction();

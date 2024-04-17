@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { PoolLocator } from './tokens.interfaces';
 import {
   decodeHex,
   encodeHex,
@@ -21,10 +22,10 @@ import {
   packPoolLocator,
   packStreamName,
   packSubscriptionName,
-  packTokenId,
+  computeTokenId,
   unpackPoolLocator,
   unpackSubscriptionName,
-  unpackTokenId,
+  unpackTypeId,
 } from './tokens.util';
 
 describe('Util', () => {
@@ -48,39 +49,56 @@ describe('Util', () => {
   });
 
   it('packTokenId', () => {
-    expect(packTokenId('F1', '0')).toEqual('340282366920938463463374607431768211456');
-    expect(packTokenId('N1', '1')).toEqual(
-      '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-    );
+    const pool: PoolLocator = {
+      isFungible: true,
+      startId: '0x100000000000000000000000000000000',
+      endId: '0x1ffffffffffffffffffffffffffffffff',
+    };
+    expect(computeTokenId(pool, '1')).toEqual('340282366920938463463374607431768211457');
   });
 
   it('unpackTokenId', () => {
-    expect(unpackTokenId('340282366920938463463374607431768211456')).toEqual({
+    expect(unpackTypeId('340282366920938463463374607431768211456')).toEqual({
       isFungible: true,
-      poolId: 'F1',
+      startId: '0x100000000000000000000000000000000',
+      endId: '0x100000000000000000000000000000000',
     });
     expect(
-      unpackTokenId(
-        '57896044618658097711785492504343953926975274699741220483192166611388333031425',
-      ),
+      unpackTypeId('57896044618658097711785492504343953926975274699741220483192166611388333031425'),
     ).toEqual({
       isFungible: false,
-      poolId: 'N1',
+      startId: '0x8000000000000000000000000000000100000000000000000000000000000000',
+      endId: '0x80000000000000000000000000000001ffffffffffffffffffffffffffffffff',
       tokenIndex: '1',
     });
   });
 
   it('packPoolLocator', () => {
-    expect(packPoolLocator('0x123', 'N1', '5')).toEqual('address=0x123&id=N1&block=5');
+    expect(packPoolLocator('0x123', false, '1', '5', '1000')).toEqual(
+      'address=0x123&type=nonfungible&startId=1&endId=5&block=1000',
+    );
   });
 
   it('unpackPoolLocator', () => {
+    expect(
+      unpackPoolLocator('address=0x123&type=nonfungible&startId=1&endId=5&block=1000'),
+    ).toEqual({
+      address: '0x123',
+      isFungible: false,
+      startId: '1',
+      endId: '5',
+      blockNumber: '1000',
+    });
     expect(unpackPoolLocator('id=N1&block=5')).toEqual({
-      poolId: 'N1',
+      isFungible: false,
+      startId: '0x8000000000000000000000000000000100000000000000000000000000000000',
+      endId: '0x80000000000000000000000000000001ffffffffffffffffffffffffffffffff',
       blockNumber: '5',
     });
     expect(unpackPoolLocator('N1')).toEqual({
-      poolId: 'N1',
+      isFungible: false,
+      startId: '0x8000000000000000000000000000000100000000000000000000000000000000',
+      endId: '0x80000000000000000000000000000001ffffffffffffffffffffffffffffffff',
     });
   });
 
@@ -97,19 +115,19 @@ describe('Util', () => {
 
   it('unpackSubscriptionName', () => {
     expect(unpackSubscriptionName('fft:0x123:F1:create:ns1')).toEqual({
-      instancePath: '0x123',
+      address: '0x123',
       poolLocator: 'F1',
       event: 'create',
       poolData: 'ns1',
     });
     expect(unpackSubscriptionName('token:0x123:F1:create')).toEqual({
-      instancePath: '0x123',
+      address: '0x123',
       poolLocator: 'F1',
       event: 'create',
       poolData: undefined,
     });
     expect(unpackSubscriptionName('fft:0x123:F1:create:ns1%3Atest')).toEqual({
-      instancePath: '0x123',
+      address: '0x123',
       poolLocator: 'F1',
       event: 'create',
       poolData: 'ns1:test',
