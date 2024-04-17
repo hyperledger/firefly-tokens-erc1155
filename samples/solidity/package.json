@@ -6,7 +6,7 @@
 		"test": "hardhat test --network hardhat"
 	},
 	"dependencies": {
-		"@openzeppelin/contracts": "^4.9.6"
+		"@openzeppelin/contracts": "^4.5.0"
 	},
 	"devDependencies": {
 		"@nomicfoundation/hardhat-toolbox": "^4.0.0",

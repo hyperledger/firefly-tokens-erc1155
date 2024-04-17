@@ -16,12 +16,15 @@ RUN npm run build
 
 FROM node:16-alpine3.15 
 RUN apk add curl
-WORKDIR /root
+WORKDIR /app
 ADD package*.json ./
 RUN npm install --production
 COPY --from=solidity-builder /home/node/contracts contracts/source
 COPY --from=solidity-builder /home/node/artifacts/contracts/ERC1155MixedFungible.sol contracts
 COPY --from=builder /root/dist dist
-COPY --from=builder /root/.env /root/.env
+COPY --from=builder /root/.env /app/.env
+RUN chgrp -R 0 /app/ \
+    && chmod -R g+rwX /app/
+USER 1001
 EXPOSE 3000
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/src/main"]

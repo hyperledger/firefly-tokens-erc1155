@@ -24,7 +24,7 @@ import {
   TokenTransfer,
   PoolLocator,
 } from './tokens.interfaces';
-import { encodeHex, isFungible, packTokenId } from './tokens.util';
+import { encodeHex, computeTokenId } from './tokens.util';
 
 // Methods defined as part of the ERC1155 standard
 
@@ -215,7 +215,7 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
       map: (poolLocator: PoolLocator, dto: TokenBurn) => {
         return [
           dto.from,
-          packTokenId(poolLocator.poolId, dto.tokenIndex),
+          computeTokenId(poolLocator, dto.tokenIndex),
           dto.amount,
           encodeHex(dto.data ?? ''),
         ];
@@ -226,7 +226,7 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
       name: 'burn',
       inputs: [{ type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
       map: (poolLocator: PoolLocator, dto: TokenBurn) => {
-        return [dto.from, packTokenId(poolLocator.poolId, dto.tokenIndex), dto.amount];
+        return [dto.from, computeTokenId(poolLocator, dto.tokenIndex), dto.amount];
       },
     },
   ],
@@ -242,13 +242,8 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
         { type: 'bytes' },
       ],
       map: (poolLocator: PoolLocator, dto: TokenMint) => {
-        if (isFungible(poolLocator.poolId)) {
-          return [
-            packTokenId(poolLocator.poolId),
-            [dto.to],
-            [dto.amount],
-            encodeHex(dto.data ?? ''),
-          ];
+        if (poolLocator.isFungible) {
+          return [computeTokenId(poolLocator), [dto.to], [dto.amount], encodeHex(dto.data ?? '')];
         }
         return undefined;
       },
@@ -258,17 +253,15 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
       name: 'mintNonFungibleWithURI',
       inputs: [{ type: 'uint256' }, { type: 'address[]' }, { type: 'bytes' }, { type: 'string' }],
       map: (poolLocator: PoolLocator, dto: TokenMint) => {
-        if (!isFungible(poolLocator.poolId)) {
-          // In the case of a non-fungible token:
-          // - We parse the value as a whole integer count of NFTs to mint
-          // - We require the number to be small enough to express as a JS number (we're packing into an array)
+        if (!poolLocator.isFungible) {
+          // In the case of a non-fungible token, we parse the value as a whole integer count of NFTs to mint
           verifyNoIndex(dto);
           const to: string[] = [];
-          const amount = parseInt(dto.amount);
-          for (let i = 0; i < amount; i++) {
+          const amount = BigInt(dto.amount);
+          for (let i = BigInt(0); i < amount; i++) {
             to.push(dto.to);
           }
-          return [packTokenId(poolLocator.poolId), to, encodeHex(dto.data ?? ''), dto.uri ?? ''];
+          return [computeTokenId(poolLocator), to, encodeHex(dto.data ?? ''), dto.uri ?? ''];
         }
         return undefined;
       },
@@ -278,19 +271,35 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
       name: 'mintNonFungible',
       inputs: [{ type: 'uint256' }, { type: 'address[]' }, { type: 'bytes' }],
       map: (poolLocator: PoolLocator, dto: TokenMint) => {
-        if (!isFungible(poolLocator.poolId)) {
-          // In the case of a non-fungible token:
-          // - We parse the value as a whole integer count of NFTs to mint
-          // - We require the number to be small enough to express as a JS number (we're packing into an array)
+        if (!poolLocator.isFungible) {
+          // In the case of a non-fungible token, we parse the value as a whole integer count of NFTs to mint
           verifyNoIndex(dto);
           const to: string[] = [];
-          const amount = parseInt(dto.amount);
-          for (let i = 0; i < amount; i++) {
+          const amount = BigInt(dto.amount);
+          for (let i = BigInt(0); i < amount; i++) {
             to.push(dto.to);
           }
-          return [packTokenId(poolLocator.poolId), to, encodeHex(dto.data ?? '')];
+          return [computeTokenId(poolLocator), to, encodeHex(dto.data ?? '')];
         }
         return undefined;
+      },
+    },
+    {
+      // Source: OpenZeppelin extension
+      name: 'mint',
+      inputs: [{ type: 'address' }, { type: 'uint256' }, { type: 'uint256' }, { type: 'bytes' }],
+      map: (poolLocator: PoolLocator, dto: TokenMint) => {
+        if (poolLocator.isFungible) {
+          return [dto.to, computeTokenId(poolLocator), dto.amount, encodeHex(dto.data ?? '')];
+        } else {
+          verifyHasIndex(dto);
+          return [
+            dto.to,
+            computeTokenId(poolLocator, dto.tokenIndex),
+            dto.amount,
+            encodeHex(dto.data ?? ''),
+          ];
+        }
       },
     },
   ],
@@ -310,7 +319,7 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
         return [
           dto.from,
           dto.to,
-          packTokenId(poolLocator.poolId, dto.tokenIndex),
+          computeTokenId(poolLocator, dto.tokenIndex),
           dto.amount,
           encodeHex(dto.data ?? ''),
         ];
@@ -318,6 +327,12 @@ export const DynamicMethods: Record<TokenOperation, MethodSignature[]> = {
     },
   ],
 };
+
+function verifyHasIndex(dto: TokenMint) {
+  if (dto.tokenIndex === undefined) {
+    throw new BadRequestException('Setting token index is required by this contract');
+  }
+}
 
 function verifyNoIndex(dto: TokenMint) {
   if (dto.tokenIndex !== undefined) {

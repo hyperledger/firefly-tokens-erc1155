@@ -21,9 +21,15 @@ import { Event } from '../event-stream/event-stream.interfaces';
 // Internal types
 
 export interface PoolLocator {
-  poolId: string;
+  isFungible: boolean;
+  startId: string;
+  endId: string;
   blockNumber?: string;
   address?: string;
+}
+
+export interface TokenLocator extends Pick<PoolLocator, 'isFungible' | 'startId' | 'endId'> {
+  tokenIndex?: string;
 }
 
 // Ethconnect interfaces
@@ -41,12 +47,22 @@ export interface ContractInfoResponse {
   address: string;
 }
 
+interface TokenPoolCreationDataV1 {
+  operator: string;
+  type_id: string;
+  data: string;
+}
+
+interface TokenPoolCreationDataV2 {
+  operator: string;
+  is_fungible: boolean;
+  start_id: string;
+  end_id: string;
+  data: string;
+}
+
 export interface TokenPoolCreationEvent extends Event {
-  data: {
-    operator: string;
-    type_id: string;
-    data: string;
-  };
+  data: TokenPoolCreationDataV1 | TokenPoolCreationDataV2;
 }
 
 export interface ApprovalForAllEvent extends Event {
@@ -112,6 +128,14 @@ export class TokenPoolConfig {
   @ApiProperty()
   @IsOptional()
   blockNumber?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  startId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  endId?: string;
 }
 
 export class TokenPool {
@@ -362,7 +386,10 @@ export class TokenPoolEventInfo {
   address: string;
 
   @ApiProperty()
-  typeId: string;
+  startId: string;
+
+  @ApiProperty()
+  endId: string;
 }
 
 export class TokenPoolEvent extends tokenEventBase {
