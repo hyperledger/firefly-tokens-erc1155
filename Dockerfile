@@ -1,4 +1,4 @@
-FROM node:16-alpine3.15 as solidity-builder
+FROM node:20-alpine3.19 as solidity-builder
 RUN apk add python3 alpine-sdk
 USER node
 WORKDIR /home/node
@@ -14,7 +14,7 @@ RUN npm install
 ADD . .
 RUN npm run build
 
-FROM node:16-alpine3.15 
+FROM node:20-alpine3.19
 RUN apk add curl
 WORKDIR /app
 ADD package*.json ./
