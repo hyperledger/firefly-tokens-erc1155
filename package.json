@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "docker": "docker build --build-arg BASE_IMAGE=node:20-alpine3.19 --tag hyperledger/firefly-tokens-erc1155 .",
+    "docker": "docker build --build-arg BASE_IMAGE=node:20-alpine3.19 --build-arg BUILD_IMAGE=node:20-alpine3.19 --tag hyperledger/firefly-tokens-erc1155 .",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

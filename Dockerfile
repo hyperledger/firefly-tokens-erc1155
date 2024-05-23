@@ -1,6 +1,7 @@
 ARG BASE_IMAGE
+ARG BUILD_IMAGE
 
-FROM node:20-alpine3.19 as solidity-build
+FROM ${BUILD_IMAGE} as solidity-build
 RUN apk add python3=3.11.9-r0 alpine-sdk=1.0-r1
 USER node
 WORKDIR /home/node
@@ -9,7 +10,7 @@ RUN npm install
 ADD --chown=node:node ./samples/solidity .
 RUN npx hardhat compile
 
-FROM node:20-alpine3.17 as build
+FROM ${BUILD_IMAGE} as build
 WORKDIR /root
 ADD package*.json ./
 RUN npm install

@@ -19,6 +19,7 @@ jobs:
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${GITHUB_REF##*/} \
             --build-arg BASE_IMAGE=node:20-alpine3.19 \
+            --build-arg BUILD_IMAGE=node:20-alpine3.19 \
             --tag ghcr.io/hyperledger/firefly-tokens-erc1155:${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly-tokens-erc1155:head \
             .
