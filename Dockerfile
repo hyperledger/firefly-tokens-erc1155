@@ -26,7 +26,7 @@ RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --exit-code 1
 
 FROM $BASE_IMAGE
-RUN apk add curl=8.9.1-r0
+RUN apk add curl=8.9.1-r1
 # We also need to keep copying it to the old location to maintain compatibility with the FireFly CLI
 COPY --from=solidity-build --chown=1001:0 /home/node/artifacts/contracts/ERC1155MixedFungible.sol/ERC1155MixedFungible.json /root/contracts/
 WORKDIR /app
