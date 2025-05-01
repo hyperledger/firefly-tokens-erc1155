@@ -2,7 +2,7 @@ ARG BASE_IMAGE
 ARG BUILD_IMAGE
 
 FROM ${BUILD_IMAGE} AS solidity-build
-RUN apk add python3=3.11.11-r0 alpine-sdk=1.0-r1
+RUN apk add python3~3.11 alpine-sdk=1.0-r1
 USER node
 WORKDIR /home/node
 ADD --chown=node:node ./samples/solidity/package*.json ./
