@@ -20,6 +20,9 @@ RUN npm run build
 FROM alpine:3.19 AS sbom
 WORKDIR /
 ADD . /SBOM
+# Copy the resolved node_modules from build stage with overrides applied
+COPY --from=build /root/node_modules /SBOM/node_modules
+COPY --from=build /root/package-lock.json /SBOM/package-lock.json
 RUN apk add --no-cache curl 
 RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
