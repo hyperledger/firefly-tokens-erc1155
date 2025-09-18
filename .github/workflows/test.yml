@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Use Node.js
         uses: actions/setup-node@v3
@@ -25,7 +25,7 @@ jobs:
       run:
         working-directory: ./samples/solidity
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Use Node.js
         uses: actions/setup-node@v3

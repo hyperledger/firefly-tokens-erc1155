@@ -1,0 +1,5 @@
+# Vulnerabilities fixed via npm overrides in package.json
+# form-data: upgraded from 4.0.1 to 4.0.4 via override
+CVE-2025-7783
+# multer: upgraded from 2.0.1 to 2.0.2 via override  
+CVE-2025-7338
