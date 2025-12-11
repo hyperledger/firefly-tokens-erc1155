@@ -21,12 +21,12 @@ FROM alpine:3.19 AS sbom
 WORKDIR /
 ADD . /SBOM
 RUN apk add --no-cache curl 
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin latest
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --exit-code 1
 
 FROM $BASE_IMAGE
-RUN apk add curl=8.12.1-r0
+RUN apk add --no-cache curl
 # We also need to keep copying it to the old location to maintain compatibility with the FireFly CLI
 COPY --from=solidity-build --chown=1001:0 /home/node/artifacts/contracts/ERC1155MixedFungible.sol/ERC1155MixedFungible.json /root/contracts/
 WORKDIR /app
